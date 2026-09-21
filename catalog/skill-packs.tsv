@@ -1,0 +1,8 @@
+# id	tier	dominio	repo	subdirectorio	descripción
+# Los packs de terceros NO se redistribuyen con el stack: se clonan de su upstream.
+ponytail	core	dev	https://github.com/DietrichGebert/ponytail.git	skills	Disciplina de código mínimo: auditoría, deuda técnica y revisión
+humanizer	core	core	https://github.com/blader/humanizer.git	.	Reescribe textos con olor a IA sin inventar hechos
+marketing	negocio	marketing	https://github.com/coreyhaines31/marketingskills.git	.	~50 skills de marketing técnico (SEO, CRO, copy, ads, pricing, analytics)
+taste	negocio	dev	https://github.com/Leonxlnx/taste-skill.git	.	Criterio estético para frontend: evita la UI genérica de IA
+open-design	opcional	dev	https://github.com/nexu-io/open-design.git	.	Biblioteca grande de skills de diseño web y sistemas de diseño
+strix	opcional	qa	https://github.com/usestrix/strix.git	.	Skills de seguridad ofensiva y testing de vulnerabilidades

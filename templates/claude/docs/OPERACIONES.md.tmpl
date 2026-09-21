@@ -1,0 +1,32 @@
+# Operaciones sobre servidores y clientes — {{EMPRESA}}
+
+## Carriles
+
+```text
+{{DATA_ROOT}}/05-OPERACIONES/
+├── bitacoras/    YYYY-MM-DD_<cliente>_<slug>/OPERACION.md + evidencia saneada
+├── scripts/      scripts operativos propios, versionados
+└── backups/      dumps y copias traídas de los servidores
+```
+
+## Bitácora mínima de una operación
+
+```markdown
+# <cliente> — <tipo de operación> — YYYY-MM-DD
+
+**Alcance:** qué se iba a hacer y sobre qué servidor exactamente.
+**Aprobación:** quién la dio y cuándo. Si no hubo, decirlo.
+**Acciones:** comandos o pasos ejecutados, en orden.
+**Resultado:** qué quedó funcionando y qué no.
+**Evidencia:** rutas de logs y capturas saneadas.
+**Próximo paso:** con responsable y fecha.
+```
+
+## Reglas
+
+- Antes de operar, **confirmar contra qué servidor**. El sufijo del conector es lo único que los
+  distingue.
+- Los backups no se guardan dentro de la bitácora: van a `backups/`, con su fecha.
+- No copiar `.env`, tokens ni credenciales a la bitácora. Si hacen falta para el diagnóstico, se
+  referencian, no se pegan.
+- Una operación sin aprobación registrada se anota igual: la bitácora es para auditar.

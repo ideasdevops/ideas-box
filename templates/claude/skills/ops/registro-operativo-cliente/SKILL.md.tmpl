@@ -1,0 +1,25 @@
+---
+name: registro-operativo-cliente
+description: Registra backups, soporte y operaciones sobre servidores de clientes en una bitácora auditable.
+argument-hint: "<cliente> <tipo de operación> <resumen>"
+allowed-tools: Read Write Edit Bash Glob Grep
+---
+
+# registro-operativo-cliente
+
+## Objetivo
+- Crear una bitácora auditable por cliente y operación en `{{DATA_ROOT}}/05-OPERACIONES/bitacoras/`.
+- Mantener separados resultado operativo, evidencia saneada y material sensible.
+
+## Procedimiento
+1. Crear la carpeta `YYYY-MM-DD_<cliente>_<slug>`.
+2. Escribir `OPERACION.md` con: alcance, acciones ejecutadas, resultado, evidencia, quién aprobó
+   y próximo paso.
+3. Guardar la evidencia saneada al lado. Los backups pesados van a
+   `{{DATA_ROOT}}/05-OPERACIONES/backups/`, no dentro de la bitácora.
+
+## Reglas
+- No copiar secretos, archivos `.env`, tokens ni datos de autenticación.
+- No ejecutar, restaurar, borrar ni transferir backups o scripts sin autorización explícita.
+- Si una operación se hizo sin aprobación registrada, eso también se anota: la bitácora sirve
+  para auditar, no para quedar bien.

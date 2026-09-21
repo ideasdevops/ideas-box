@@ -1,0 +1,31 @@
+# Estructura de datos — {{EMPRESA}}
+
+Raíz de datos: `{{DATA_ROOT}}`
+
+Si vive en un disco o partición aparte, **montala antes de trabajar**. El hook de arranque de
+sesión avisa cuando no está: si aparece ese aviso, no asumas que la información no existe.
+
+## Carpetas
+
+| Carpeta | Qué guarda |
+|---|---|
+| `00-INBOX` | Lo que entra sin clasificar |
+| `01-RECURSOS-IA` | Agentes, skills y MCP candidatos, con sus carriles de validación |
+| `02-CLIENTES` | Una carpeta por cliente y por prospecto: documentación, contexto, entregables |
+| `03-PROYECTOS` | Desarrollos propios |
+| `04-SERVICIOS` | Servicios autoalojados: compose, configuración, notas de despliegue |
+| `05-OPERACIONES` | `bitacoras/`, `scripts/`, `backups/` |
+| `06-CONTENIDO` | `10-CRUDOS/` (material de proceso) y `30-LISTOS-PARA-PUBLICAR/` (entregables) |
+| `07-DOCUMENTOS` · `08-IMAGENES` · `09-VIDEOS` | Archivos transversales por tipo |
+| `10-PROSPECCIONES` | Listas y tablas de prospección |
+| `90-ARCHIVO` | Lo descartado, que no se borra pero no se usa |
+| `.claude/` | Árbol canónico: agentes, skills, memoria, docs |
+
+## Convenciones
+
+1. No mover proyectos existentes solo para ajustar nombres.
+2. Cada cliente y cada prospecto tiene **su propia carpeta** en `02-CLIENTES`.
+3. Los `.claude/` dentro de un proyecto son overrides locales; la definición compartida está en
+   la raíz canónica.
+4. El archivo `.empresa-stack` en la raíz es la marca que usa `{{STACK}} doctor` para distinguir
+   "disco no montado" de "disco montado pero vacío". No lo borres.

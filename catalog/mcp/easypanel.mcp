@@ -1,0 +1,18 @@
+ID="easypanel"
+TITLE="Easypanel — panel de servicios en tu VPS"
+DESC="Estado, logs, métricas y reinicio de los servicios desplegados en un servidor con Easypanel."
+TIER="negocio"
+KIND="python"
+REPO="https://github.com/dannymaaz/easypanel-mcp.git"
+REF="main"
+DIR="easypanel-mcp"
+CMD="__SRC__/venv/bin/easypanel-mcp"
+ARGS_JSON='[]'
+MULTI=1
+INSTANCE_PROMPT="Etiqueta de este servidor (ej: produccion)"
+ENV_KEYS="EASYPANEL_URL EASYPANEL_API_KEY"
+ENV_SECRET="EASYPANEL_API_KEY"
+ENV_PROMPT_EASYPANEL_URL="URL del panel (https://panel.tuempresa.com)"
+ENV_PROMPT_EASYPANEL_API_KEY="API key de Easypanel (Settings → API)"
+TOOLGROUP="easypanel"
+NOTES="Un servidor = una instancia. Repetí la instalación por cada VPS que administres."

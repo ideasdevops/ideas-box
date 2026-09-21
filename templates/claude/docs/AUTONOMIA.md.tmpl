@@ -1,0 +1,52 @@
+# Autonomía y permisos del workspace — {{EMPRESA}}
+
+Esta política rige a todos los agentes que trabajen bajo `{{DATA_ROOT}}`.
+
+## Zonas de autonomía
+
+| Área | Acción autónoma permitida | Requiere aprobación explícita |
+| --- | --- | --- |
+| `01-RECURSOS-IA` | Catalogar, documentar y preparar pruebas aisladas. | Ejecutar código no validado, instalar dependencias, activar un recurso. |
+| `02-CLIENTES` | Leer y escribir en la carpeta del cliente puntual que pide la tarea. | Entrar a la carpeta de otro cliente, tocar documentación administrativa o contratos. |
+| `03-PROYECTOS` | Trabajo técnico solicitado y documentado en el proyecto. | Deploy, acceso a secretos, cambios de infraestructura, acciones destructivas. |
+| `04-SERVICIOS` | Catalogar servicios y preparar manifiestos sin secretos. | Instalar, desplegar, cambiar configuración, migrar o tocar `.env*`, `deploy/`, `database/`. |
+| `05-OPERACIONES` | Crear bitácoras y outputs nuevos. | Ejecutar, editar, restaurar, borrar o transferir scripts y backups existentes. |
+| `06-CONTENIDO` | Leer fuentes y crear derivados en los carriles de producción. | Borrar o sobrescribir fuentes; publicar hacia afuera. |
+| `07/08/09` (documentos, imágenes, videos) | Clasificar y generar borradores en la carpeta indicada. | Publicar, borrar, sobrescribir fuentes o distribuir material de terceros. |
+| `10-PROSPECCIONES` | Procesar listas y crear fichas de prospecto. | Contactar a alguien de la lista. |
+
+## Zonas protegidas
+
+Agregá acá las carpetas que ningún agente puede tocar sin una autorización puntual —típicamente
+documentación administrativa, contable o legal. Sin autorización expresa para la tarea, el agente
+no puede **leer, enumerar, editar, copiar, ejecutar ni mover** nada en ellas:
+
+- `{{DATA_ROOT}}/07-DOCUMENTOS/administracion/`  ← ejemplo, ajustalo a tu realidad
+
+La autorización debe especificar **ruta, acción y objetivo**. Nunca incluye acceso implícito a
+archivos vecinos, secretos, credenciales, `.env*`, llaves, bases de datos ni backups.
+
+## Ciclo de vida de recursos nuevos
+
+1. `00-INBOX`: ingresó, nadie lo revisó; no se ejecuta.
+2. `10-CANDIDATOS`: documentado, con plan de prueba aislada.
+3. `20-VALIDADOS`: aprobado, con manifiesto de uso, versión, permisos y evidencia.
+4. `90-ARCHIVO`: descartado u obsoleto; no se reactiva sin decisión nueva.
+
+## Reglas de seguridad
+
+- No incluir secretos ni datos personales en prompts, logs, memoria, commits ni documentación.
+- Las credenciales viven en `~/.config/{{STACK}}/secrets/` con permisos 600. No se copian a
+  ningún otro lado, ni siquiera "temporalmente para probar".
+- Si un cliente corre servicios propios visibles desde tu infraestructura, verlos para
+  diagnóstico está permitido; **usar sus credenciales o leer sus datos, no**.
+
+## Acciones que siempre requieren aprobación explícita del usuario
+
+1. Escribirle a un cliente o prospecto (salvo campaña ya ordenada con sus cuatro datos).
+2. Publicar, programar o responder en redes sociales.
+3. Gastar dinero: pauta, APIs pagas, servicios nuevos.
+4. Reiniciar, detener, desplegar o borrar servicios.
+5. Ejecutar comandos arbitrarios en un servidor remoto.
+6. `UPDATE` o `DELETE` sobre datos de producción.
+7. Cualquier acción destructiva o difícil de revertir.

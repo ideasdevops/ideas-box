@@ -1,0 +1,22 @@
+---
+name: release-validation
+description: Valida una corrección o release antes de producción, con smoke tests y criterios de salida.
+argument-hint: "<proyecto> <alcance>"
+allowed-tools: Read Write Edit Bash Glob Grep
+---
+
+# release-validation
+
+## Objetivo
+Decidir, con evidencia, si un fix o una release está listo para salir.
+
+## Entregables
+- casos probados, con los pasos exactos
+- resultado por caso (pasó / falló, con la salida real)
+- riesgo residual
+- decisión: listo o no listo
+
+## Reglas
+- Si un caso falla, se reporta con su salida. Un informe optimista es peor que no validar.
+- "No lo probé" es un resultado válido y hay que decirlo; "debería andar" no lo es.
+- Los casos críticos se prueban en el entorno más parecido a producción que haya disponible.

@@ -1,0 +1,167 @@
+#!/usr/bin/env bash
+# CLI del stack: mantenimiento después de la instalación.
+set -euo pipefail
+
+STACK_SRC="${STACK_SRC:-$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)}"
+export STACK_SRC
+
+. "$STACK_SRC/lib/common.sh"
+. "$STACK_SRC/lib/deps.sh"
+. "$STACK_SRC/lib/profile.sh"
+. "$STACK_SRC/lib/datastore.sh"
+. "$STACK_SRC/lib/mcp.sh"
+. "$STACK_SRC/lib/thirdparty.sh"
+. "$STACK_SRC/lib/canonical.sh"
+. "$STACK_SRC/lib/settings.sh"
+. "$STACK_SRC/lib/doctor.sh"
+
+usage() {
+  cat <<TXT
+$STACK_NAME — mantenimiento del stack
+
+  $STACK_NAME doctor [--deep]        diagnóstico (--deep prueba cada conector de verdad)
+  $STACK_NAME status                 resumen corto
+  $STACK_NAME sync [--force]         regenerar agentes/skills/docs y symlinks
+  $STACK_NAME mcp list               conectores del catálogo
+  $STACK_NAME mcp installed          conectores instalados
+  $STACK_NAME mcp add <id>           instalar un conector
+  $STACK_NAME mcp remove <servidor>  quitar un conector
+  $STACK_NAME skills list            packs de skills
+  $STACK_NAME skills add <pack>      instalar un pack
+  $STACK_NAME skills update          actualizar todos los packs
+  $STACK_NAME backup                 respaldo del árbol canónico y la config
+  $STACK_NAME update                 actualizar stack, packs y conectores
+  $STACK_NAME profile                editar la identidad de la empresa
+
+Opciones: --dry-run, --yes, --debug
+TXT
+}
+
+args=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --dry-run) DRY_RUN=1; shift ;;
+    --yes|-y) ASSUME_YES=1; shift ;;
+    --debug) STACK_DEBUG=1; shift ;;
+    --deep) DOCTOR_DEEP=1; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) args+=("$1"); shift ;;
+  esac
+done
+set -- "${args[@]:-}"
+
+cmd="${1:-}"; shift || true
+
+init_input
+
+# El comando ensure_node define NODE_BIN, que necesitan los lanzadores nuevos.
+NODE_BIN="${NODE_BIN:-$(command -v node || true)}"
+
+case "$cmd" in
+  doctor)
+    doctor_main
+    ;;
+
+  status)
+    load_profile
+    printf '%s (%s)\n' "$EMPRESA_NOMBRE" "$EMPRESA_SLUG"
+    printf '  datos    %s %s\n' "$DATA_ROOT" "$([ -f "$DATA_ROOT/.empresa-stack" ] && echo '(montado)' || echo '(NO DISPONIBLE)')"
+    printf '  agentes  %s\n' "$(find "$DATA_ROOT/.claude/agents" -name '*.md' 2>/dev/null | wc -l)"
+    printf '  skills   %s\n' "$(find "$DATA_ROOT/.claude/skills" -maxdepth 2 -mindepth 2 2>/dev/null | wc -l)"
+    printf '  memoria  %s notas\n' "$(find "$DATA_ROOT/.claude/memory" -name '*.md' 2>/dev/null | wc -l)"
+    printf '  MCP      %s conectores\n' "$([ -f "$MCP_REGISTRY" ] && wc -l < "$MCP_REGISTRY" || echo 0)"
+    ;;
+
+  sync)
+    load_profile
+    canonical_main "${1:-}"
+    settings_apply
+    ;;
+
+  mcp)
+    load_profile
+    case "${1:-list}" in
+      list)
+        echo "Núcleo:";    mcp_catalog_list core
+        echo "Negocio:";   mcp_catalog_list negocio
+        echo "Opcional:";  mcp_catalog_list opcional
+        ;;
+      installed)
+        [ -s "$MCP_REGISTRY" ] && column -t -s$'\t' "$MCP_REGISTRY" || echo "(ninguno)"
+        ;;
+      add)
+        [ -n "${2:-}" ] || die "Falta el id. Verlos con: $STACK_NAME mcp list"
+        mcp_install "$2" "${3:-}"
+        canonical_render   # los agentes se regeneran con las tools nuevas
+        ;;
+      remove)
+        server="${2:-}"; [ -n "$server" ] || die "Falta el nombre del servidor."
+        confirm "¿Quitar el conector $server?" n || exit 0
+        SERVER="$server" python3 - <<'PY' > /tmp/mcp-remove.json
+import json, os, sys
+path = os.path.expanduser("~/.claude.json")
+cfg = json.load(open(path))
+cfg.get("mcpServers", {}).pop(os.environ["SERVER"], None)
+json.dump(cfg, open(path, "w"), indent=2, ensure_ascii=False)
+print("{}")
+PY
+        rm -f "$MCP_LAUNCHERS/$server.sh" "$STACK_SECRETS_DIR/$server.env" /tmp/mcp-remove.json
+        grep -v -P "^\Q$server\E\t" "$MCP_REGISTRY" > "$MCP_REGISTRY.tmp" 2>/dev/null || true
+        mv "$MCP_REGISTRY.tmp" "$MCP_REGISTRY"
+        canonical_render
+        ok "Conector $server eliminado"
+        ;;
+      *) usage; exit 1 ;;
+    esac
+    ;;
+
+  skills)
+    load_profile
+    case "${1:-list}" in
+      list)   column -t -s$'\t' "$STACK_SRC/catalog/skill-packs.tsv" ;;
+      add)    [ -n "${2:-}" ] || die "Falta el pack."; thirdparty_install_pack "$2"; canonical_link ;;
+      update) thirdparty_update_all; canonical_link ;;
+      *) usage; exit 1 ;;
+    esac
+    ;;
+
+  backup)
+    load_profile
+    dest="$DATA_ROOT/05-OPERACIONES/backups/stack"
+    mkdir -p "$dest"
+    file="$dest/stack-$(date +%Y%m%d-%H%M%S).tar.gz"
+    tar -czf "$file" \
+      --exclude='*/node_modules' --exclude='*/venv' --exclude='*/.git' \
+      -C "$DATA_ROOT" .claude \
+      -C "$HOME" ".config/$STACK_NAME"
+    ok "Respaldo en $file"
+    warn "Incluye las credenciales de $STACK_SECRETS_DIR: guardalo cifrado."
+    ;;
+
+  update)
+    load_profile
+    if [ -d "$STACK_SRC/.git" ]; then
+      info "Actualizando el stack"
+      git -C "$STACK_SRC" pull --ff-only || warn "No se pudo actualizar el repo del stack"
+    fi
+    thirdparty_update_all
+    if [ -s "$MCP_REGISTRY" ]; then
+      while IFS=$'\t' read -r server id _ label; do
+        info "Actualizando conector $server"
+        mcp_install "$id" "$label" || true
+      done < "$MCP_REGISTRY"
+    fi
+    canonical_main
+    settings_apply
+    ;;
+
+  profile)
+    load_profile
+    "${EDITOR:-nano}" "$STACK_PROFILE"
+    load_profile
+    canonical_main --force
+    ;;
+
+  ""|help|-h|--help) usage ;;
+  *) err "Comando desconocido: $cmd"; usage; exit 1 ;;
+esac

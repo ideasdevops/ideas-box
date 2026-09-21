@@ -1,0 +1,29 @@
+---
+name: informe-cliente
+description: Arma informes de estado, auditoría o resultados para un cliente, con la plantilla institucional de {{EMPRESA}}.
+argument-hint: "<cliente> <tipo de informe>"
+allowed-tools: Read Write Edit Bash Glob Grep
+---
+
+# informe-cliente
+
+## Objetivo
+Producir un informe presentable, con hallazgos verificables y próximos pasos claros.
+
+## Flujo
+1. Reunir los datos reales: métricas, logs, capturas, registros de la operación.
+2. Redactar en Markdown primero — es barato de corregir.
+3. Iterar con el usuario hasta que el contenido esté cerrado.
+4. Recién entonces exportar al formato final (PDF o documento) con la plantilla de la empresa.
+
+## Estructura sugerida
+- resumen ejecutivo (qué pasó, en tres líneas)
+- hallazgos, cada uno con su evidencia
+- impacto en el negocio del cliente
+- recomendaciones priorizadas
+- próximos pasos con responsable y fecha
+
+## Reglas
+- Nada de hallazgos especulativos presentados como hechos.
+- Sanear capturas y logs: sin credenciales, sin datos de otros clientes.
+- Aplicar `core/humanizer` antes de entregar.

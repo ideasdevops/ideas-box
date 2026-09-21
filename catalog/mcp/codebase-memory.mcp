@@ -1,0 +1,10 @@
+ID="codebase-memory"
+TITLE="Codebase Memory — grafo de código indexado"
+DESC="Indexa tus repos y deja que los agentes busquen funciones, rutas y dependencias sin leer archivos a ciegas."
+TIER="core"
+KIND="custom"
+DIR="codebase-memory"
+INSTALL_CUSTOM="bash \"$STACK_SRC/catalog/installers/codebase-memory.sh\""
+CMD="$HOME/.local/bin/codebase-memory-mcp"
+ARGS_JSON='[]'
+TOOLGROUP="codebase-memory"

@@ -1,0 +1,17 @@
+ID="facebook-ads"
+TITLE="Meta Ads (lectura) — métricas de campañas"
+DESC="21 herramientas de solo lectura sobre cuentas, campañas, adsets y anuncios de Meta Ads."
+TIER="opcional"
+KIND="python"
+REPO="https://github.com/gomarble-ai/facebook-ads-mcp-server.git"
+REF="main"
+DIR="facebook-ads-mcp"
+BUILD="venv/bin/pip install --quiet -r requirements.txt"
+CMD="__SRC__/venv/bin/python"
+ARGS_JSON='["__SRC__/server.py"]'
+LAUNCH_EXTRA_ARGS='--fb-token "$FACEBOOK_ADS_TOKEN"'
+ENV_KEYS="FACEBOOK_ADS_TOKEN"
+ENV_SECRET="FACEBOOK_ADS_TOKEN"
+ENV_PROMPT_FACEBOOK_ADS_TOKEN="Access token con permiso ads_read"
+TOOLGROUP="facebook-ads"
+NOTES="Solo lectura: no crea ni pausa campañas. El System User necesita una cuenta publicitaria asignada."

@@ -1,0 +1,33 @@
+---
+name: como-trabaja-este-stack
+description: Reglas de base del stack de {{EMPRESA}} — dónde está la fuente de verdad, qué requiere aprobación y qué nunca se hace solo
+metadata:
+  type: shared
+---
+
+## Fuente de verdad
+
+Agentes, skills, memoria y documentación viven en `{{DATA_ROOT}}/.claude/`. Lo que está en
+`~/.claude/` son symlinks. Si la raíz de datos no está montada, **no trabajes como si no
+existiera**: avisá.
+
+## Aprobación explícita, siempre
+
+Escribirle a un cliente, publicar, gastar dinero, reiniciar o borrar un servicio, ejecutar
+comandos remotos y modificar datos de producción requieren un OK puntual del usuario, cada vez.
+Aprobar algo una vez no habilita la próxima.
+
+## Un solo dueño por acción hacia afuera
+
+`comms-chatwoot` es el único que le escribe a una persona. `content-strategist` coordina lo que
+se publica. `ads-manager` es el único que habla de gasto en pauta. Si dos agentes pueden hacer lo
+mismo, alguien va a duplicar un mensaje a un cliente real.
+
+## Memoria
+
+Lo que no se deduce leyendo el repo, se escribe en memoria con `core/docs-memory-sync`. Lo que sí
+se deduce, no. Fechas absolutas. Sin secretos.
+
+**Why:** el valor del stack no está en las herramientas sino en que las reglas se cumplan sin que
+haya que repetirlas en cada conversación.
+**How to apply:** ante la duda de si algo necesita aprobación, la respuesta es que sí.

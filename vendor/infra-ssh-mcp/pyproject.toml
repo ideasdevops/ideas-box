@@ -1,0 +1,19 @@
+[project]
+name = "infra-ssh-mcp"
+version = "0.1.0"
+description = "MCP server for controlled SSH/Docker access to Easypanel hosts"
+requires-python = ">=3.10"
+dependencies = [
+    "asyncssh>=2.14.0",
+    "mcp>=1.2.0,<2",
+]
+
+[project.scripts]
+infra-ssh-mcp = "infra_ssh_mcp.server:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["infra_ssh_mcp*"]

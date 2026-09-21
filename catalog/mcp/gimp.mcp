@@ -1,0 +1,12 @@
+ID="gimp"
+TITLE="GIMP — edición de imágenes"
+DESC="Retoque y composición de imágenes. Necesita GIMP instalado y su plugin de servidor activo."
+TIER="opcional"
+KIND="python"
+REPO="https://github.com/maorcc/gimp-mcp.git"
+REF="main"
+DIR="gimp-mcp"
+CMD="__SRC__/venv/bin/python"
+ARGS_JSON='["__SRC__/gimp_mcp_server.py"]'
+REQUIRES_HOST="gimp"
+TOOLGROUP="gimp"

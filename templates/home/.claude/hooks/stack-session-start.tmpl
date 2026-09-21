@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Hook SessionStart — generado por el stack de {{EMPRESA}}.
+# Lo que imprime entra como contexto de la sesión.
+
+DATA_ROOT="{{DATA_ROOT}}"
+
+if [ ! -d "$DATA_ROOT" ] || [ ! -f "$DATA_ROOT/.empresa-stack" ]; then
+  cat <<TXT
+ATENCIÓN: la raíz de datos de {{EMPRESA}} ($DATA_ROOT) no está disponible.
+Si vive en un disco o partición aparte, montalo antes de trabajar. No asumas
+que la memoria, los clientes o los proyectos no existen: avisale al usuario
+que el disco no está montado antes de tomar cualquier decisión operativa.
+TXT
+  exit 0
+fi
+
+cat <<TXT
+Stack de {{EMPRESA}} — raíz de datos: $DATA_ROOT (montada)
+- Memoria canónica: $DATA_ROOT/.claude/memory/MEMORY.md (índice)
+- Agentes y skills: $DATA_ROOT/.claude/{agents,skills}; lo de ~/.claude son symlinks
+- Reglas de autonomía: $DATA_ROOT/.claude/docs/AUTONOMIA.md
+Antes de tocar clientes, servidores o publicar algo hacia afuera, leé esas reglas.
+TXT

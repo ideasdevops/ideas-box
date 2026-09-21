@@ -1,0 +1,23 @@
+---
+name: static-design-production
+description: Produce piezas gráficas estáticas y assets de branding listos para el canal definido.
+argument-hint: "<marca> <pieza> <canal>"
+allowed-tools: Read Write Edit Bash Glob Grep
+---
+
+# static-design-production
+
+## Flujo
+1. Aplicar la escalera de costo: ¿ya existe el asset? ¿se puede recortar uno propio?
+2. Si hay que producir: Pillow o ffmpeg local antes que cualquier API paga.
+3. Exportar en las medidas exactas del canal de destino.
+4. Guardar el entregable en `{{DATA_ROOT}}/06-CONTENIDO/30-LISTOS-PARA-PUBLICAR/<pieza>/` con su
+   `ASSET.md`; las fuentes y variantes descartadas van a `10-CRUDOS/<pieza>/`.
+
+## Entregables
+- pieza final en el formato del canal
+- archivos fuente editables
+- `ASSET.md` con copy, CTA, formato y estado
+
+## Regla
+Checklist de datos sensibles antes de entregar cualquier pieza con captura de pantalla.

@@ -1,0 +1,39 @@
+# Organigrama de agentes — {{EMPRESA}}
+
+Un agente = un puesto. Si dos agentes pueden hacer lo mismo, uno sobra.
+
+| Área | Agente | Responsabilidad | Hacia afuera |
+|---|---|---|---|
+| core | `agents-orchestrator` | Divide un objetivo entre áreas y evita trabajo duplicado | — |
+| core | `admin-daily` | Agenda, pendientes y prioridades del día | — |
+| core | `docs-memory` | Documentación y memoria canónica | — |
+| dev | `dev-saas` | Bugs, arquitectura, continuidad técnica. Verifica deploys, no los dispara | lectura |
+| dev | `design-ui` | Pantallas y flujos, diseño-como-código | — |
+| dev | `git-ops` | Ramas, commits, push, releases | push con confirmación |
+| qa | `qa-tester` | Reproduce, valida y deja evidencia | — |
+| ops | `ops-support` | Servidores, incidentes, mitigación | restart/exec con aprobación |
+| ventas | `sales-crm` | Prospección, propuestas, pipeline | publica con aprobación |
+| clientes | `comms-chatwoot` | Envío puntual por la bandeja, a pedido | envía con aprobación |
+| clientes | `customer-success-pm` | Seguimiento de clientes activos | — |
+| marketing | `growth-marketing` | Estrategia orgánica, SEO, CRO, medición | solo lectura |
+| marketing | `ads-manager` | Pauta paga: plan, presupuesto, medición | solo lectura |
+| contenido | `content-strategist` | Plan editorial y calendario | publica con aprobación |
+| contenido | `design-content` | Piezas gráficas | publica con aprobación |
+| contenido | `video-content` | Reels, shorts, video comercial | publica con aprobación |
+
+## Reglas de frontera
+
+- **Marketing define, contenido produce.** Primero `growth-marketing`, después
+  `content-strategist`. Nunca el mismo objetivo a los dos en paralelo.
+- **Un solo dueño del envío.** `comms-chatwoot` es el único que escribe a una persona. Los demás
+  preparan el mensaje.
+- **Nadie despliega solo.** `dev-saas` prepara y verifica; el disparo es del usuario;
+  `ops-support` recupera servicios con aprobación.
+- **Toda acción irreversible hacia afuera se aprueba de a una.**
+
+## Cómo agregar un agente
+
+1. Copiá uno existente del dominio más parecido, en `{{DATA_ROOT}}/.claude/agents/<dominio>/`.
+2. Declarar en `tools:` **solo** herramientas que existen. Un `mcp__servidor__tool` de un servidor
+   no instalado deja al agente sin esa capacidad y sin aviso.
+3. Correr `{{STACK}} sync` para que aparezca el symlink en el runtime.

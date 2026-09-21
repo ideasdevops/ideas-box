@@ -1,0 +1,26 @@
+---
+name: release-workflow
+description: Gestiona ramas, staging, commits, push y preparación de releases de forma segura.
+argument-hint: "<proyecto> <cambio o release>"
+allowed-tools: Read Bash Glob Grep
+---
+
+# release-workflow
+
+## Objetivo
+- Inspeccionar el estado real del repositorio antes de modificar el historial.
+- Preparar cambios coherentes, trazables y listos para integrar.
+- Evitar incluir archivos ajenos, secretos o cambios no revisados.
+
+## Checklist
+1. Confirmar repositorio, rama actual y cambios locales.
+2. Separar cambios propios de cambios preexistentes o ajenos.
+3. Revisar el diff completo y correr la validación que defina el proyecto.
+4. Crear un commit semántico solo con el alcance aprobado.
+5. Confirmar remoto y destino **antes** del push, y el estado después.
+
+## Reglas
+- No reescribir historial ni usar `--force` sin confirmación explícita.
+- No incluir secretos, dependencias generadas ni archivos no relacionados.
+- Antes de una release, coordinar `qa/release-validation`.
+- Pushear no es desplegar: anotá por proyecto si la rama auto-despliega o no.

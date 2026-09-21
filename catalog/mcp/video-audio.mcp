@@ -1,0 +1,13 @@
+ID="video-audio"
+TITLE="Video y audio — edición por ffmpeg"
+DESC="Cortar, concatenar, subtitular, superponer texto, cambiar formato y limpiar silencios. Sin credenciales."
+TIER="negocio"
+KIND="python"
+REPO="https://github.com/misbahsy/video-audio-mcp.git"
+REF="main"
+DIR="video-audio-mcp"
+BUILD="venv/bin/pip install --quiet -r requirements.txt"
+CMD="__SRC__/venv/bin/python"
+ARGS_JSON='["__SRC__/server.py"]'
+REQUIRES_HOST="ffmpeg"
+TOOLGROUP="video"

@@ -1,0 +1,21 @@
+---
+name: customer-followup
+description: Estructura seguimientos a clientes activos, proyectos en curso y compromisos abiertos.
+argument-hint: "<cliente> <contexto>"
+allowed-tools: Read Write Edit Bash Glob Grep
+---
+
+# customer-followup
+
+## Objetivo
+- Preparar un seguimiento claro, estilo project manager.
+- Identificar estado, bloqueos, próximo paso y mensaje al cliente.
+
+## Salida esperada
+- estado actual
+- riesgo o bloqueo
+- próximo paso interno, con responsable y fecha
+- mensaje o resumen para el cliente
+
+## Regla
+Un seguimiento sin próximo paso concreto no está terminado.

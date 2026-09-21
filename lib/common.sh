@@ -1,0 +1,234 @@
+#!/usr/bin/env bash
+# Utilidades compartidas por el instalador y por el CLI `empresa`.
+# Se espera que quien haga source defina STACK_SRC (raíz del repo del stack).
+
+set -o pipefail
+
+STACK_NAME="${STACK_NAME:-empresa}"
+STACK_SRC="${STACK_SRC:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+STACK_CONFIG_DIR="${STACK_CONFIG_DIR:-$HOME/.config/$STACK_NAME}"
+STACK_PROFILE="$STACK_CONFIG_DIR/empresa.conf"
+STACK_LOCKS="$STACK_CONFIG_DIR/locks.tsv"
+STACK_SECRETS_DIR="$STACK_CONFIG_DIR/secrets"
+STACK_MCP_SRC="${STACK_MCP_SRC:-$HOME/.local/share/mcp-servers}"
+CLAUDE_CONFIG_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+CLAUDE_JSON="${CLAUDE_JSON:-$HOME/.claude.json}"
+
+DRY_RUN="${DRY_RUN:-0}"
+ASSUME_YES="${ASSUME_YES:-0}"
+NON_INTERACTIVE="${NON_INTERACTIVE:-0}"
+
+if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
+  C_RESET=$'\033[0m'; C_DIM=$'\033[2m'; C_B=$'\033[1m'
+  C_OK=$'\033[32m'; C_WARN=$'\033[33m'; C_ERR=$'\033[31m'; C_INFO=$'\033[36m'
+else
+  C_RESET=; C_DIM=; C_B=; C_OK=; C_WARN=; C_ERR=; C_INFO=
+fi
+
+log()   { printf '%s\n' "$*"; }
+info()  { printf '%s→%s %s\n' "$C_INFO" "$C_RESET" "$*"; }
+ok()    { printf '%s✓%s %s\n' "$C_OK" "$C_RESET" "$*"; }
+warn()  { printf '%s!%s %s\n' "$C_WARN" "$C_RESET" "$*" >&2; }
+err()   { printf '%s✗%s %s\n' "$C_ERR" "$C_RESET" "$*" >&2; }
+die()   { err "$*"; exit 1; }
+step()  { printf '\n%s%s%s\n' "$C_B" "$*" "$C_RESET"; }
+debug() { [ "${STACK_DEBUG:-0}" = 1 ] && printf '%s  %s%s\n' "$C_DIM" "$*" "$C_RESET" >&2 || true; }
+
+# run <cmd...> — respeta DRY_RUN
+run() {
+  if [ "$DRY_RUN" = 1 ]; then
+    printf '%s  [dry-run] %s%s\n' "$C_DIM" "$*" "$C_RESET"
+    return 0
+  fi
+  "$@"
+}
+
+have() { command -v "$1" >/dev/null 2>&1; }
+
+# De dónde se lee cuando hay que preguntar. Sin una terminal real, preguntar
+# devuelve vacío en silencio y la instalación termina a medias sin que se note:
+# por eso init_input() lo resuelve una vez y el instalador corta si no hay.
+STACK_TTY=""
+init_input() {
+  if { : >/dev/tty; } 2>/dev/null; then
+    STACK_TTY=/dev/tty
+  elif [ -t 0 ]; then
+    STACK_TTY=/dev/stdin
+  else
+    STACK_TTY=""
+    return 0
+  fi
+  # Se abre una sola vez en el descriptor 3: reabrir el archivo en cada pregunta
+  # hace que un origen que no sea un dispositivo vuelva siempre a la primera línea.
+  exec 3< "$STACK_TTY" || STACK_TTY=""
+}
+
+require_input() {
+  [ "$NON_INTERACTIVE" = 1 ] && return 0
+  [ -n "$STACK_TTY" ] && return 0
+  err "Esta instalación es interactiva y no hay terminal disponible."
+  err "Si lo estás corriendo con 'curl | bash', bajá el repo y corré: bash install.sh"
+  err "O usá --non-interactive para aceptar todos los valores por defecto."
+  exit 1
+}
+
+# confirm <pregunta> [default:y|n]
+confirm() {
+  local q="$1" def="${2:-n}" ans hint
+  [ "$ASSUME_YES" = 1 ] && return 0
+  if [ "$NON_INTERACTIVE" = 1 ] || [ -z "$STACK_TTY" ]; then
+    [ "$def" = y ] && return 0 || return 1
+  fi
+  [ "$def" = y ] && hint="[S/n]" || hint="[s/N]"
+  read -r -u 3 -p "$q $hint " ans || ans=""
+  ans="${ans:-$def}"
+  case "${ans,,}" in s|si|sí|y|yes) return 0 ;; *) return 1 ;; esac
+}
+
+# ask <pregunta> <variable-destino> [default]
+ask() {
+  local q="$1" __var="$2" def="${3:-}" ans
+  if [ "$NON_INTERACTIVE" = 1 ] || [ -z "$STACK_TTY" ]; then
+    printf -v "$__var" '%s' "$def"; return 0
+  fi
+  if [ -n "$def" ]; then
+    read -r -u 3 -p "$q [$def]: " ans || ans=""
+  else
+    read -r -u 3 -p "$q: " ans || ans=""
+  fi
+  printf -v "$__var" '%s' "${ans:-$def}"
+}
+
+# ask_secret <pregunta> <variable-destino> — no hace echo de lo tipeado
+ask_secret() {
+  local q="$1" __var="$2" ans
+  if [ "$NON_INTERACTIVE" = 1 ] || [ -z "$STACK_TTY" ]; then
+    printf -v "$__var" '%s' ""; return 0
+  fi
+  read -r -s -u 3 -p "$q: " ans || ans=""
+  printf '\n'
+  printf -v "$__var" '%s' "$ans"
+}
+
+# slug <texto> — minúsculas, sin acentos, sin espacios
+slug() {
+  printf '%s' "$1" \
+    | iconv -f utf8 -t ascii//TRANSLIT 2>/dev/null || printf '%s' "$1"
+}
+slugify() {
+  local s
+  s="$(slug "$1")"
+  s="${s,,}"
+  s="$(printf '%s' "$s" | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')"
+  printf '%s' "$s"
+}
+
+# backup_file <path> — copia con timestamp antes de sobrescribir
+backup_file() {
+  local f="$1" dest
+  [ -e "$f" ] || return 0
+  dest="$CLAUDE_BACKUP_DIR/$(basename "$f").$(date +%Y%m%d-%H%M%S).bak"
+  run mkdir -p "$CLAUDE_BACKUP_DIR"
+  run cp -a "$f" "$dest"
+  debug "backup: $f -> $dest"
+}
+CLAUDE_BACKUP_DIR="${CLAUDE_BACKUP_DIR:-$STACK_CONFIG_DIR/backups}"
+
+# write_file <path> — lee contenido de stdin, respeta DRY_RUN, hace backup
+write_file() {
+  local f="$1" mode="${2:-644}" content
+  content="$(cat)"
+  if [ "$DRY_RUN" = 1 ]; then
+    printf '%s  [dry-run] write %s (%s bytes)%s\n' "$C_DIM" "$f" "${#content}" "$C_RESET"
+    return 0
+  fi
+  [ -e "$f" ] && backup_file "$f"
+  mkdir -p "$(dirname "$f")"
+  printf '%s\n' "$content" > "$f"
+  chmod "$mode" "$f"
+}
+
+# require_cmds <cmd...> — corta si falta alguno
+require_cmds() {
+  local missing=()
+  for c in "$@"; do have "$c" || missing+=("$c"); done
+  [ ${#missing[@]} -eq 0 ] || die "Faltan comandos requeridos: ${missing[*]}"
+}
+
+load_profile() {
+  [ -f "$STACK_PROFILE" ] || die "No hay perfil en $STACK_PROFILE. Ejecutá primero install.sh."
+  # shellcheck disable=SC1090
+  . "$STACK_PROFILE"
+}
+
+# detect_os — define OS_ID, OS_LIKE, OS_VERSION, PKG
+detect_os() {
+  [ -r /etc/os-release ] || die "No se pudo leer /etc/os-release; este instalador soporta Ubuntu, Linux Mint y Debian."
+  # shellcheck disable=SC1091
+  . /etc/os-release
+  OS_ID="${ID:-unknown}"
+  OS_LIKE="${ID_LIKE:-}"
+  OS_VERSION="${VERSION_ID:-}"
+  OS_PRETTY="${PRETTY_NAME:-$OS_ID}"
+  case "$OS_ID $OS_LIKE" in
+    *debian*|*ubuntu*) PKG=apt ;;
+    *) PKG="" ;;
+  esac
+  [ -n "$PKG" ] || die "Distribución no soportada ($OS_PRETTY). El stack soporta Ubuntu, Linux Mint y Debian."
+}
+
+# lock_record <clave> <valor> — deja trazabilidad de versiones instaladas
+lock_record() {
+  [ "$DRY_RUN" = 1 ] && return 0
+  mkdir -p "$(dirname "$STACK_LOCKS")"
+  touch "$STACK_LOCKS"
+  local key="$1" val="$2" tmp
+  tmp="$(mktemp)"
+  grep -v -P "^\Q$key\E\t" "$STACK_LOCKS" > "$tmp" 2>/dev/null || true
+  printf '%s\t%s\t%s\n' "$key" "$val" "$(date -Iseconds)" >> "$tmp"
+  sort -o "$STACK_LOCKS" "$tmp"
+  rm -f "$tmp"
+}
+
+# json_merge <archivo.json> — aplica un patch JSON (stdin) con python3
+json_merge() {
+  local target="$1" patch
+  patch="$(cat)"
+  if [ "$DRY_RUN" = 1 ]; then
+    printf '%s  [dry-run] merge json en %s%s\n' "$C_DIM" "$target" "$C_RESET"
+    return 0
+  fi
+  [ -e "$target" ] && backup_file "$target"
+  PATCH="$patch" TARGET="$target" python3 - <<'PY'
+import json, os, sys
+
+target = os.environ["TARGET"]
+patch = json.loads(os.environ["PATCH"])
+
+try:
+    with open(target) as fh:
+        base = json.load(fh)
+except (FileNotFoundError, json.JSONDecodeError):
+    base = {}
+
+def deep(dst, src):
+    for k, v in src.items():
+        if isinstance(v, dict) and isinstance(dst.get(k), dict):
+            deep(dst[k], v)
+        elif isinstance(v, list) and isinstance(dst.get(k), list):
+            for item in v:
+                if item not in dst[k]:
+                    dst[k].append(item)
+        else:
+            dst[k] = v
+    return dst
+
+deep(base, patch)
+os.makedirs(os.path.dirname(target) or ".", exist_ok=True)
+tmp = target + ".tmp"
+with open(tmp, "w") as fh:
+    json.dump(base, fh, indent=2, ensure_ascii=False)
+    fh.write("\n")
+os.replace(tmp, target)
+PY
+}

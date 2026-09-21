@@ -1,0 +1,20 @@
+---
+name: social-post
+description: Genera copy y estructura de publicación para cada canal social.
+argument-hint: "<marca> <canal> <tema>"
+allowed-tools: Read Write Edit Bash Glob Grep
+---
+
+# social-post
+
+## Entregables
+- hook (primera línea o primeros 3 segundos)
+- cuerpo del post
+- CTA
+- hashtags o metadata si el canal lo usa
+
+## Reglas
+- Ajustar tono, largo y formato al canal: lo que funciona en LinkedIn no funciona en Instagram.
+- Pasar el copy por `core/humanizer` antes de entregar.
+- Publicar es una acción irreversible hacia afuera: este skill deja el copy listo, el envío lo
+  aprueba el usuario.

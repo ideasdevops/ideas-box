@@ -1,0 +1,23 @@
+---
+name: chatwoot-triage
+description: Clasifica conversaciones entrantes y decide si van a ventas, seguimiento, soporte o desarrollo.
+argument-hint: "<canal> <resumen>"
+allowed-tools: Read Write Edit Bash Glob Grep
+---
+
+# chatwoot-triage
+
+## Objetivo
+- Leer la conversación o su resumen.
+- Clasificar: prospecto, cliente activo, soporte, incidente, seguimiento.
+- Definir respuesta inicial o derivación.
+
+## Salida esperada
+- clasificación
+- prioridad
+- siguiente agente responsable
+- respuesta sugerida breve
+
+## Regla
+Clasificar no es responder. El envío del mensaje sigue requiriendo la aprobación explícita
+definida en `comms-chatwoot`.

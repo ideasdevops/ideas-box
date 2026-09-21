@@ -1,0 +1,45 @@
+# Sistema canónico de agentes, skills y memoria — {{EMPRESA}}
+
+## Raíz oficial
+
+La fuente de verdad de agentes, skills y memoria vive en:
+
+```text
+{{DATA_ROOT}}/.claude/
+```
+
+Todo recurso nuevo se crea primero acá. Lo que hay en `~/.claude/` son **symlinks**: si editás
+ahí, estás editando este árbol.
+
+## Estructura
+
+```text
+.claude/
+├── agents/     core · dev · ops · qa · ventas · marketing · contenido · clientes · internos
+├── skills/     mismos dominios
+├── memory/     shared · clientes · proyectos · operaciones · referencias · workflows · qa
+└── docs/       reglas de autonomía, estructura, organigrama y operaciones
+```
+
+## Reglas de uso
+
+1. `agents/` y `skills/` son recursos reutilizables y centralizados.
+2. `memory/` guarda memoria persistente curada, organizada por dominio, con `MEMORY.md` de índice.
+3. Los `.claude/` dentro de un proyecto son solo overrides locales, nunca la fuente de verdad.
+4. El runtime en `~/.claude/{agents,skills}` contiene solo symlinks a este árbol. Regeneralos con
+   `{{STACK}} sync`.
+5. Los packs de skills de terceros se clonan en `{{DATA_ROOT}}/01-RECURSOS-IA/20-VALIDADOS/skill-packs/`
+   y se enlazan acá. No los edites: la próxima actualización los pisa. Si necesitás una variante,
+   copiala con otro nombre.
+
+## Convención de dominios
+
+- `dev/`: desarrollo, arquitectura, deploy, integración.
+- `ops/`: infraestructura, monitoreo, backups, incidentes.
+- `qa/`: testing, evidencia, validaciones, criterios de salida.
+- `ventas/`: propuestas, CRM, cierres, seguimiento comercial.
+- `marketing/`: campañas, SEO, pauta, estrategia.
+- `contenido/`: diseño, guiones, video, assets.
+- `clientes/`: recursos específicos de cuentas o verticales.
+- `internos/`: automatizaciones y playbooks propios.
+- `shared/`: contexto transversal y reglas globales.

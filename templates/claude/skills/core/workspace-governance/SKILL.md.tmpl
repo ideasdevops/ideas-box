@@ -1,0 +1,31 @@
+---
+name: workspace-governance
+description: Clasifica recursos nuevos y aplica los límites de autonomía del workspace de {{EMPRESA}}.
+argument-hint: "<recurso o ruta>"
+allowed-tools: Read Write Edit Bash Glob Grep
+---
+
+# workspace-governance
+
+## Objetivo
+- Clasificar recursos nuevos sin mover lo que ya está funcionando.
+- Usar los carriles de `{{DATA_ROOT}}/01-RECURSOS-IA/`: `00-INBOX`, `10-CANDIDATOS`,
+  `20-VALIDADOS`, `90-ARCHIVO`.
+- Mantener trazabilidad con un `MANIFEST.md` por recurso.
+
+## Procedimiento
+1. Leer `docs/AUTONOMIA.md`.
+2. Determinar dominio y estado del recurso.
+3. Crear o actualizar el manifiesto, sin copiar secretos.
+4. Proponer la prueba aislada o la promoción. **No instalar, desplegar ni activar sin aprobación.**
+
+## Ciclo de vida
+1. `00-INBOX`: entró, nadie lo revisó, no se ejecuta.
+2. `10-CANDIDATOS`: documentado, con plan de prueba aislada.
+3. `20-VALIDADOS`: aprobado, con manifiesto de uso, versión, permisos y evidencia.
+4. `90-ARCHIVO`: descartado, duplicado u obsoleto; no se reactiva sin decisión nueva.
+
+## Regla crítica
+No acceder a las zonas protegidas declaradas en `docs/AUTONOMIA.md` sin una autorización que
+indique **ruta, acción y objetivo**. Esa autorización nunca es implícita ni se extiende a los
+archivos vecinos.

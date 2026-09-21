@@ -1,0 +1,36 @@
+---
+name: codebase-memory
+description: Usa el grafo de código para preguntas estructurales. Se activa con: explorar el código, entender la arquitectura, quién llama a esta función, qué llama X, seguir la cadena de llamadas, análisis de impacto, código muerto, candidatos a refactor.
+allowed-tools: Read Grep Glob Bash
+---
+
+# codebase-memory
+
+Las consultas al grafo devuelven resultados estructurales precisos en cientos de tokens, contra
+decenas de miles leyendo archivos a ciegas. Usalo **antes** de grep.
+
+## Qué herramienta para qué pregunta
+
+| Pregunta | Llamada |
+|---|---|
+| ¿Quién llama a X? | `trace_path(direction="inbound")` |
+| ¿Qué llama X? | `trace_path(direction="outbound")` |
+| Contexto completo | `trace_path(direction="both")` |
+| Buscar por nombre | `search_graph(name_pattern=...)` |
+| Código muerto | `search_graph(max_degree=0, exclude_entry_points=true)` |
+| Impacto de cambios locales | `detect_changes()` |
+| Búsqueda de texto | `search_code` o Grep |
+
+## Flujo de exploración
+1. `list_projects` — ¿está indexado?
+2. `get_architecture` — estructura general.
+3. `search_graph(label="Function", name_pattern=".*Patron.*")` — ubicar el símbolo.
+4. `get_code_snippet(qualified_name=...)` — leer el código exacto.
+
+## Gotchas
+1. **El índice está atado a una rama y un commit.** Corré `index_status` / `detect_changes`
+   antes de confiar en el grafo: si cambiaste de rama, estás consultando una foto vieja y las
+   respuestas van a ser sutilmente erróneas.
+2. `trace_path` necesita el nombre exacto: buscalo antes con `search_graph`.
+3. `direction="outbound"` se pierde llamadores entre servicios: usá `"both"`.
+4. Los resultados vienen paginados: revisá `has_more` y usá `offset`.

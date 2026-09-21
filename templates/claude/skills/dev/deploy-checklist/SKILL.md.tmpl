@@ -1,0 +1,32 @@
+---
+name: deploy-checklist
+description: Prepara y verifica un despliegue. El disparo del deploy lo hace una persona, no el agente.
+argument-hint: "<proyecto> <entorno>"
+allowed-tools: Read Write Edit Bash Glob Grep
+---
+
+# deploy-checklist
+
+## Antes (el agente prepara)
+- variables de entorno completas en el destino
+- build local o de CI en verde
+- migraciones de base de datos revisadas y reversibles
+- plan de rollback escrito antes de salir
+- `qa/release-validation` con resultado registrado
+
+## El disparo
+**Lo ejecuta el usuario.** El agente no dispara deploys: ni por herramienta, ni por webhook con
+`curl`, ni pusheando a una rama que auto-despliega.
+
+## Después (el agente verifica)
+Un deploy puede fallar en silencio y dejar producción sirviendo el build anterior. Verificá:
+
+1. qué commit registró el panel para el servicio;
+2. el uptime de la réplica — un deploy real crea réplica nueva;
+3. `curl` a un asset nuevo, para ver qué build se está sirviendo de verdad.
+
+Si algo no coincide, el deploy no salió, por más que la interfaz diga que sí.
+
+## Si falla
+Rollback primero, diagnóstico después. Registrar causa, impacto y acción con
+`core/docs-memory-sync`.

@@ -1,0 +1,27 @@
+---
+name: prospecting-workflow
+description: Ejecuta el flujo de prospección comercial desde la señal inicial hasta el primer seguimiento.
+argument-hint: "<cliente o nicho> <objetivo>"
+allowed-tools: Read Write Edit Bash Glob Grep
+---
+
+# prospecting-workflow
+
+## Flujo
+1. **Señal**: de dónde salió el prospecto (comentó una publicación, escribió, lo encontraste
+   buscando, lo recomendaron).
+2. **Investigación real**: qué hace, con qué trabaja, qué problema concreto tiene. Sin esto, el
+   primer mensaje es una plantilla y se nota.
+3. **Ángulo comercial**: qué le ofrecés y por qué a él.
+4. **Primer mensaje**, pasado por `core/humanizer`.
+5. **Seguimiento agendado**, con fecha.
+
+## Entregables
+- perfil breve del prospecto
+- ángulo comercial
+- primer mensaje
+- fecha del siguiente seguimiento
+
+## Regla
+El envío lo ejecuta `comms-chatwoot` con aprobación del usuario. Este skill prepara, no manda.
+Los contactos nuevos (persona, rol, empresa) se registran en la ficha del cliente en memoria.

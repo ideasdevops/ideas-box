@@ -1,0 +1,12 @@
+ID="ponytail"
+TITLE="Ponytail — disciplina de código mínimo"
+DESC="Hace que el agente escriba el código más chico que resuelve el problema, en vez de sobre-construir."
+TIER="core"
+KIND="node"
+REPO="https://github.com/DietrichGebert/ponytail.git"
+REF="main"
+DIR="ponytail"
+BUILD="cd ponytail-mcp && npm install --omit=dev --no-audit --no-fund"
+CMD="__NODE__"
+ARGS_JSON='["__SRC__/ponytail-mcp/index.js"]'
+TOOLGROUP="ponytail"

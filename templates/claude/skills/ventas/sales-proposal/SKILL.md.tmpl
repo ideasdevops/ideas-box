@@ -1,0 +1,25 @@
+---
+name: sales-proposal
+description: Genera propuestas, presupuestos y ofertas ajustadas al cliente y a la etapa del pipeline.
+argument-hint: "<cliente> <producto o servicio>"
+allowed-tools: Read Write Edit Bash Glob Grep
+---
+
+# sales-proposal
+
+## Flujo obligatorio
+1. **Análisis preliminar** con hallazgos verificables del caso real del cliente.
+2. **Borrador en Markdown.** Nunca arranques por el formato final.
+3. **Rondas de ajuste** con el usuario: alcance, precio, encuadre, plazos.
+4. **Documento definitivo** recién cuando el usuario confirma que el borrador está cerrado.
+
+## Entregables
+- resumen ejecutivo
+- alcance, con lo que queda explícitamente afuera
+- precio y condiciones
+- próximos pasos y validez de la oferta
+
+## Reglas
+- Nada de diagnósticos genéricos: si no auditaste, no afirmes.
+- Pasar todo texto por `core/humanizer` antes de entregar.
+- No mandar la propuesta por tu cuenta: el envío lo decide el usuario.

@@ -1,0 +1,24 @@
+---
+name: video-production
+description: Produce reels, shorts y videos comerciales con el pipeline local de edición.
+argument-hint: "<marca> <pieza> <duración>"
+allowed-tools: Read Write Edit Bash Glob Grep
+---
+
+# video-production
+
+## Flujo
+1. Escalera de costo: reusar → recortar material propio → ffmpeg local → API paga con aprobación.
+2. Guion y estructura de tomas antes de tocar el editor.
+3. Edición con ffmpeg: cortes, `loudnorm`, subtítulos quemados, letterbox 9:16.
+4. QA: mirar el export completo antes de entregarlo, con el checklist de datos sensibles.
+
+## Estándar por defecto
+- ≤5 s por toma, con cortes; nada de una toma continua.
+- Gancho en los primeros 1-3 segundos.
+- Audio normalizado a -14/-16 LUFS.
+- Zoom o paneo sobre la zona relevante en grabaciones de pantalla.
+
+## Entregables
+- export final en `{{DATA_ROOT}}/06-CONTENIDO/30-LISTOS-PARA-PUBLICAR/<pieza>/` con su `ASSET.md`
+- masters y tomas descartadas en `10-CRUDOS/<pieza>/`

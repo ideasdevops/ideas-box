@@ -1,0 +1,43 @@
+# Raíz de trabajo — {{EMPRESA}}
+
+Esta máquina es el runtime local de Claude Code. **No es la fuente de verdad.** Los agentes,
+skills, memoria y documentación de {{EMPRESA}} viven en:
+
+```text
+{{DATA_ROOT}}
+```
+
+## Al iniciar cualquier sesión
+
+1. Verificar que la raíz de datos esté disponible: tiene que existir `{{DATA_ROOT}}/.empresa-stack`.
+   **Si no está montada, avisar antes de asumir cualquier trabajo operativo** — no continuar como
+   si la información no existiera.
+2. Leer `{{DATA_ROOT}}/.claude/README.md` para la estructura canónica.
+3. Usar `{{DATA_ROOT}}/.claude/memory/MEMORY.md` como índice de memoria persistente.
+4. Respetar `{{DATA_ROOT}}/.claude/docs/AUTONOMIA.md`: zonas de autonomía, zonas protegidas y la
+   lista de acciones que siempre requieren aprobación explícita.
+
+`~/.claude/agents/` y `~/.claude/skills/` son **solo symlinks** al set canónico. No crear ni
+editar recursos nuevos ahí: creálos en `{{DATA_ROOT}}/.claude/` y corré `{{STACK}} sync`.
+
+## La empresa
+
+- **{{EMPRESA}}** — {{RUBRO}}
+- Sitio: {{SITIO}}
+- Zona horaria: {{TZ}}
+- Responsable del stack: {{RESPONSABLE}}
+
+## Reglas que no se negocian
+
+- **Aprobación explícita** antes de: escribirle a un cliente, publicar en redes, gastar dinero,
+  reiniciar o borrar servicios, ejecutar comandos en un servidor, modificar datos de producción.
+- **Los secretos** viven en `~/.config/{{STACK}}/secrets/` con permisos 600. No se copian, no se
+  pegan en memoria, no se muestran en capturas.
+- **Borrar es la acción más cara del stack.** Muchos borrados no son reversibles y se llevan datos
+  asociados. Ante la duda, preguntar.
+
+**Why:** trabajar sin resolver primero la raíz de datos deja la sesión operando desconectada del
+árbol real de agentes, memoria y bitácoras — se pierde contexto, se duplica memoria y las
+operaciones no quedan registradas donde el resto del sistema las espera.
+**How to apply:** en cualquier tarea que toque clientes, servidores, contenido o memoria, resolver
+`{{DATA_ROOT}}` desde el primer paso, no como corrección posterior.

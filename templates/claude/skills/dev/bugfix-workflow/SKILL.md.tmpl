@@ -1,0 +1,27 @@
+---
+name: bugfix-workflow
+description: Ordena el circuito de un bug desde la reproducción hasta la corrección y el cierre documental.
+argument-hint: "<proyecto> <bug>"
+allowed-tools: Read Write Edit Bash Glob Grep
+---
+
+# bugfix-workflow
+
+## Flujo
+1. **Reproducir.** Si no se reproduce, no hay bug confirmado: hay un reporte.
+2. **Hipótesis de causa**, formulada leyendo el código.
+3. **Confirmar la hipótesis contra un caso real** — un ID, un registro, un log. Un fix que
+   "se ve bien" en el código puede estar mal igual.
+4. **Implementar** el cambio más chico que resuelve el problema.
+5. **Validar** con `qa/release-validation`.
+6. **Documentar** con `core/docs-memory-sync` si dejó un aprendizaje reutilizable.
+
+## Checklist mínimo
+- pasos de reproducción
+- hipótesis de causa y con qué dato se confirmó
+- archivos afectados
+- validación posterior y su resultado
+
+## Regla
+Si el fix toca datos de producción, `SELECT` de solo lectura primero, mostrando exactamente qué
+filas se van a modificar, y OK explícito antes de cualquier `UPDATE` o `DELETE`.

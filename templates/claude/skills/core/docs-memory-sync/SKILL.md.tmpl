@@ -1,0 +1,33 @@
+---
+name: docs-memory-sync
+description: Registra avances reales, cierres y aprendizajes reutilizables en la memoria canónica de {{EMPRESA}}.
+argument-hint: "<proyecto o cliente> <avance>"
+allowed-tools: Read Write Edit Glob Grep
+---
+
+# docs-memory-sync
+
+## Objetivo
+- Registrar avances reales sin duplicar.
+- Curar memoria útil en `{{DATA_ROOT}}/.claude/memory/`.
+- Mantener el índice `MEMORY.md` como única puerta de entrada.
+
+## Flujo
+1. Confirmar proyecto, cliente y archivos tocados.
+2. Buscar si ya existe una nota del tema: actualizarla antes que crear otra.
+3. Escribir la nota en el dominio que corresponde
+   (`shared/`, `clientes/`, `proyectos/`, `operaciones/`, `referencias/`, `workflows/`, `qa/`).
+4. Agregar o actualizar **una línea** en `MEMORY.md`: `- [Título](ruta.md) — gancho`.
+
+## Qué guardar y qué no
+Guardá lo que no se deduce leyendo el repo: decisiones y su porqué, acuerdos con clientes,
+restricciones operativas, aprendizajes que costaron caro, convenciones no obvias.
+
+No guardes lo que ya está en el código, en el historial de Git o en la documentación del
+proyecto; ni lo que solo importa dentro de la conversación de hoy.
+
+## Reglas
+- Fechas absolutas, nunca "la semana pasada".
+- Nada de secretos, tokens ni datos personales.
+- Si una nota quedó desactualizada o es falsa, corregila o borrala: memoria vieja que se lee
+  como vigente es peor que no tener memoria.

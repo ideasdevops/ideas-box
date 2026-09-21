@@ -1,0 +1,44 @@
+---
+name: campana-prospectos
+description: Ejecuta una campaña de mensajes a prospectos sin pedir confirmación por cada envío — la orden de campaña, con sus cuatro datos definidos, ES la aprobación.
+argument-hint: "<criterio destinatarios> <canal> <mensaje> <límite>"
+allowed-tools: Read Write Edit Bash Glob Grep
+---
+
+# campana-prospectos
+
+## Objetivo
+Ejecutar una campaña puntual a un lote de prospectos sin volver a consultar por cada mensaje
+dentro de esa corrida.
+
+**Reparto de roles, un solo dueño del envío:** `sales-crm` arma la campaña (criterio, lista,
+mensaje y límite) y **`comms-chatwoot` ejecuta los envíos**. Así una misma persona nunca recibe
+dos mensajes de dos agentes distintos.
+
+## Cuándo se activa
+Solo cuando el usuario invoca este skill explícitamente, o da la orden en esos términos. Fuera
+de acá rige la norma general: consultar antes de cada envío.
+
+## Los cuatro datos obligatorios
+1. **Destinatarios**: criterio de búsqueda o lista concreta.
+2. **Canal**: qué bandeja o conector se usa.
+3. **Mensaje**: contenido literal o plantilla con variables claras.
+4. **Límite**: cantidad máxima de envíos en esta corrida.
+
+Si falta alguno, preguntá antes de arrancar. La autonomía aplica a **ejecutar** una campaña ya
+definida, no a **inventar** sus parámetros. No asumas "todos los que matcheen" como límite.
+
+## Procedimiento
+1. Armar la lista según el criterio, con las herramientas de lectura del canal.
+2. Enviar hasta el límite, sin pedir aprobación por mensaje individual.
+3. Registrar cada envío: a quién, cuándo, resultado.
+4. Reportar el resumen al terminar: cuántos, a quiénes, cuántos fallaron y por qué.
+
+## Regla crítica
+Este skill **suspende** la norma de "consultar antes de enviar" únicamente dentro del alcance
+exacto declarado. Otro destinatario, otro mensaje, otro canal o pasar el límite vuelve a requerir
+consulta. No amplíes el criterio a mitad de la corrida.
+
+En WhatsApp, si el prospecto no escribió en las últimas 24 horas el envío libre puede ser
+rechazado por política de la plataforma: reportalo como falla de ese destinatario, no reintentes
+con otro formato ni pauses la campaña entera sin avisar.

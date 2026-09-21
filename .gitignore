@@ -1,0 +1,10 @@
+# Nada de credenciales ni estado local en el repo del stack
+*.env
+secrets/
+locks.tsv
+rendered*.tsv
+mcp-installed.tsv
+__pycache__/
+*.pyc
+venv/
+node_modules/

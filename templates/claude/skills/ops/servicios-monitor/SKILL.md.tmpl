@@ -1,0 +1,30 @@
+---
+name: servicios-monitor
+description: Revisa salud de servidores, contenedores y endpoints de {{EMPRESA}} y sus clientes.
+argument-hint: "<servidor o proyecto>"
+allowed-tools: Read Write Edit Bash Glob Grep
+---
+
+# servicios-monitor
+
+## Objetivo
+- Revisar estado operativo.
+- Detectar caídas, degradación o anomalías.
+- Entregar un resumen accionable, no un volcado de logs.
+
+## Chequeos típicos
+- servicios y contenedores arriba, y desde cuándo
+- logs recientes con errores repetidos
+- health checks y códigos de respuesta de los dominios
+- disco, RAM y carga
+- vencimiento de certificados TLS (alertar con menos de 20 días)
+- versión de imagen de los servicios expuestos a internet contra su upstream
+
+## Salida
+- estado por servicio
+- anomalías encontradas, con la evidencia que las sostiene
+- acción propuesta, marcando cuál necesita aprobación del usuario
+
+## Regla
+Este skill diagnostica. Reiniciar, detener, desplegar o borrar requiere la aprobación explícita
+definida en `ops-support`.
