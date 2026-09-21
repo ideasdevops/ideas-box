@@ -4,7 +4,7 @@
 
 set -o pipefail
 
-STACK_NAME="${STACK_NAME:-empresa}"
+STACK_NAME="${STACK_NAME:-ideasbox}"
 STACK_SRC="${STACK_SRC:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 STACK_CONFIG_DIR="${STACK_CONFIG_DIR:-$HOME/.config/$STACK_NAME}"
 STACK_PROFILE="$STACK_CONFIG_DIR/empresa.conf"

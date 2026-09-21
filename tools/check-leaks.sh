@@ -19,10 +19,14 @@ HOMES='/home/[a-z][a-z0-9_-]*/'
 EXCLUDE=(--exclude-dir=.git --exclude-dir=node_modules --exclude-dir=venv
          --exclude-dir=__pycache__ --exclude=check-leaks.sh)
 
+# Menciones legítimas de la marca: autoría, copyright y la URL del propio repo.
+# Sin esto, el chequeo se dispararía con su propio README.
+ALLOW_AUTORIA='IdeasDevOps & Disruptia AI|Copyright \(c\) [0-9]{4} IdeasDevOps|github\.com[:/]ideasdevops/|^\./AUTHORS:'
+
 fails=0
 report() {  # <etiqueta> <patrón> <nivel>
   local label="$1" pat="$2" level="$3" out
-  out="$(grep -rInE "${EXCLUDE[@]}" "$pat" . 2>/dev/null)" || true
+  out="$(grep -rInE "${EXCLUDE[@]}" "$pat" . 2>/dev/null | grep -vE "$ALLOW_AUTORIA")" || true
   if [ -n "$out" ]; then
     if [ "$level" = error ]; then
       printf '\n✗ %s\n%s\n' "$label" "$out"
@@ -35,8 +39,19 @@ report() {  # <etiqueta> <patrón> <nivel>
   fi
 }
 
+report_i() {  # igual que report pero sin distinguir mayúsculas
+  local label="$1" pat="$2" level="$3" out
+  out="$(grep -rIinE "${EXCLUDE[@]}" "$pat" . 2>/dev/null | grep -vE "$ALLOW_AUTORIA")" || true
+  if [ -n "$out" ]; then
+    printf '\n✗ %s\n%s\n' "$label" "$out"
+    fails=$((fails+1))
+  else
+    printf '✓ %s\n' "$label"
+  fi
+}
+
 echo "Chequeo de fugas en $(pwd)"
-report "Sin marcas de la empresa de origen"        "(${MARCAS}${EXTRA})" error
+report_i "Sin marcas de la empresa de origen"      "(${MARCAS}${EXTRA})" error
 report "Sin credenciales con formato conocido"     "($SECRETOS)"          error
 report "Sin rutas absolutas de un home concreto"   "$HOMES"               error
 report "Sin direcciones IP"                        "$IPS"                 warn

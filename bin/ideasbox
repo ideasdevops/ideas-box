@@ -65,7 +65,7 @@ case "$cmd" in
   status)
     load_profile
     printf '%s (%s)\n' "$EMPRESA_NOMBRE" "$EMPRESA_SLUG"
-    printf '  datos    %s %s\n' "$DATA_ROOT" "$([ -f "$DATA_ROOT/.empresa-stack" ] && echo '(montado)' || echo '(NO DISPONIBLE)')"
+    printf '  datos    %s %s\n' "$DATA_ROOT" "$([ -f "$DATA_ROOT/.ideas-box" ] && echo '(montado)' || echo '(NO DISPONIBLE)')"
     printf '  agentes  %s\n' "$(find "$DATA_ROOT/.claude/agents" -name '*.md' 2>/dev/null | wc -l)"
     printf '  skills   %s\n' "$(find "$DATA_ROOT/.claude/skills" -maxdepth 2 -mindepth 2 2>/dev/null | wc -l)"
     printf '  memoria  %s notas\n' "$(find "$DATA_ROOT/.claude/memory" -name '*.md' 2>/dev/null | wc -l)"

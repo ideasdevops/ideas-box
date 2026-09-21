@@ -1,11 +1,11 @@
-# Primeros pasos
+# Primeros pasos con Ideas Box
 
 Guía para la persona que acaba de instalar el stack y nunca trabajó con agentes.
 
 ## 1. Comprobar que quedó bien
 
 ```bash
-empresa doctor
+ideasbox doctor
 ```
 
 Tiene que decir "Stack sano". Si dice que la raíz de datos no está disponible y la pusiste en un
@@ -45,12 +45,12 @@ Si no sabés cuál, pedíselo a `agents-orchestrator`: reparte el trabajo entre 
 ## 5. Conectar tus herramientas
 
 ```bash
-empresa mcp list          # ver qué se puede conectar
-empresa mcp add chatwoot  # conectar tu bandeja de atención
+ideasbox mcp list          # ver qué se puede conectar
+ideasbox mcp add chatwoot  # conectar tu bandeja de atención
 ```
 
 Cada conector pide sus credenciales y las guarda cifradas por permisos en
-`~/.config/empresa/secrets/`, fuera de la configuración de Claude.
+`~/.config/ideasbox/secrets/`, fuera de la configuración de Claude.
 
 Después de agregar uno, los agentes que lo usan se actualizan solos.
 
@@ -67,7 +67,7 @@ Después de agregar uno, los agentes que lo usan se actualizan solos.
 
 | Síntoma | Qué pasa |
 |---|---|
-| "No encuentra mis agentes" | La raíz de datos no está montada. `empresa doctor` |
-| Un conector no responde | Credenciales vencidas o vacías: revisá `~/.config/empresa/secrets/<servidor>.env` |
+| "No encuentra mis agentes" | La raíz de datos no está montada. `ideasbox doctor` |
+| Un conector no responde | Credenciales vencidas o vacías: revisá `~/.config/ideasbox/secrets/<servidor>.env` |
 | Editaste un agente y volvió atrás | No volvió: mirá si quedó un archivo `.nuevo` al lado con la versión del stack |
-| Tras actualizar falta una skill | `empresa skills update && empresa sync` |
+| Tras actualizar falta una skill | `ideasbox skills update && ideasbox sync` |

@@ -6,7 +6,7 @@ settings_apply() {
   step "8/8 · Configuración de Claude Code"
   local settings="$CLAUDE_CONFIG_DIR/settings.json"
 
-  DATA_ROOT="$DATA_ROOT" STACK_CONFIG_DIR="$STACK_CONFIG_DIR" HOOK="$CLAUDE_CONFIG_DIR/hooks/stack-session-start" \
+  DATA_ROOT="$DATA_ROOT" STACK_CONFIG_DIR="$STACK_CONFIG_DIR" HOOK="$CLAUDE_CONFIG_DIR/hooks/ideasbox-session-start" \
   python3 - <<'PY' | json_merge "$settings"
 import json, os
 

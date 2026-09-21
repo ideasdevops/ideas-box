@@ -1,14 +1,14 @@
-# Stack de empresa online híbrida
+# Ideas Box
 
-> Un proyecto de **IdeasDevOps & Disruptia AI**.
+> Tu empresa online híbrida, en una caja. Un proyecto de **IdeasDevOps & Disruptia AI**.
 
 Convierte una máquina con Ubuntu, Linux Mint o Debian recién instalado en un puesto de trabajo
 completo para operar una empresa con agentes de IA: agentes por área, skills, memoria canónica
 persistente y conectores MCP a las herramientas del negocio.
 
 ```bash
-git clone <este-repo> stack-empresa-hibrida
-cd stack-empresa-hibrida
+git clone git@github.com:ideasdevops/ideas-box.git
+cd ideas-box
 bash install.sh
 ```
 
@@ -39,21 +39,21 @@ Una sola pasada guiada. Al terminar, `claude` abre una sesión que ya conoce tu 
 ## Después de instalar
 
 ```bash
-empresa doctor          # ¿está todo sano?
-empresa status          # resumen corto
-empresa mcp list        # conectores disponibles
-empresa mcp add chatwoot
-empresa skills update   # actualizar los packs de terceros
-empresa sync            # regenerar agentes y symlinks
-empresa backup          # respaldo del árbol canónico
-empresa update          # actualizar todo
+ideasbox doctor          # ¿está todo sano?
+ideasbox status          # resumen corto
+ideasbox mcp list        # conectores disponibles
+ideasbox mcp add chatwoot
+ideasbox skills update   # actualizar los packs de terceros
+ideasbox sync            # regenerar agentes y symlinks
+ideasbox backup          # respaldo del árbol canónico
+ideasbox update          # actualizar todo
 ```
 
 ## Cómo está organizado
 
 ```text
 install.sh              instalador guiado, en 8 pasos
-bin/empresa             CLI de mantenimiento
+bin/ideasbox            CLI de mantenimiento
 lib/                    un módulo por paso del instalador
 catalog/mcp/*.mcp       un archivo declarativo por conector
 catalog/skill-packs.tsv packs de terceros, con su repo de origen
@@ -70,18 +70,18 @@ vendor/                 código propio que se distribuye con el stack
 - Ubuntu, Linux Mint o Debian (con `apt`), usuario con sudo.
 - Una cuenta de Claude con acceso a Claude Code.
 - Las credenciales de los servicios que quieras conectar. Todo lo que no tengas a mano se puede
-  agregar después con `empresa mcp add`.
+  agregar después con `ideasbox mcp add`.
 
 ## Autores
 
 **IdeasDevOps & Disruptia AI.**
 
-## Licencia y terceros
+## Licencia
+
+Ideas Box se publica bajo licencia **MIT** — ver [LICENSE](LICENSE). Usalo, modificalo y
+vendé servicios sobre él; lo único que pedimos es que se mantenga el aviso de copyright.
 
 Los packs de skills y los servidores MCP de terceros **no se redistribuyen**: se clonan de sus
-repositorios originales durante la instalación, cada uno bajo su propia licencia. `catalog/` y
-`docs/TERCEROS.md` listan el origen de cada uno.
-
-Este repositorio todavía **no declara una licencia propia**. Sin un archivo `LICENSE`, en la
-práctica queda como "todos los derechos reservados" aunque sea público: nadie puede reusarlo
-legalmente. Definila antes de difundirlo.
+repositorios originales durante la instalación, cada uno **bajo su propia licencia**, que puede
+no ser MIT. `catalog/` y `docs/TERCEROS.md` listan el origen de cada uno: revisalos antes de
+usarlos comercialmente.

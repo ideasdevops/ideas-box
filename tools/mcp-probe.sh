@@ -7,7 +7,7 @@
 set -uo pipefail
 
 server="${1:?falta el nombre del servidor}"
-launcher="${2:-$HOME/.config/empresa/launchers/$server.sh}"
+launcher="${2:-$HOME/.config/ideasbox/launchers/$server.sh}"
 claude_json="${3:-$HOME/.claude.json}"
 
 [ -x "$launcher" ] || { echo "sin lanzador: $launcher" >&2; exit 2; }

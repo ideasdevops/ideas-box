@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Packs de skills de terceros. Se clonan de su upstream al disco de datos y se
 # enlazan al árbol canónico: no se copian dentro del repo del stack ni se
-# redistribuyen. Actualizables con `empresa update`.
+# redistribuyen. Actualizables con `ideasbox update`.
 
 PACKS_TSV="$STACK_SRC/catalog/skill-packs.tsv"
 packs_dir() { printf '%s' "$DATA_ROOT/01-RECURSOS-IA/20-VALIDADOS/skill-packs"; }

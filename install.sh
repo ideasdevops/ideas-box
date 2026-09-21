@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Instalador del stack de empresa online híbrida.
+# Ideas Box — instalador del stack de empresa online híbrida.
 #
 #   bash install.sh                 instalación guiada
 #   bash install.sh --dry-run       muestra qué haría, sin tocar nada
@@ -27,7 +27,7 @@ SKIP_DEPS=0
 
 usage() {
   cat <<TXT
-Instalador del stack — empresa online híbrida sobre Claude Code
+Ideas Box — instalador del stack de empresa online híbrida sobre Claude Code
 
 Uso: bash install.sh [opciones]
 
@@ -71,10 +71,10 @@ done
 banner() {
   cat <<'TXT'
 
-  ╔══════════════════════════════════════════════════════════════╗
-  ║   Stack de empresa online híbrida sobre Claude Code          ║
-  ║   agentes · skills · memoria canónica · conectores MCP       ║
-  ╚══════════════════════════════════════════════════════════════╝
+  ╔══════════════════════════════════════════════════════════╗
+  ║   IDEAS BOX — tu empresa online híbrida, en una caja     ║
+  ║   agentes · skills · memoria canónica · conectores MCP   ║
+  ╚══════════════════════════════════════════════════════════╝
 
 TXT
 }
@@ -82,7 +82,7 @@ TXT
 install_cli() {
   local dest="$HOME/.local/bin/$STACK_NAME"
   run mkdir -p "$HOME/.local/bin"
-  run ln -sfn "$STACK_SRC/bin/empresa" "$dest"
+  run ln -sfn "$STACK_SRC/bin/ideasbox" "$dest"
   ok "Comando '$STACK_NAME' disponible en $dest"
   case ":$PATH:" in
     *":$HOME/.local/bin:"*) ;;

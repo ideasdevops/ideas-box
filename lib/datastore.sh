@@ -122,9 +122,9 @@ datastore_wizard() {
     run mkdir -p "$DATA_ROOT/$d"
   done
 
-  # Marca de identidad: permite a `empresa doctor` distinguir "disco no montado"
+  # Marca de identidad: permite a `ideasbox doctor` distinguir "disco no montado"
   # de "disco montado pero vacío".
-  write_file "$DATA_ROOT/.empresa-stack" 644 <<EOF
+  write_file "$DATA_ROOT/.ideas-box" 644 <<EOF
 slug=$EMPRESA_SLUG
 nombre=$EMPRESA_NOMBRE
 creado=$(date -Iseconds)

@@ -1,4 +1,4 @@
-# Arquitectura del stack
+# Arquitectura de Ideas Box
 
 > IdeasDevOps & Disruptia AI
 
@@ -29,13 +29,13 @@ el agente nunca se entera. Es un modo de falla silencioso y caro.
 
 Por eso las plantillas escriben `{{TOOLS easypanel:ops}}` y `tools/render.py` lo expande a una
 línea por herramienta y por servidor realmente instalado, leyendo `mcp-installed.tsv`. Agregar un
-servidor nuevo y correr `empresa sync` actualiza a todos los agentes que lo usan.
+servidor nuevo y correr `ideasbox sync` actualiza a todos los agentes que lo usan.
 
 ### 3. Los secretos no entran en la configuración de Claude
 
-Cada conector se registra con `command` apuntando a `~/.config/empresa/launchers/<servidor>.sh`,
-un script que carga `~/.config/empresa/secrets/<servidor>.env` (600) y hace `exec` del servidor
-real. `~/.claude.json` queda sin un solo token, y `empresa doctor` avisa si alguno se filtró.
+Cada conector se registra con `command` apuntando a `~/.config/ideasbox/launchers/<servidor>.sh`,
+un script que carga `~/.config/ideasbox/secrets/<servidor>.env` (600) y hace `exec` del servidor
+real. `~/.claude.json` queda sin un solo token, y `ideasbox doctor` avisa si alguno se filtró.
 
 También resuelve el caso de los servidores que piden el token como argumento de línea de comandos
 (visible en `ps`): el lanzador lo arma desde la variable de entorno.
@@ -44,7 +44,7 @@ También resuelve el caso de los servidores que piden el token como argumento de
 
 Los packs de skills y los MCP de terceros se clonan de su upstream durante la instalación, con su
 commit anotado en `locks.tsv`. El repo del stack no redistribuye código ajeno y los packs se
-actualizan con `empresa skills update`.
+actualizan con `ideasbox skills update`.
 
 ### 5. El renderizador no pisa lo que editaste
 
@@ -62,7 +62,7 @@ que él mismo creó.
 
 ```text
 1. deps        apt + Node ≥20 + Claude Code (+ Docker opcional)
-2. profile     nombre, rubro, sitio, idioma, zona horaria  → ~/.config/empresa/empresa.conf
+2. profile     nombre, rubro, sitio, idioma, zona horaria  → ~/.config/ideasbox/empresa.conf
 3. datastore   elección de disco/carpeta + estructura       → $DATA_ROOT
 4. skill-packs clone de packs de terceros                   → $DATA_ROOT/01-RECURSOS-IA/20-VALIDADOS
 5. mcp         clone/build + credenciales + lanzadores      → ~/.claude.json, secrets/
@@ -80,7 +80,7 @@ credenciales pide y a qué grupo de herramientas pertenece. Si el grupo es nuevo
 `catalog/tool-groups.tsv` y referencialo desde los agentes que lo usen.
 
 **Un agente nuevo**: una plantilla en `templates/claude/agents/<dominio>/`, con `{{TOOLS grupo}}`
-para lo que necesite. Aparece en el runtime con `empresa sync`.
+para lo que necesite. Aparece en el runtime con `ideasbox sync`.
 
 **Otro idioma o rubro**: todo el texto visible sale de plantillas. Un fork con `templates/`
 traducido es un stack en otro idioma sin tocar una línea de código.

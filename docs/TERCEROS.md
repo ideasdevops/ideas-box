@@ -1,7 +1,7 @@
 # Componentes de terceros
 
-El stack **no redistribuye** código ajeno: lo clona de su repositorio original durante la
-instalación y anota el commit exacto en `~/.config/empresa/locks.tsv`. Cada componente queda bajo
+Ideas Box **no redistribuye** código ajeno: lo clona de su repositorio original durante la
+instalación y anota el commit exacto en `~/.config/ideasbox/locks.tsv`. Cada componente queda bajo
 su propia licencia; revisala antes de usarlo comercialmente.
 
 ## Packs de skills (`catalog/skill-packs.tsv`)

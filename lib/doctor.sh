@@ -22,11 +22,11 @@ doctor_main() {
   fi
 
   # 2. Raíz de datos
-  if [ -d "$DATA_ROOT" ] && [ -f "$DATA_ROOT/.empresa-stack" ]; then
+  if [ -d "$DATA_ROOT" ] && [ -f "$DATA_ROOT/.ideas-box" ]; then
     local libre; libre="$(df -h --output=avail "$DATA_ROOT" 2>/dev/null | tail -1 | tr -d ' ')"
     _chk "Raíz de datos montada: $DATA_ROOT (libre: ${libre:-?})"
   elif [ -d "$DATA_ROOT" ]; then
-    _bad "$DATA_ROOT existe pero no tiene la marca .empresa-stack (¿disco equivocado o montaje vacío?)"
+    _bad "$DATA_ROOT existe pero no tiene la marca .ideas-box (¿disco equivocado o montaje vacío?)"
   else
     _bad "Raíz de datos NO disponible: $DATA_ROOT — si está en un disco aparte, montalo"
   fi
