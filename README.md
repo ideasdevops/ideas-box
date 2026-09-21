@@ -1,6 +1,6 @@
 # Stack de empresa online híbrida
 
-> Un proyecto de **IdeasDevOps & Disruptia**.
+> Un proyecto de **IdeasDevOps & Disruptia AI**.
 
 Convierte una máquina con Ubuntu, Linux Mint o Debian recién instalado en un puesto de trabajo
 completo para operar una empresa con agentes de IA: agentes por área, skills, memoria canónica
@@ -74,7 +74,7 @@ vendor/                 código propio que se distribuye con el stack
 
 ## Autores
 
-**IdeasDevOps & Disruptia.**
+**IdeasDevOps & Disruptia AI.**
 
 ## Licencia y terceros
 

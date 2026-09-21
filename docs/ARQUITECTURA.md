@@ -1,6 +1,6 @@
 # Arquitectura del stack
 
-> IdeasDevOps & Disruptia
+> IdeasDevOps & Disruptia AI
 
 ## La idea
 
