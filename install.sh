@@ -9,6 +9,13 @@
 
 set -euo pipefail
 
+# macOS todavía trae bash 3.2 de fábrica. El código está escrito para funcionar ahí,
+# pero si alguien lo corre con algo más viejo conviene decirlo antes de fallar raro.
+if [ -z "${BASH_VERSINFO:-}" ] || [ "${BASH_VERSINFO[0]}" -lt 3 ]; then
+  echo "Ideas Box necesita bash 3.2 o superior. Ejecutalo con: bash install.sh" >&2
+  exit 1
+fi
+
 STACK_SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export STACK_SRC
 

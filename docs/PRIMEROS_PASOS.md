@@ -71,3 +71,5 @@ Después de agregar uno, los agentes que lo usan se actualizan solos.
 | Un conector no responde | Credenciales vencidas o vacías: revisá `~/.config/ideasbox/secrets/<servidor>.env` |
 | Editaste un agente y volvió atrás | No volvió: mirá si quedó un archivo `.nuevo` al lado con la versión del stack |
 | Tras actualizar falta una skill | `ideasbox skills update && ideasbox sync` |
+| En Mac: "command not found: brew" | Abrí una terminal nueva después de instalar Homebrew y repetí |
+| En Mac: no aparece el disco externo | Tiene que estar montado en `/Volumes` y con permiso de escritura |

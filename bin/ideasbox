@@ -2,7 +2,14 @@
 # CLI del stack: mantenimiento después de la instalación.
 set -euo pipefail
 
-STACK_SRC="${STACK_SRC:-$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)}"
+# readlink -f no existe en macOS: se resuelve a mano hasta tener portability.sh cargado
+_ib_self="${BASH_SOURCE[0]}"
+while [ -L "$_ib_self" ]; do
+  _ib_dir="$(cd "$(dirname "$_ib_self")" && pwd)"
+  _ib_self="$(readlink "$_ib_self")"
+  case "$_ib_self" in /*) ;; *) _ib_self="$_ib_dir/$_ib_self" ;; esac
+done
+STACK_SRC="${STACK_SRC:-$(cd "$(dirname "$_ib_self")/.." && pwd)}"
 export STACK_SRC
 
 . "$STACK_SRC/lib/common.sh"
@@ -106,7 +113,7 @@ json.dump(cfg, open(path, "w"), indent=2, ensure_ascii=False)
 print("{}")
 PY
         rm -f "$MCP_LAUNCHERS/$server.sh" "$STACK_SECRETS_DIR/$server.env" /tmp/mcp-remove.json
-        grep -v -P "^\Q$server\E\t" "$MCP_REGISTRY" > "$MCP_REGISTRY.tmp" 2>/dev/null || true
+        tsv_drop "$MCP_REGISTRY" "$server" > "$MCP_REGISTRY.tmp" || true
         mv "$MCP_REGISTRY.tmp" "$MCP_REGISTRY"
         canonical_render
         ok "Conector $server eliminado"

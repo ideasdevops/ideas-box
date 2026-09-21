@@ -8,7 +8,7 @@ profile_defaults() {
   EMPRESA_SITIO="${EMPRESA_SITIO:-}"
   EMPRESA_RESPONSABLE="${EMPRESA_RESPONSABLE:-}"
   EMPRESA_IDIOMA="${EMPRESA_IDIOMA:-es}"
-  EMPRESA_TZ="${EMPRESA_TZ:-$(timedatectl show -p Timezone --value 2>/dev/null || echo UTC)}"
+  EMPRESA_TZ="${EMPRESA_TZ:-$(tz_current)}"
   DATA_ROOT="${DATA_ROOT:-}"
 }
 

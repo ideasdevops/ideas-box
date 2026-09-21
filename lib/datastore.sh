@@ -24,8 +24,7 @@ CLAUDE_TREE=(
   ".claude/memory/qa"
 )
 
-_candidate_mounts() {
-  # Particiones montadas que sirven como raíz de datos (excluye sistema y solo-lectura).
+_candidate_mounts_linux() {
   lsblk -rno NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL 2>/dev/null | while read -r name size type mnt fstype label; do
     [ "$type" = part ] || continue
     [ -n "$mnt" ] || continue
@@ -37,7 +36,55 @@ _candidate_mounts() {
   done
 }
 
+# En macOS los volúmenes externos se montan en /Volumes. El disco de arranque también
+# aparece ahí como enlace a /, así que se descarta comparando el dispositivo con el de la raíz.
+_candidate_mounts_macos() {
+  local raiz_dev; raiz_dev="$(df / | awk 'NR==2 {print $1}')"
+  local vol dev size fstype
+  for vol in /Volumes/*; do
+    [ -d "$vol" ] || continue
+    [ -L "$vol" ] && continue
+    [ -w "$vol" ] || continue
+    dev="$(df "$vol" 2>/dev/null | awk 'NR==2 {print $1}')"
+    [ "$dev" = "$raiz_dev" ] && continue
+    size="$(df -h "$vol" 2>/dev/null | awk 'NR==2 {print $2}')"
+    fstype="$(diskutil info "$vol" 2>/dev/null | awk -F: '/Type \(Bundle\)/ {gsub(/^ +/,"",$2); print $2; exit}')"
+    printf '%s\t%s\t%s\t%s\n' "$vol" "${size:-?}" "${fstype:-?}" "$(basename "$vol")"
+  done
+}
+
+_candidate_mounts() {
+  if is_mac; then _candidate_mounts_macos; else _candidate_mounts_linux; fi
+}
+
 _print_partition_guide() {
+  if is_mac; then
+    cat <<'TXT'
+
+── Cómo dejar un volumen dedicado para los datos (macOS) ───────────────────
+Este instalador no toca los discos: borrar el equivocado es irreversible.
+Si querés un volumen aparte, creálo una vez a mano:
+
+  Opción A — volumen APFS en el disco interno (no requiere formatear nada):
+    1. Abrí Utilidad de Discos (Disk Utility).
+    2. Seleccioná el contenedor APFS → botón "+" (Añadir volumen APFS).
+    3. Nombralo, por ejemplo, "Datos". Comparte espacio con el sistema.
+
+  Opción B — disco externo:
+    1. Utilidad de Discos → seleccioná el disco externo.
+    2. Borrar → formato APFS o Mac OS Plus (con registro) → nombralo "Datos".
+
+  Por línea de comandos:  diskutil list
+                          diskutil apfs addVolume disk1 APFS Datos
+
+El volumen queda montado en /Volumes/Datos. Volvé a correr el instalador y
+elegilo de la lista.
+─────────────────────────────────────────────────────────────────────────────
+
+TXT
+    return 0
+  fi
+
   cat <<'TXT'
 
 ── Cómo dejar una partición dedicada para los datos ────────────────────────
@@ -79,7 +126,12 @@ datastore_wizard() {
     for o in "${opts[@]}"; do printf '  %d) disco/partición: %s\n' "$i" "$o"; i=$((i+1)); done
     local opt_home=$i;   printf '  %d) carpeta en tu home: %s\n' "$i" "$HOME/$EMPRESA_SLUG-data"; i=$((i+1))
     local opt_manual=$i; printf '  %d) otra ruta (la escribo yo)\n' "$i"; i=$((i+1))
-    local opt_guide=$i;  printf '  %d) quiero una partición dedicada y todavía no la tengo\n' "$i"
+    local opt_guide=$i
+  if is_mac; then
+    printf '  %d) quiero un volumen dedicado y todavía no lo tengo\n' "$i"
+  else
+    printf '  %d) quiero una partición dedicada y todavía no la tengo\n' "$i"
+  fi
     echo
 
     local choice

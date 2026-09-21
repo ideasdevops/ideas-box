@@ -73,6 +73,21 @@ que él mismo creó.
 
 Cada paso es idempotente: volver a correr el instalador actualiza en vez de duplicar.
 
+## Portabilidad Linux / macOS
+
+Toda diferencia entre sistemas vive en `lib/portability.sh`: `path_resolve` por `readlink -f`,
+`perm_of` por `stat -c`, `avail_of` por `df --output`, `broken_links` por `find -xtype`,
+`tsv_drop` por `grep -P`, más `normaliza` y `tz_current`. El resto del código no pregunta en qué
+sistema está.
+
+Las dos partes que sí tienen ramas explícitas son las que no se pueden abstraer: instalación de
+paquetes (`apt` contra Homebrew, en `lib/deps.sh`) y detección de discos (`lsblk` contra
+`/Volumes` + `diskutil`, en `lib/datastore.sh`).
+
+Una restricción que conviene respetar al contribuir: **macOS trae bash 3.2**, así que nada de
+`mapfile`, `readarray`, `${var,,}`, `${var^^}` ni arrays asociativos. El instalador verifica la
+versión y avisa antes de fallar de forma rara.
+
 ## Extender el stack
 
 **Un conector nuevo**: agregá un `.mcp` en `catalog/mcp/` con su repo, cómo se compila, qué

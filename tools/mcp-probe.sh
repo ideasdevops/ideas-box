@@ -12,7 +12,8 @@ claude_json="${3:-$HOME/.claude.json}"
 
 [ -x "$launcher" ] || { echo "sin lanzador: $launcher" >&2; exit 2; }
 
-mapfile -t argv < <(SERVER="$server" python3 -c '
+argv=()
+while IFS= read -r _a; do [ -n "$_a" ] && argv+=("$_a"); done < <(SERVER="$server" python3 -c '
 import json, os, sys
 try:
     cfg = json.load(open(sys.argv[1]))

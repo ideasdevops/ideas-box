@@ -42,7 +42,7 @@ mcp_registry_add() {
   [ "$DRY_RUN" = 1 ] && return 0
   mkdir -p "$(dirname "$MCP_REGISTRY")"
   touch "$MCP_REGISTRY"
-  grep -v -P "^\Q$server\E\t" "$MCP_REGISTRY" > "$MCP_REGISTRY.tmp" 2>/dev/null || true
+  tsv_drop "$MCP_REGISTRY" "$server" > "$MCP_REGISTRY.tmp" || true
   printf '%s\t%s\t%s\t%s\n' "$server" "$id" "$toolgroup" "$label" >> "$MCP_REGISTRY.tmp"
   sort -o "$MCP_REGISTRY" "$MCP_REGISTRY.tmp"
   rm -f "$MCP_REGISTRY.tmp"

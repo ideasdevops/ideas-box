@@ -2,15 +2,23 @@
 
 > Tu empresa online híbrida, en una caja. Un proyecto de **IdeasDevOps & Disruptia AI**.
 
-Convierte una máquina con Ubuntu, Linux Mint o Debian recién instalado en un puesto de trabajo
-completo para operar una empresa con agentes de IA: agentes por área, skills, memoria canónica
-persistente y conectores MCP a las herramientas del negocio.
+Convierte una máquina recién instalada —Ubuntu, Linux Mint, Debian o macOS— en un puesto de
+trabajo completo para operar una empresa con agentes de IA: agentes por área, skills, memoria
+canónica persistente y conectores MCP a las herramientas del negocio.
 
 ```bash
-git clone git@github.com:ideasdevops/ideas-box.git
+# Linux: una máquina limpia no trae git
+sudo apt update && sudo apt install -y git
+
+# macOS: el instalador se encarga de Homebrew, pero git viene con Xcode CLT
+xcode-select --install     # si nunca lo instalaste
+
+git clone https://github.com/ideasdevops/ideas-box.git
 cd ideas-box
 bash install.sh
 ```
+
+Después de instalar, autenticá Claude Code una vez con `claude`.
 
 Una sola pasada guiada. Al terminar, `claude` abre una sesión que ya conoce tu empresa.
 
@@ -67,10 +75,23 @@ vendor/                 código propio que se distribuye con el stack
 
 ## Requisitos
 
-- Ubuntu, Linux Mint o Debian (con `apt`), usuario con sudo.
+| Sistema | Qué necesita |
+|---|---|
+| Ubuntu · Linux Mint · Debian | `apt`, usuario con sudo, `git` para clonar |
+| macOS 12 o posterior (Intel y Apple Silicon) | Herramientas de línea de comandos de Xcode. Homebrew lo instala el script si falta |
+
+También:
+
 - Una cuenta de Claude con acceso a Claude Code.
 - Las credenciales de los servicios que quieras conectar. Todo lo que no tengas a mano se puede
   agregar después con `ideasbox mcp add`.
+
+**Estado de macOS: soportado pero todavía sin probar en hardware real.** El código está escrito
+para el bash 3.2 y las utilidades BSD que trae el sistema, con Homebrew en lugar de apt y
+`/Volumes` en lugar de particiones. Si algo falla ahí, abrí un issue con la salida del error.
+
+Dos diferencias en Mac: Docker se instala aparte (Docker Desktop, no por script) y el "disco de
+datos aparte" se resuelve con un volumen APFS o un disco externo montado en `/Volumes`.
 
 ## Autores
 

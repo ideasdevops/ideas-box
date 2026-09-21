@@ -4,6 +4,9 @@
 
 set -o pipefail
 
+# shellcheck source=lib/portability.sh
+. "$(dirname "${BASH_SOURCE[0]}")/portability.sh"
+
 STACK_NAME="${STACK_NAME:-ideasbox}"
 STACK_SRC="${STACK_SRC:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 STACK_CONFIG_DIR="${STACK_CONFIG_DIR:-$HOME/.config/$STACK_NAME}"
@@ -82,7 +85,7 @@ confirm() {
   [ "$def" = y ] && hint="[S/n]" || hint="[s/N]"
   read -r -u 3 -p "$q $hint " ans || ans=""
   ans="${ans:-$def}"
-  case "${ans,,}" in s|si|sí|y|yes) return 0 ;; *) return 1 ;; esac
+  case "$(normaliza "$ans")" in s|si|y|yes|ok) return 0 ;; *) return 1 ;; esac
 }
 
 # ask <pregunta> <variable-destino> [default]
@@ -110,15 +113,10 @@ ask_secret() {
   printf -v "$__var" '%s' "$ans"
 }
 
-# slug <texto> — minúsculas, sin acentos, sin espacios
-slug() {
-  printf '%s' "$1" \
-    | iconv -f utf8 -t ascii//TRANSLIT 2>/dev/null || printf '%s' "$1"
-}
+# slugify <texto> — minúsculas, sin acentos, sin espacios
 slugify() {
   local s
-  s="$(slug "$1")"
-  s="${s,,}"
+  s="$(normaliza "$1")"
   s="$(printf '%s' "$s" | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')"
   printf '%s' "$s"
 }
@@ -161,9 +159,17 @@ load_profile() {
   . "$STACK_PROFILE"
 }
 
-# detect_os — define OS_ID, OS_LIKE, OS_VERSION, PKG
+# detect_os — define OS_ID, OS_VERSION, OS_PRETTY y PKG (apt | brew)
 detect_os() {
-  [ -r /etc/os-release ] || die "No se pudo leer /etc/os-release; este instalador soporta Ubuntu, Linux Mint y Debian."
+  if is_mac; then
+    OS_ID="macos"
+    OS_VERSION="$(sw_vers -productVersion 2>/dev/null || echo '?')"
+    OS_PRETTY="macOS $OS_VERSION ($(uname -m))"
+    PKG=brew
+    return 0
+  fi
+
+  [ -r /etc/os-release ] || die "Sistema no soportado. Ideas Box corre en Ubuntu, Linux Mint, Debian y macOS."
   # shellcheck disable=SC1091
   . /etc/os-release
   OS_ID="${ID:-unknown}"
@@ -174,7 +180,7 @@ detect_os() {
     *debian*|*ubuntu*) PKG=apt ;;
     *) PKG="" ;;
   esac
-  [ -n "$PKG" ] || die "Distribución no soportada ($OS_PRETTY). El stack soporta Ubuntu, Linux Mint y Debian."
+  [ -n "$PKG" ] || die "Distribución no soportada ($OS_PRETTY). Ideas Box soporta Ubuntu, Linux Mint, Debian y macOS."
 }
 
 # lock_record <clave> <valor> — deja trazabilidad de versiones instaladas
@@ -184,7 +190,7 @@ lock_record() {
   touch "$STACK_LOCKS"
   local key="$1" val="$2" tmp
   tmp="$(mktemp)"
-  grep -v -P "^\Q$key\E\t" "$STACK_LOCKS" > "$tmp" 2>/dev/null || true
+  tsv_drop "$STACK_LOCKS" "$key" > "$tmp" || true
   printf '%s\t%s\t%s\n' "$key" "$val" "$(date -Iseconds)" >> "$tmp"
   sort -o "$STACK_LOCKS" "$tmp"
   rm -f "$tmp"

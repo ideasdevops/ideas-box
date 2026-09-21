@@ -59,7 +59,7 @@ canonical_link() {
 
       # limpiar symlinks rotos de corridas anteriores
       if [ "$DRY_RUN" != 1 ]; then
-        find "$dst" -maxdepth 1 -xtype l -delete 2>/dev/null || true
+        broken_links "$dst" | while IFS= read -r roto; do rm -f "$roto"; done
       fi
 
       shopt -s nullglob

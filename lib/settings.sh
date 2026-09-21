@@ -6,19 +6,21 @@ settings_apply() {
   step "8/8 · Configuración de Claude Code"
   local settings="$CLAUDE_CONFIG_DIR/settings.json"
 
-  DATA_ROOT="$DATA_ROOT" STACK_CONFIG_DIR="$STACK_CONFIG_DIR" HOOK="$CLAUDE_CONFIG_DIR/hooks/ideasbox-session-start" \
+  DATA_ROOT="$DATA_ROOT" STACK_CONFIG_DIR="$STACK_CONFIG_DIR" USER_HOME="$HOME" \
+  HOOK="$CLAUDE_CONFIG_DIR/hooks/ideasbox-session-start" \
   python3 - <<'PY' | json_merge "$settings"
 import json, os
 
 data_root = os.environ["DATA_ROOT"]
 cfg = os.environ["STACK_CONFIG_DIR"]
+home = os.environ["USER_HOME"]
 hook = os.environ["HOOK"]
 
 allow = [
     # lectura y navegación: ruido puro si cada una pide permiso
     "Bash(ls:*)", "Bash(cat:*)", "Bash(head:*)", "Bash(tail:*)", "Bash(wc:*)",
     "Bash(grep:*)", "Bash(rg:*)", "Bash(find:*)", "Bash(file:*)", "Bash(stat:*)",
-    "Bash(df:*)", "Bash(du:*)", "Bash(lsblk:*)", "Bash(mount)", "Bash(date)",
+    "Bash(df:*)", "Bash(du:*)", "Bash(lsblk:*)", "Bash(diskutil list)", "Bash(mount)", "Bash(date)",
     "Bash(git status:*)", "Bash(git log:*)", "Bash(git diff:*)", "Bash(git show:*)",
     "Bash(git branch:*)", "Bash(git remote:*)",
     "Bash(docker ps:*)", "Bash(docker logs:*)", "Bash(docker stats:*)",
@@ -28,7 +30,7 @@ allow = [
 deny = [
     # secretos: ni leer ni copiar, aunque el agente crea que los necesita
     f"Read({cfg}/secrets/**)",
-    "Read(//home/*/.ssh/**)",
+    f"Read({home}/.ssh/**)",
     "Read(//**/.env)",
     "Read(//**/.env.*)",
     "Read(//**/id_rsa)",

@@ -23,7 +23,7 @@ doctor_main() {
 
   # 2. Raíz de datos
   if [ -d "$DATA_ROOT" ] && [ -f "$DATA_ROOT/.ideas-box" ]; then
-    local libre; libre="$(df -h --output=avail "$DATA_ROOT" 2>/dev/null | tail -1 | tr -d ' ')"
+    local libre; libre="$(avail_of "$DATA_ROOT")"
     _chk "Raíz de datos montada: $DATA_ROOT (libre: ${libre:-?})"
   elif [ -d "$DATA_ROOT" ]; then
     _bad "$DATA_ROOT existe pero no tiene la marca .ideas-box (¿disco equivocado o montaje vacío?)"
@@ -43,7 +43,7 @@ doctor_main() {
 
   # 4. Runtime enlazado
   local rotos
-  rotos="$(find "$CLAUDE_CONFIG_DIR/agents" "$CLAUDE_CONFIG_DIR/skills" -xtype l 2>/dev/null | wc -l)"
+  rotos="$(broken_links "$CLAUDE_CONFIG_DIR/agents" "$CLAUDE_CONFIG_DIR/skills" | wc -l)"
   if [ "$rotos" -gt 0 ]; then
     _warn "$rotos symlinks rotos en ~/.claude — corré '$STACK_NAME sync'"
   else
@@ -72,7 +72,7 @@ doctor_main() {
       envfile="$STACK_SECRETS_DIR/$server.env"
       local sin_credenciales=0
       if [ -f "$envfile" ]; then
-        local perm; perm="$(stat -c %a "$envfile")"
+        local perm; perm="$(perm_of "$envfile")"
         [ "$perm" = 600 ] || _warn "MCP $server: $envfile tiene permisos $perm (debería ser 600)"
         if grep -qE '^[A-Z_]+=$' "$envfile"; then
           _warn "MCP $server: hay credenciales vacías en $envfile"
