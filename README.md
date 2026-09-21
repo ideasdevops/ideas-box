@@ -20,6 +20,10 @@ bash install.sh
 
 Después de instalar, autenticá Claude Code una vez con `claude`.
 
+📄 **Manual de usuario completo, en PDF:** [`docs/manual/Manual-Ideas-Box.pdf`](docs/manual/Manual-Ideas-Box.pdf)
+— instalación en Linux y macOS, el asistente paso por paso, los agentes, los conectores y
+resolución de problemas. Se regenera con `bash docs/manual/build.sh`.
+
 Una sola pasada guiada. Al terminar, `claude` abre una sesión que ya conoce tu empresa.
 
 ## Qué instala
@@ -68,6 +72,7 @@ catalog/skill-packs.tsv packs de terceros, con su repo de origen
 catalog/tool-groups.tsv grupos de herramientas MCP que expanden los agentes
 templates/claude/       agentes, skills, docs y memoria (con variables {{EMPRESA}}, {{DATA_ROOT}})
 templates/home/         CLAUDE.md y hooks del home
+docs/manual/            manual de usuario en PDF, con su fuente HTML regenerable
 tools/render.py         renderizador de plantillas
 tools/check-leaks.sh    verifica que no se filtren datos ni credenciales
 vendor/                 código propio que se distribuye con el stack

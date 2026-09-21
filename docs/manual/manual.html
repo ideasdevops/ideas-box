@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Ideas Box — Manual de instalación y despliegue</title>
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+
+<!-- ═══════════════ PORTADA ═══════════════ -->
+<section class="portada">
+  <img class="logo" src="assets/logo-oscuro.png" alt="IdeasDevOps">
+  <div class="barra"></div>
+  <h1>Ideas <em>Box</em></h1>
+  <p class="bajada">Manual de instalación y despliegue.<br>
+     Tu empresa online híbrida, operada por agentes, en una caja.</p>
+  <div class="meta">
+    <div><b>Versión</b>0.1.0</div>
+    <div><b>Sistemas</b>Ubuntu · Mint · Debian · macOS</div>
+    <div><b>Autores</b>IdeasDevOps &amp; Disruptia&nbsp;AI</div>
+    <div><b>Licencia</b>MIT</div>
+  </div>
+</section>
+
+<!-- ═══════════════ ÍNDICE ═══════════════ -->
+<h2 class="sinquiebre"><span class="num">—</span>Contenido</h2>
+<p class="sub">Trece secciones. Si venís a instalar y nada más, leé la 2, la 3 o la 4 según tu sistema, y la 6.</p>
+
+<div class="indice">
+  <div><b>1</b>Qué es Ideas Box<span>Qué instala y qué no hace por vos</span></div>
+  <div><b>2</b>Antes de empezar<span>Requisitos y credenciales a tener a mano</span></div>
+  <div><b>3</b>Instalación en Linux<span>Ubuntu, Linux Mint y Debian</span></div>
+  <div><b>4</b>Instalación en macOS<span>Intel y Apple Silicon</span></div>
+  <div><b>5</b>El asistente, paso por paso<span>Qué pregunta y qué conviene responder</span></div>
+  <div><b>6</b>Los primeros 30 minutos<span>Autenticar, verificar y cargar tu contexto</span></div>
+  <div><b>7</b>Los agentes<span>Quién hace qué y dónde está el límite</span></div>
+  <div><b>8</b>Conectores<span>Catálogo y credenciales de cada uno</span></div>
+  <div><b>9</b>Comandos del día a día<span>El CLI <code>ideasbox</code></span></div>
+  <div><b>10</b>Dónde vive tu información<span>Estructura de datos y respaldo</span></div>
+  <div><b>11</b>Reglas de seguridad<span>Aprobaciones, secretos y borrado</span></div>
+  <div><b>12</b>Problemas frecuentes<span>Síntoma, causa y solución</span></div>
+  <div><b>13</b>Soporte<span>Cómo reportar y dónde seguir</span></div>
+</div>
+
+<!-- ═══════════════ 1 ═══════════════ -->
+<h2><span class="num">1</span>Qué es Ideas Box</h2>
+<p class="sub">Un puesto de trabajo completo para operar una empresa con agentes de IA, instalable en una máquina recién formateada.</p>
+
+<p>Ideas Box no es un programa con ventanas. Es la <strong>organización</strong> que hace que trabajar con
+agentes de IA rinda: una estructura de datos, un equipo de agentes con roles definidos, procedimientos
+escritos, memoria que sobrevive a la sesión y conexiones a las herramientas que ya usás.</p>
+
+<h3>Qué instala</h3>
+<table>
+  <tr><th style="width:32%">Capa</th><th>Qué es</th></tr>
+  <tr><td><b>Base técnica</b></td><td>Node, Python, ffmpeg, git y Claude Code</td></tr>
+  <tr><td><b>Raíz de datos</b></td><td>Un disco, un volumen o una carpeta con la estructura de tu empresa</td></tr>
+  <tr><td><b>16 agentes</b></td><td>Dirección, desarrollo, operaciones, QA, ventas, marketing, contenido y clientes — con el nombre de <em>tu</em> empresa</td></tr>
+  <tr><td><b>~20 procedimientos</b></td><td>Cómo se resuelve un bug, cómo se arma una propuesta, cómo se registra una operación</td></tr>
+  <tr><td><b>Packs de skills</b></td><td>Marketing, diseño y disciplina de código, de repositorios abiertos</td></tr>
+  <tr><td><b>17 conectores</b></td><td>Búsqueda web, bandeja de atención, servidores, redes sociales, video, código</td></tr>
+  <tr><td><b>Reglas</b></td><td>Qué puede hacer un agente solo y qué necesita tu aprobación</td></tr>
+</table>
+
+<h3>Qué no hace</h3>
+<ul>
+  <li><strong>No toca tus discos.</strong> No reparticiona ni formatea nada. Si querés un disco dedicado,
+      te dice cómo crearlo y después lo usa.</li>
+  <li><strong>No guarda contraseñas en la configuración de Claude.</strong> Cada conector arranca por un
+      lanzador que lee su archivo de credenciales, con permisos restringidos.</li>
+  <li><strong>No trae datos de nadie.</strong> Los agentes son plantillas que se completan con los datos de
+      tu empresa durante la instalación.</li>
+  <li><strong>No publica ni despliega solo.</strong> Toda acción hacia afuera pide tu aprobación.</li>
+</ul>
+
+<div class="caja">
+  <div class="t">La idea de fondo</div>
+  <p>Un agente sin reglas es un becario con acceso a producción. Ideas Box empaqueta las reglas, no
+  solamente las herramientas: por eso lo primero que vas a leer en cada agente es qué <em>no</em> puede
+  hacer sin preguntarte.</p>
+</div>
+
+<h3>Cuánto tarda</h3>
+<p>Entre 10 y 25 minutos según cuántos conectores actives. La mayor parte es descarga y compilación:
+podés dejarlo corriendo y volver.</p>
+
+<!-- ═══════════════ 2 ═══════════════ -->
+<h2><span class="num">2</span>Antes de empezar</h2>
+<p class="sub">Cinco minutos de preparación te ahorran tener que repetir la instalación.</p>
+
+<h3>Requisitos del equipo</h3>
+<table>
+  <tr><th style="width:32%">Sistema</th><th>Qué necesita</th></tr>
+  <tr><td><b>Ubuntu · Linux Mint · Debian</b></td><td>Gestor <code>apt</code>, un usuario con <code>sudo</code> y <code>git</code> para clonar</td></tr>
+  <tr><td><b>macOS 12 o posterior</b><br><span class="chico">Intel y Apple Silicon</span></td><td>Herramientas de línea de comandos de Xcode. Homebrew lo instala el asistente si falta</td></tr>
+  <tr><td><b>Ambos</b></td><td>Conexión a internet, 5&nbsp;GB libres y una cuenta de Claude con acceso a Claude Code</td></tr>
+</table>
+
+<h3>Decidí dónde van a vivir los datos</h3>
+<p>Es la única decisión difícil de cambiar después. Tres opciones, de más a menos recomendable:</p>
+<ol>
+  <li><strong>Un disco o volumen aparte.</strong> Reinstalás el sistema operativo sin perder nada, y te
+      llevás la empresa entera enchufando el disco en otra máquina. <em>Montalo antes de instalar</em>
+      para que aparezca en la lista.</li>
+  <li><strong>Una partición o volumen APFS dedicado</strong> en el disco interno. Mismo beneficio, sin
+      hardware extra.</li>
+  <li><strong>Una carpeta en tu home.</strong> Funciona perfecto y es lo que elige la mayoría al arrancar.
+      Se puede mudar después.</li>
+</ol>
+
+<h3>Credenciales a tener a mano</h3>
+<p>Ninguna es obligatoria el primer día: todo lo que falte se agrega después con un comando. Pero si las
+tenés cerca, el asistente las configura de una.</p>
+<table>
+  <tr><th style="width:26%">Si vas a usar…</th><th>Necesitás</th><th style="width:30%">Dónde se saca</th></tr>
+  <tr><td>Búsqueda web</td><td>API key de Brave Search</td><td>brave.com/search/api — gratis hasta 2.000 consultas/mes</td></tr>
+  <tr><td>Bandeja de atención</td><td>URL, token de agente e ID de cuenta de Chatwoot</td><td>Tu Chatwoot → Perfil → Access Token</td></tr>
+  <tr><td>Servidores</td><td>URL y API key de Easypanel</td><td>Panel → Settings → API</td></tr>
+  <tr><td>Servidores por SSH</td><td>IP, usuario y ruta de tu clave privada</td><td>Tu proveedor de VPS</td></tr>
+  <tr><td>Instagram / Facebook</td><td>Tokens de página y de cuenta business</td><td>Meta for Developers</td></tr>
+  <tr><td>YouTube</td><td>API key de YouTube Data API v3</td><td>Google Cloud Console</td></tr>
+</table>
+
+<div class="caja gris">
+  <div class="t">Datos de tu empresa</div>
+  <p>El asistente te va a pedir nombre, rubro en una línea, sitio web y zona horaria. Eso queda escrito
+  en los 16 agentes: cuanto más preciso el rubro, mejor entienden el contexto. «Panadería con venta
+  online y reparto propio» rinde más que «alimentos».</p>
+</div>
+
+<!-- ═══════════════ 3 ═══════════════ -->
+<h2><span class="num">3</span>Instalación en Linux</h2>
+<p class="sub">Ubuntu, Linux Mint y Debian. Cuatro pasos desde una máquina recién instalada.</p>
+
+<div class="paso">
+  <div class="n">1</div>
+  <div class="cuerpo">
+    <h4>Instalar git</h4>
+    <p>Una instalación limpia de Ubuntu o Debian no lo trae, y sin git no podés bajar Ideas Box.</p>
+<pre><code>sudo apt update &amp;&amp; sudo apt install -y git</code></pre>
+  </div>
+</div>
+
+<div class="paso">
+  <div class="n">2</div>
+  <div class="cuerpo">
+    <h4>Bajar Ideas Box</h4>
+<pre><code>git clone https://github.com/ideasdevops/ideas-box.git
+cd ideas-box</code></pre>
+  </div>
+</div>
+
+<div class="paso">
+  <div class="n">3</div>
+  <div class="cuerpo">
+    <h4>Ejecutar el asistente</h4>
+<pre><code>bash install.sh</code></pre>
+    <p>Te pide la contraseña de <code>sudo</code> en el primer paso, para instalar los paquetes del
+    sistema. De ahí en adelante son preguntas sobre tu empresa y tus herramientas (sección 5). Si primero
+    querés ver qué haría sin que toque nada: <code>bash install.sh --dry-run</code>.</p>
+  </div>
+</div>
+
+<div class="paso">
+  <div class="n">4</div>
+  <div class="cuerpo">
+    <h4>Autenticar Claude Code</h4>
+    <p>Esto no lo puede hacer el asistente por vos: abre el navegador para que inicies sesión.</p>
+<pre><code>claude</code></pre>
+  </div>
+</div>
+
+<h3>Opciones útiles</h3>
+<table>
+  <tr><th style="width:36%">Opción</th><th>Para qué</th></tr>
+  <tr><td><code>--dry-run</code></td><td>Mostrar las acciones sin ejecutarlas</td></tr>
+  <tr><td><code>--data-root RUTA</code></td><td>Fijar la raíz de datos y saltar esa pregunta</td></tr>
+  <tr><td><code>--empresa "NOMBRE"</code></td><td>Fijar el nombre y saltar esa pregunta</td></tr>
+  <tr><td><code>--skip-deps</code></td><td>No instalar paquetes del sistema (si ya los tenés)</td></tr>
+  <tr><td><code>--non-interactive</code></td><td>No preguntar nada: toma el valor por defecto de cada opción</td></tr>
+  <tr><td><code>--help</code></td><td>Ver todas las opciones</td></tr>
+</table>
+
+<div class="caja">
+  <div class="t">Ejecutalo como archivo, no por tubería</div>
+  <p>Usá <code>bash install.sh</code>. El asistente es interactivo y necesita una terminal real; si lo
+  invocás con <code>curl … | bash</code> no puede leer tus respuestas y corta con un aviso en vez de
+  instalar algo a medias.</p>
+</div>
+
+<!-- ═══════════════ 4 ═══════════════ -->
+<h2><span class="num">4</span>Instalación en macOS</h2>
+<p class="sub">Intel y Apple Silicon, de macOS 12 en adelante.</p>
+
+<div class="paso">
+  <div class="n">1</div>
+  <div class="cuerpo">
+    <h4>Herramientas de línea de comandos de Xcode</h4>
+    <p>Traen <code>git</code> y el compilador. Si nunca las instalaste, se abre un instalador gráfico de
+    Apple: aceptalo y esperá a que termine.</p>
+<pre><code>xcode-select --install</code></pre>
+  </div>
+</div>
+
+<div class="paso">
+  <div class="n">2</div>
+  <div class="cuerpo">
+    <h4>Bajar Ideas Box</h4>
+<pre><code>git clone https://github.com/ideasdevops/ideas-box.git
+cd ideas-box</code></pre>
+  </div>
+</div>
+
+<div class="paso">
+  <div class="n">3</div>
+  <div class="cuerpo">
+    <h4>Ejecutar el asistente</h4>
+<pre><code>bash install.sh</code></pre>
+    <p>macOS no trae gestor de paquetes. Si no tenés <strong>Homebrew</strong>, el asistente te ofrece
+    instalarlo; aceptá y dejalo trabajar — la primera vez tarda varios minutos.</p>
+  </div>
+</div>
+
+<div class="paso">
+  <div class="n">4</div>
+  <div class="cuerpo">
+    <h4>Autenticar Claude Code</h4>
+<pre><code>claude</code></pre>
+  </div>
+</div>
+
+<h3>Tres diferencias respecto de Linux</h3>
+<table>
+  <tr><th style="width:30%">Tema</th><th>En macOS</th></tr>
+  <tr><td><b>Paquetes</b></td><td>Homebrew en lugar de <code>apt</code>. Si al terminar la instalación de Homebrew la terminal dice «command not found: brew», abrí una ventana nueva y repetí</td></tr>
+  <tr><td><b>Disco de datos</b></td><td>Se usa un volumen montado en <code>/Volumes</code>, no una partición. El asistente te guía para crear un volumen APFS desde Utilidad de Discos, que comparte espacio con el sistema y no requiere formatear nada</td></tr>
+  <tr><td><b>Docker</b></td><td>Se instala aparte, como Docker Desktop. No es obligatorio: solo lo necesitás si vas a levantar servicios en esta misma máquina</td></tr>
+</table>
+
+<div class="caja tinta">
+  <div class="t">Estado del soporte en macOS</div>
+  <p>El código está escrito para las utilidades y el <code>bash</code> que trae el sistema, pero todavía
+  <strong>no fue probado en hardware Apple real</strong>. Si algo falla, el error y el paso donde ocurrió
+  son información valiosa: reportalos (sección 13) y lo corregimos.</p>
+</div>
+
+<!-- ═══════════════ 5 ═══════════════ -->
+<h2><span class="num">5</span>El asistente, paso por paso</h2>
+<p class="sub">Ocho etapas. Qué hace cada una, qué te pregunta y qué conviene responder.</p>
+
+<h3>1 · Dependencias del sistema</h3>
+<p>Instala paquetes base, Node, Claude Code y, si querés, ffmpeg e ImageMagick para los agentes de
+contenido. Pregunta si instalar Docker: <strong>respondé que no</strong> salvo que vayas a levantar
+servicios en esta máquina.</p>
+
+<h3>2 · Identidad de la empresa</h3>
+<p>Nombre, identificador corto, rubro, sitio, responsable, idioma y zona horaria. Todo esto se escribe
+en los agentes y en la documentación. Queda guardado en un archivo de texto editable: si te equivocás,
+se corrige después con <code>ideasbox profile</code>.</p>
+
+<h3>3 · Raíz de datos</h3>
+<p>Te muestra los discos y volúmenes montados y te deja elegir, o crear una carpeta en tu home. Si elegís
+la opción «quiero un disco dedicado y todavía no lo tengo», te imprime el procedimiento exacto para tu
+sistema y podés seguir con una carpeta mientras tanto.</p>
+
+<h3>4 · Packs de skills</h3>
+<p>Descarga colecciones de procedimientos de repositorios abiertos: disciplina de código y redacción
+(siempre), marketing y criterio de diseño (recomendados) y dos opcionales más pesados.</p>
+
+<h3>5 · Conectores</h3>
+<p>Instala primero los tres del núcleo, que no piden credenciales. Después te ofrece uno por uno los de
+negocio. Para cada uno que aceptes te va a pedir sus credenciales y, si admite varias cuentas —como
+Chatwoot, Easypanel o las redes sociales—, te deja agregar tantas como tengas, cada una con su etiqueta.</p>
+
+<div class="caja gris">
+  <div class="t">La etiqueta importa</div>
+  <p>Cuando cargás dos servidores, quedan como <code>easypanel-produccion</code> y
+  <code>easypanel-clientes</code>. Esa etiqueta es lo único que distingue un servidor de otro cuando un
+  agente va a reiniciar un servicio: poné nombres que no se presten a confusión.</p>
+</div>
+
+<h3>6 y 7 · Agentes y runtime</h3>
+<p>Se generan los 16 agentes con los datos de tu empresa, los procedimientos, la documentación y el índice
+de memoria, y se enlazan al runtime de Claude Code. <strong>Cada agente recibe solamente las herramientas
+de los conectores que instalaste</strong>: si mañana agregás uno, los agentes que lo usan se actualizan solos.</p>
+
+<h3>8 · Permisos y hook de arranque</h3>
+<p>Permisos de Claude Code (lectura libre; escritura y acciones sensibles bajo aprobación), bloqueo de
+lectura sobre tus credenciales y claves SSH, y un aviso de arranque que detecta si el disco de datos no
+está montado.</p>
+
+<div class="caja">
+  <div class="t">Volver a correrlo es seguro</div>
+  <p>El asistente es idempotente: si lo ejecutás de nuevo, actualiza en lugar de duplicar. Y nunca pisa un
+  archivo que hayas editado vos — deja la versión nueva al lado, con extensión <code>.nuevo</code>, y te avisa.</p>
+</div>
+
+<!-- ═══════════════ 6 ═══════════════ -->
+<h2><span class="num">6</span>Los primeros 30 minutos</h2>
+<p class="sub">Terminó la instalación. Esto es lo que conviene hacer antes de pedirle trabajo a un agente.</p>
+
+<div class="paso">
+  <div class="n">1</div>
+  <div class="cuerpo">
+    <h4>Verificar que quedó sano</h4>
+<pre><code>ideasbox doctor</code></pre>
+    <p>Revisa perfil, disco de datos, árbol de agentes, enlaces, Claude Code y cada conector. Tiene que
+    terminar con <span style="color:#1a7f37;font-weight:700">Stack sano</span>. Para que además pruebe de
+    verdad cada conector, arrancándolo como lo hace Claude:</p>
+<pre><code>ideasbox doctor --deep</code></pre>
+  </div>
+</div>
+
+<div class="paso">
+  <div class="n">2</div>
+  <div class="cuerpo">
+    <h4>Abrir Claude Code y conocer el equipo</h4>
+<pre><code>claude</code></pre>
+    <p>Probá con: <em>«mostrame qué agentes tengo y qué hace cada uno»</em>.</p>
+  </div>
+</div>
+
+<div class="paso">
+  <div class="n">3</div>
+  <div class="cuerpo">
+    <h4>Cargar el contexto de tu empresa</h4>
+    <p>Los agentes ya saben <em>cómo</em> trabajar, pero todavía no saben nada de tu negocio. Dedicale la
+    primera sesión a eso. Ejemplos de lo que conviene decirle:</p>
+    <ul>
+      <li>«Guardá en memoria que mi empresa hace X, le vende a Y, y su diferencial es Z»</li>
+      <li>«Creá la carpeta del cliente Fulano y anotá lo que sabemos: contacto, qué le vendimos, en qué estado está»</li>
+      <li>«Anotá que los martes cierro pedidos a las 18 y que no trabajo con transferencias»</li>
+      <li>«Registrá que el servidor de producción es el que tiene la etiqueta <em>produccion</em>»</li>
+    </ul>
+    <p>Cada cosa que cargues es una cosa que no vas a tener que repetir nunca más.</p>
+  </div>
+</div>
+
+<div class="paso">
+  <div class="n">4</div>
+  <div class="cuerpo">
+    <h4>Pedir el primer trabajo real</h4>
+    <p>Los agentes se invocan por nombre:</p>
+    <ul>
+      <li><em>«Usá <code>sales-crm</code> para preparar una propuesta para Fulano»</em></li>
+      <li><em>«Que <code>ops-support</code> revise cómo está el servidor de producción»</em></li>
+      <li><em>«<code>content-strategist</code>, armame el calendario de contenido del mes»</em></li>
+    </ul>
+    <p>Si no sabés cuál corresponde, pedíselo a <code>agents-orchestrator</code>: reparte el trabajo entre
+    las áreas y evita que dos agentes hagan lo mismo.</p>
+  </div>
+</div>
+
+<!-- ═══════════════ 7 ═══════════════ -->
+<h2><span class="num">7</span>Los agentes</h2>
+<p class="sub">Dieciséis puestos. Un agente = un rol. Si dos pueden hacer lo mismo, uno sobra.</p>
+
+<table>
+  <tr><th style="width:15%">Área</th><th style="width:24%">Agente</th><th>Responsabilidad</th><th style="width:17%">Hacia afuera</th></tr>
+  <tr><td>Dirección</td><td><code>agents-orchestrator</code></td><td>Divide un objetivo entre áreas y evita trabajo duplicado</td><td>—</td></tr>
+  <tr><td>Dirección</td><td><code>admin-daily</code></td><td>Agenda, pendientes y prioridades del día</td><td>—</td></tr>
+  <tr><td>Dirección</td><td><code>docs-memory</code></td><td>Documentación y memoria de la empresa</td><td>—</td></tr>
+  <tr><td>Desarrollo</td><td><code>dev-saas</code></td><td>Bugs, arquitectura, continuidad técnica. Verifica deploys, no los dispara</td><td>Solo lectura</td></tr>
+  <tr><td>Desarrollo</td><td><code>design-ui</code></td><td>Pantallas y flujos, trabajando contra el código real</td><td>—</td></tr>
+  <tr><td>Desarrollo</td><td><code>git-ops</code></td><td>Ramas, commits, push y releases</td><td>Push con confirmación</td></tr>
+  <tr><td>Calidad</td><td><code>qa-tester</code></td><td>Reproduce, valida y deja evidencia</td><td>—</td></tr>
+  <tr><td>Operaciones</td><td><code>ops-support</code></td><td>Servidores, incidentes y mitigación</td><td>Reinicios con aprobación</td></tr>
+  <tr><td>Ventas</td><td><code>sales-crm</code></td><td>Prospección, propuestas y pipeline</td><td>Publica con aprobación</td></tr>
+  <tr><td>Clientes</td><td><code>comms-chatwoot</code></td><td>Mensajes puntuales por la bandeja, a pedido tuyo</td><td>Envía con aprobación</td></tr>
+  <tr><td>Clientes</td><td><code>customer-success-pm</code></td><td>Seguimiento de clientes activos</td><td>—</td></tr>
+  <tr><td>Marketing</td><td><code>growth-marketing</code></td><td>Estrategia orgánica, SEO, conversión, medición</td><td>Solo lectura</td></tr>
+  <tr><td>Marketing</td><td><code>ads-manager</code></td><td>Pauta paga: plan, presupuesto y medición</td><td>Solo lectura</td></tr>
+  <tr><td>Contenido</td><td><code>content-strategist</code></td><td>Plan editorial y calendario</td><td>Publica con aprobación</td></tr>
+  <tr><td>Contenido</td><td><code>design-content</code></td><td>Piezas gráficas</td><td>Publica con aprobación</td></tr>
+  <tr><td>Contenido</td><td><code>video-content</code></td><td>Reels, shorts y video comercial</td><td>Publica con aprobación</td></tr>
+</table>
+
+<h3>Las cuatro fronteras que evitan desastres</h3>
+<ul>
+  <li><strong>Marketing define, contenido produce.</strong> Nunca el mismo objetivo a los dos en paralelo.</li>
+  <li><strong>Un solo dueño del envío.</strong> Solo <code>comms-chatwoot</code> le escribe a una persona;
+      los demás preparan el mensaje. Así nadie recibe dos respuestas distintas.</li>
+  <li><strong>Nadie despliega solo.</strong> <code>dev-saas</code> prepara y verifica, el disparo es tuyo.</li>
+  <li><strong>Toda acción irreversible se aprueba de a una.</strong> Aprobar hoy no habilita mañana.</li>
+</ul>
+
+<div class="caja gris">
+  <div class="t">Son archivos de texto</div>
+  <p>Cada agente es un archivo en <code>.claude/agents/</code> dentro de tu raíz de datos. Si uno no trabaja
+  como querés, editalo: es la forma esperada de usar Ideas Box, no un atajo. Después corré
+  <code>ideasbox sync</code>.</p>
+</div>
+
+<!-- ═══════════════ 8 ═══════════════ -->
+<h2><span class="num">8</span>Conectores</h2>
+<p class="sub">Diecisiete integraciones disponibles. Instalás solo las que uses, cuando las necesites.</p>
+
+<h3>Núcleo — se instalan siempre</h3>
+<table>
+  <tr><th style="width:24%">Conector</th><th>Para qué sirve</th><th style="width:26%">Credencial</th></tr>
+  <tr><td><code>brave-search</code></td><td>Búsqueda web, noticias e imágenes: la fuente de investigación de marketing y ventas</td><td>API key de Brave</td></tr>
+  <tr><td><code>codebase-memory</code></td><td>Indexa tus repositorios para que los agentes busquen en el código sin leerlo a ciegas</td><td>Ninguna</td></tr>
+  <tr><td><code>ponytail</code></td><td>Obliga a resolver con el código más chico posible, en vez de sobre-construir</td><td>Ninguna</td></tr>
+</table>
+
+<h3>Negocio — los elegís durante la instalación</h3>
+<table>
+  <tr><th style="width:24%">Conector</th><th>Para qué sirve</th><th style="width:26%">Credencial</th></tr>
+  <tr><td><code>chatwoot</code> <span class="chico">· multi-cuenta</span></td><td>Bandeja omnicanal: WhatsApp, web y email</td><td>URL, token e ID de cuenta</td></tr>
+  <tr><td><code>easypanel</code> <span class="chico">· multi-servidor</span></td><td>Estado, logs y reinicio de los servicios de tu VPS</td><td>URL y API key</td></tr>
+  <tr><td><code>ssh-infra</code> <span class="chico">· multi-servidor</span></td><td>Acceso controlado por SSH y Docker a tus servidores</td><td>IP, usuario y clave SSH</td></tr>
+  <tr><td><code>instagram</code> <span class="chico">· multi-cuenta</span></td><td>Publicar y leer métricas de Instagram Business</td><td>Token y IDs de Meta</td></tr>
+  <tr><td><code>facebook</code> <span class="chico">· multi-página</span></td><td>Publicar, responder comentarios y leer métricas</td><td>Token de página e ID</td></tr>
+  <tr><td><code>youtube</code></td><td>Investigar canales, videos y transcripciones</td><td>API key de YouTube</td></tr>
+  <tr><td><code>video-audio</code></td><td>Cortar, subtitular y convertir video con ffmpeg</td><td>Ninguna</td></tr>
+</table>
+
+<h3 style="break-before: page">Opcionales — se agregan después, cuando hagan falta</h3>
+<table>
+  <tr><th style="width:24%">Conector</th><th>Para qué sirve</th><th style="width:26%">Credencial</th></tr>
+  <tr><td><code>facebook-ads</code></td><td>Métricas de campañas de Meta Ads, solo lectura</td><td>Token con <code>ads_read</code></td></tr>
+  <tr><td><code>meta-ads</code></td><td>Gestión de campañas de Meta con escritura</td><td>Token con <code>ads_management</code></td></tr>
+  <tr><td><code>google-ads</code></td><td>Gestión de campañas de Google Ads con escritura</td><td>Developer token y OAuth</td></tr>
+  <tr><td><code>inkscape</code></td><td>Diseño vectorial y exportación de piezas</td><td>Inkscape instalado</td></tr>
+  <tr><td><code>gimp</code></td><td>Retoque y composición de imágenes</td><td>GIMP instalado</td></tr>
+  <tr><td><code>obs</code></td><td>Controlar grabación y streaming de OBS Studio</td><td>Contraseña del websocket</td></tr>
+  <tr><td><code>obsidian</code></td><td>Leer y escribir en una bóveda de Obsidian</td><td>API key del plugin REST</td></tr>
+</table>
+
+<h3>Agregar uno después</h3>
+<pre><code><span class="c"># Ver el catálogo completo</span>
+ideasbox mcp list
+
+<span class="c"># Instalar uno (te pide las credenciales en el momento)</span>
+ideasbox mcp add chatwoot
+
+<span class="c"># Ver los que ya tenés</span>
+ideasbox mcp installed</code></pre>
+
+<div class="caja">
+  <div class="t">Dónde quedan tus credenciales</div>
+  <p>En <code>~/.config/ideasbox/secrets/</code>, un archivo por conector, con permisos que solo permiten
+  leerlas a tu usuario. <strong>No se escriben en la configuración de Claude</strong>: cada conector arranca
+  por un lanzador que las carga en el momento. <code>ideasbox doctor</code> avisa si alguna se filtró
+  donde no corresponde.</p>
+</div>
+
+<!-- ═══════════════ 9 ═══════════════ -->
+<h2><span class="num">9</span>Comandos del día a día</h2>
+<p class="sub">Todo el mantenimiento pasa por un comando: <code>ideasbox</code>.</p>
+
+<table>
+  <tr><th style="width:38%">Comando</th><th>Qué hace</th></tr>
+  <tr><td><code>ideasbox doctor</code></td><td>Diagnóstico completo: disco, agentes, enlaces, conectores, credenciales</td></tr>
+  <tr><td><code>ideasbox doctor --deep</code></td><td>Además arranca cada conector y verifica que responda</td></tr>
+  <tr><td><code>ideasbox status</code></td><td>Resumen corto: cuántos agentes, skills, notas y conectores tenés</td></tr>
+  <tr><td><code>ideasbox sync</code></td><td>Regenera agentes y documentación, y repara los enlaces</td></tr>
+  <tr><td><code>ideasbox mcp list</code></td><td>Catálogo de conectores disponibles</td></tr>
+  <tr><td><code>ideasbox mcp add &lt;id&gt;</code></td><td>Instalar un conector y cargar sus credenciales</td></tr>
+  <tr><td><code>ideasbox mcp remove &lt;servidor&gt;</code></td><td>Quitar un conector y borrar sus credenciales</td></tr>
+  <tr><td><code>ideasbox skills update</code></td><td>Actualizar los packs de procedimientos desde sus repositorios</td></tr>
+  <tr><td><code>ideasbox backup</code></td><td>Respaldo comprimido de agentes, memoria, documentación y configuración</td></tr>
+  <tr><td><code>ideasbox update</code></td><td>Actualiza Ideas Box, los packs y los conectores, y regenera todo</td></tr>
+  <tr><td><code>ideasbox profile</code></td><td>Editar los datos de la empresa y volver a generar los agentes</td></tr>
+</table>
+
+<h3>Rutina sugerida</h3>
+<table>
+  <tr><th style="width:24%">Cuándo</th><th>Qué correr</th></tr>
+  <tr><td><b>Cada mañana</b></td><td>Nada. Abrí <code>claude</code> y trabajá</td></tr>
+  <tr><td><b>Si algo raro pasa</b></td><td><code>ideasbox doctor</code></td></tr>
+  <tr><td><b>Una vez por semana</b></td><td><code>ideasbox backup</code></td></tr>
+  <tr><td><b>Una vez por mes</b></td><td><code>ideasbox update</code></td></tr>
+  <tr><td><b>Al cambiar de máquina</b></td><td>Enchufá el disco de datos y corré el instalador de nuevo</td></tr>
+</table>
+
+<!-- ═══════════════ 10 ═══════════════ -->
+<h2><span class="num">10</span>Dónde vive tu información</h2>
+<p class="sub">Una sola carpeta concentra todo. Respaldala y tenés la empresa entera.</p>
+
+<pre><code>&lt;tu raíz de datos&gt;/
+├── 00-INBOX                 <span class="c">lo que entra sin clasificar</span>
+├── 01-RECURSOS-IA           <span class="c">agentes y skills candidatos, con sus carriles</span>
+├── 02-CLIENTES              <span class="c">una carpeta por cliente y por prospecto</span>
+├── 03-PROYECTOS             <span class="c">desarrollos propios</span>
+├── 04-SERVICIOS             <span class="c">servicios autoalojados y su configuración</span>
+├── 05-OPERACIONES           <span class="c">bitácoras, scripts y backups de servidores</span>
+├── 06-CONTENIDO             <span class="c">10-CRUDOS y 30-LISTOS-PARA-PUBLICAR</span>
+├── 07-DOCUMENTOS
+├── 08-IMAGENES
+├── 09-VIDEOS
+├── 10-PROSPECCIONES         <span class="c">listas y tablas de prospección</span>
+├── 90-ARCHIVO               <span class="c">descartado: no se borra, no se usa</span>
+└── .claude/                 <span class="p">el cerebro</span>
+    ├── agents/              <span class="c">los 16 agentes</span>
+    ├── skills/              <span class="c">los procedimientos</span>
+    ├── memory/              <span class="c">memoria persistente, con MEMORY.md de índice</span>
+    └── docs/                <span class="c">reglas de autonomía, estructura y organigrama</span></code></pre>
+
+<h3>Dos reglas de esta estructura</h3>
+<ul>
+  <li><strong>La fuente de verdad está acá, no en tu home.</strong> Lo que hay en <code>~/.claude</code> son
+      enlaces a esta carpeta. Por eso podés reinstalar el sistema operativo sin perder nada.</li>
+  <li><strong>Cada cliente y cada prospecto tiene su propia carpeta</strong> en <code>02-CLIENTES</code>.
+      Los agentes tienen prohibido entrar a la carpeta de un cliente que no sea el de la tarea.</li>
+</ul>
+
+<h3>Respaldo</h3>
+<pre><code>ideasbox backup</code></pre>
+<p>Genera un comprimido en <code>05-OPERACIONES/backups/stack/</code> con agentes, memoria, documentación
+y configuración. <strong>Incluye tus credenciales</strong>: guardalo cifrado y no lo subas a ningún lado
+sin protegerlo.</p>
+
+<div class="caja">
+  <div class="t">Si el disco de datos no está montado</div>
+  <p>Claude te lo avisa apenas abrís una sesión, antes de que un agente empiece a trabajar a ciegas y
+  concluya que tu información «no existe». Si ves ese aviso: montá el disco y volvé a abrir.</p>
+</div>
+
+<!-- ═══════════════ 11 ═══════════════ -->
+<h2><span class="num">11</span>Reglas de seguridad</h2>
+<p class="sub">Lo que Ideas Box no deja que pase, y lo que depende de vos.</p>
+
+<h3>Siempre te van a pedir aprobación</h3>
+<ol>
+  <li>Escribirle a un cliente o prospecto</li>
+  <li>Publicar, programar o responder en redes sociales</li>
+  <li>Gastar dinero: pauta, APIs pagas, servicios nuevos</li>
+  <li>Reiniciar, detener, desplegar o borrar un servicio</li>
+  <li>Ejecutar comandos en un servidor remoto</li>
+  <li>Modificar o borrar datos de producción</li>
+  <li>Cualquier acción difícil de revertir</li>
+</ol>
+<p>Aprobar una vez no habilita la próxima. Es deliberado: la mayoría de los incidentes graves con agentes
+vienen de una autorización que alguien dio una vez y quedó abierta.</p>
+
+<h3>Credenciales</h3>
+<ul>
+  <li>Viven en <code>~/.config/ideasbox/secrets/</code>, un archivo por conector, legible solo por tu usuario.</li>
+  <li>No se copian a la memoria, ni a las bitácoras, ni a las capturas de pantalla.</li>
+  <li>Los agentes tienen <strong>bloqueada por configuración</strong> la lectura de esa carpeta, de tus
+      claves SSH y de cualquier archivo <code>.env</code>.</li>
+</ul>
+
+<h3>Borrar es la acción más cara</h3>
+<p>Muchos borrados de paneles y aplicaciones no son reversibles y se llevan puestos datos asociados: una
+bandeja borrada puede llevarse miles de conversaciones con sus adjuntos. Los agentes no tienen
+herramientas de borrado declaradas y tienen instrucción explícita de preguntar ante la duda.</p>
+
+<h3>Datos de clientes</h3>
+<p>Si administrás infraestructura de terceros, vas a ver credenciales de tus clientes en sus paneles.
+Mirarlas para diagnosticar está permitido; <strong>usarlas para leer o escribir en sus sistemas, no</strong>.
+Es una regla escrita en los agentes de operaciones y desarrollo.</p>
+
+<div class="caja tinta">
+  <div class="t">Lo que depende de vos</div>
+  <p>Ideas Box te protege de los accidentes, no de las decisiones. Si aprobás un envío masivo mal armado,
+  se envía. Leé lo que el agente te muestra antes de decir que sí: siempre te muestra el texto exacto y el
+  destinatario antes de ejecutar.</p>
+</div>
+
+<!-- ═══════════════ 12 ═══════════════ -->
+<h2><span class="num">12</span>Problemas frecuentes</h2>
+<p class="sub">Síntoma, causa y qué hacer. Empezá siempre por <code>ideasbox doctor</code>.</p>
+
+<h3>Durante la instalación</h3>
+<table>
+  <tr><th style="width:33%">Síntoma</th><th>Causa y solución</th></tr>
+  <tr><td>«command not found: git»</td><td>Máquina limpia sin git. Linux: <code>sudo apt install -y git</code>. macOS: <code>xcode-select --install</code></td></tr>
+  <tr><td>«command not found: brew» después de instalar Homebrew</td><td>La terminal actual no tomó el PATH nuevo. Abrí una ventana nueva y repetí</td></tr>
+  <tr><td>Corta diciendo que no hay terminal disponible</td><td>Lo estás corriendo por tubería. Usá <code>bash install.sh</code> desde la carpeta del repo</td></tr>
+  <tr><td>Falla al crear el entorno de Python</td><td>Falta el paquete de entornos virtuales: <code>sudo apt install -y python3-venv</code></td></tr>
+  <tr><td>No aparece mi disco externo en la lista</td><td>Tiene que estar montado y con permiso de escritura. En macOS, visible en <code>/Volumes</code></td></tr>
+</table>
+
+<h3>Después de instalar</h3>
+<table>
+  <tr><th style="width:33%">Síntoma</th><th>Causa y solución</th></tr>
+  <tr><td>«No encuentro mis agentes»</td><td>El disco de datos no está montado. Montalo y verificá con <code>ideasbox doctor</code></td></tr>
+  <tr><td>Un conector no responde</td><td>Credenciales vacías o vencidas. <code>ideasbox doctor --deep</code> te dice cuál, y el archivo a corregir</td></tr>
+  <tr><td>Un agente no usa la herramienta que esperabas</td><td>Ese conector no está instalado: los agentes solo reciben las herramientas que existen. <code>ideasbox mcp add &lt;id&gt;</code></td></tr>
+  <tr><td>Editaste un agente y «volvió atrás»</td><td>No volvió: mirá si hay un archivo <code>.nuevo</code> al lado con la versión del stack. Tu edición está intacta</td></tr>
+  <tr><td>Después de actualizar falta una skill</td><td><code>ideasbox skills update &amp;&amp; ideasbox sync</code></td></tr>
+  <tr><td><code>ideasbox</code> no se encuentra</td><td>Falta <code>$HOME/.local/bin</code> en tu PATH. Agregalo a tu <code>.bashrc</code> o <code>.zshrc</code></td></tr>
+  <tr><td>Enlaces rotos en <code>~/.claude</code></td><td><code>ideasbox sync</code> los limpia y regenera</td></tr>
+</table>
+
+<h3>Cómo leer un diagnóstico</h3>
+<pre><code>ideasbox doctor
+
+<span class="p">✓</span> Perfil: Panadería Los Tres Hornos (tres-hornos)
+<span class="p">✓</span> Raíz de datos montada: /mnt/datos/tres-hornos (libre: 234G)
+<span class="p">✓</span> Runtime: 16 agentes y 363 skills enlazados
+<span class="p">!</span> MCP brave-search: hay credenciales vacías        <span class="c">← advertencia: se puede usar igual</span>
+<span class="p">✗</span> MCP easypanel-prod: falta el lanzador            <span class="c">← problema: ese conector no funciona</span></code></pre>
+<p><strong>✓</strong> está bien · <strong>!</strong> funciona pero algo falta ·
+<strong>✗</strong> eso no anda. Las advertencias no impiden trabajar; los problemas sí, pero solo afectan
+al conector que mencionan.</p>
+
+<!-- ═══════════════ 13 ═══════════════ -->
+<h2><span class="num">13</span>Soporte</h2>
+<p class="sub">Dónde seguir, cómo reportar y qué esperar.</p>
+
+<h3>El repositorio</h3>
+<p><a href="https://github.com/ideasdevops/ideas-box">github.com/ideasdevops/ideas-box</a> — código, catálogo
+de conectores y documentación técnica. Licencia MIT: usalo, modificalo y vendé servicios sobre él.</p>
+
+<div class="caja gris">
+  <div class="t">Ojo con las licencias de terceros</div>
+  <p>MIT cubre Ideas Box, no lo que instala. Los packs de skills y los conectores se descargan de sus
+  repositorios originales, cada uno con su propia licencia, que puede no ser MIT.
+  <code>docs/TERCEROS.md</code> lista el origen de cada uno: revisalo antes de usarlos comercialmente.</p>
+</div>
+
+<h3>Si algo falla, qué mandar</h3>
+<p>Con estas cuatro cosas el problema se resuelve en una vuelta en vez de tres:</p>
+<ol>
+  <li>Sistema y versión: la salida de <code>uname -a</code> y de <code>lsb_release -a</code> o <code>sw_vers</code></li>
+  <li>En qué paso del asistente falló (de los ocho de la sección 5)</li>
+  <li>El error completo, copiado tal cual, no una captura recortada</li>
+  <li>La salida de <code>ideasbox doctor</code></li>
+</ol>
+<p class="chico"><strong>Antes de mandar nada, revisá que no haya credenciales en el texto.</strong>
+Los tokens aparecen en los mensajes de error más seguido de lo que uno espera.</p>
+
+<h3>Documentación técnica incluida</h3>
+<table>
+  <tr><th style="width:36%">Archivo</th><th>Qué contiene</th></tr>
+  <tr><td><code>README.md</code></td><td>Instalación rápida y mapa del repositorio</td></tr>
+  <tr><td><code>docs/PRIMEROS_PASOS.md</code></td><td>Guía corta para el primer día</td></tr>
+  <tr><td><code>docs/ARQUITECTURA.md</code></td><td>Decisiones de diseño y cómo extenderlo</td></tr>
+  <tr><td><code>docs/TERCEROS.md</code></td><td>Origen y licencia de cada componente externo</td></tr>
+</table>
+
+<h3>Más allá de la instalación</h3>
+<p>Ideas Box te deja el puesto armado. Lo que sigue —adaptar los agentes a tu operación, conectar tus
+sistemas, poner los procedimientos de tu negocio por escrito— es donde aparece el rendimiento real.
+Si querés acompañamiento en esa etapa, <strong>IdeasDevOps</strong> lo hace como servicio.</p>
+
+<div class="caja">
+  <div class="t">Una última cosa</div>
+  <p>Todo lo que genera Ideas Box es texto plano: agentes, procedimientos, memoria, documentación. No hay
+  base de datos propietaria ni formato cerrado. Podés leerlo, editarlo, versionarlo con git y llevártelo.
+  Es tuyo.</p>
+</div>
+
+<p style="margin-top:12mm;padding-top:5mm;border-top:2px solid #e4e7ee;font-size:9pt;color:#6b7280">
+  <strong style="color:#0d1220">Ideas Box</strong> · Manual de instalación y despliegue · versión 0.1.0<br>
+  Un proyecto de <strong style="color:#0d1220">IdeasDevOps</strong> &amp;
+  <strong style="color:#0d1220">Disruptia AI</strong> · Licencia MIT
+</p>
+
+</body>
+</html>

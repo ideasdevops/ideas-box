@@ -1,0 +1,164 @@
+/* Manual Ideas Box — identidad IdeasDevOps
+   Naranja de marca #ff6a00 sobre tinta #0d1220. Pensado para impresión A4. */
+@import url("assets/fonts.css");
+
+:root {
+  --naranja:      #ff6a00;
+  --naranja-sua:  #fff3ec;
+  --tinta:        #0d1220;
+  --tinta-sua:    #3d4558;
+  --gris:         #6b7280;
+  --linea:        #e4e7ee;
+  --fondo-sua:    #f7f7fa;
+  --fondo-ter:    #eef0f5;
+}
+
+@page            { size: A4; margin: 16mm 15mm 15mm; }
+@page :first     { margin: 0; }
+
+* { box-sizing: border-box; }
+
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 9.6pt;
+  line-height: 1.45;
+  color: var(--tinta);
+  margin: 0;
+}
+
+/* ── Portada ─────────────────────────────────────────────── */
+.portada {
+  width: 210mm; height: 297mm;
+  /* El resplandor va como fondo y no como pseudo-elemento: en medios paginados
+     un elemento absoluto que sobresale no se recorta y se cuela en la página siguiente. */
+  background:
+    radial-gradient(circle at 118% 112%, rgba(255,106,0,.30) 0%, rgba(255,106,0,0) 42%),
+    var(--tinta);
+  color: #fff;
+  padding: 30mm 22mm;
+  display: flex; flex-direction: column;
+  page-break-after: always;
+  position: relative;
+  overflow: hidden;
+}
+.portada .logo { width: 62mm; margin-bottom: auto; }
+.portada .barra { width: 26mm; height: 4px; background: var(--naranja); margin: 0 0 9mm; }
+.portada h1 {
+  font-size: 40pt; font-weight: 800; letter-spacing: -1.2px;
+  margin: 0 0 4mm; line-height: 1.02;
+}
+.portada h1 em { color: var(--naranja); font-style: normal; }
+.portada .bajada {
+  font-size: 13pt; font-weight: 400; color: #b9c0d0;
+  margin: 0 0 14mm; max-width: 125mm; line-height: 1.45;
+}
+.portada .meta {
+  border-top: 1px solid rgba(255,255,255,.16);
+  padding-top: 6mm; font-size: 9.5pt; color: #8e97ab;
+  display: flex; gap: 14mm; position: relative; z-index: 1;
+}
+.portada .meta b { display: block; color: #fff; font-weight: 600; margin-bottom: 1mm; }
+
+/* ── Estructura interior ─────────────────────────────────── */
+h2 {
+  font-size: 17pt; font-weight: 800; letter-spacing: -.5px;
+  margin: 0 0 2mm; padding-top: 2mm;
+  break-before: page; break-after: avoid-page;
+}
+h2 .num {
+  display: inline-block; color: var(--naranja);
+  margin-right: 3mm; font-variant-numeric: tabular-nums;
+}
+h2 + .sub {
+  color: var(--gris); font-size: 10pt; margin: 0 0 5mm;
+  padding-bottom: 3mm; border-bottom: 2px solid var(--linea);
+}
+h3 {
+  font-size: 11.5pt; font-weight: 700; margin: 5mm 0 2mm;
+  page-break-after: avoid;
+}
+h4 { font-size: 10pt; font-weight: 700; margin: 3.5mm 0 1.5mm; page-break-after: avoid; }
+p  { margin: 0 0 2.4mm; }
+ul, ol { margin: 0 0 2.4mm; padding-left: 5mm; }
+li { margin-bottom: 1mm; }
+strong { font-weight: 700; }
+a { color: var(--naranja); text-decoration: none; }
+
+code, pre {
+  /* Sin ligaduras: la fuente convierte -- en un guion largo y el lector copia mal el comando. */
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "calt" 0;
+}
+
+code {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 8.8pt; background: var(--fondo-ter);
+  padding: .5mm 1.2mm; border-radius: 2px;
+}
+
+pre {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 8.2pt; line-height: 1.45;
+  background: var(--tinta); color: #e8ebf2;
+  padding: 3mm 4mm; border-radius: 3px; margin: 0 0 3mm;
+  border-left: 3px solid var(--naranja);
+  page-break-inside: avoid; white-space: pre-wrap;
+}
+pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+pre .c { color: #8e97ab; }          /* comentario */
+pre .p { color: var(--naranja); }   /* prompt / énfasis */
+
+/* ── Tablas ──────────────────────────────────────────────── */
+table {
+  width: 100%; border-collapse: collapse; margin: 0 0 3mm;
+  font-size: 8.6pt; page-break-inside: avoid;
+}
+th {
+  text-align: left; background: var(--tinta); color: #fff;
+  font-weight: 600; padding: 1.6mm 2.2mm; font-size: 8.2pt;
+  text-transform: uppercase; letter-spacing: .4px;
+}
+td { padding: 1.6mm 2.2mm; border-bottom: 1px solid var(--linea); vertical-align: top; }
+tr:nth-child(even) td { background: var(--fondo-sua); }
+td code { font-size: 8.2pt; }
+
+/* ── Cajas ───────────────────────────────────────────────── */
+.caja {
+  border-left: 3px solid var(--naranja);
+  background: var(--naranja-sua);
+  padding: 3mm 3.5mm; margin: 0 0 3mm; border-radius: 0 3px 3px 0;
+  page-break-inside: avoid;
+}
+.caja.gris  { border-color: var(--gris); background: var(--fondo-sua); }
+.caja.tinta { border-color: var(--tinta); background: var(--fondo-ter); }
+.caja .t {
+  font-weight: 700; font-size: 9pt; text-transform: uppercase;
+  letter-spacing: .5px; margin-bottom: 1.5mm; color: var(--tinta);
+}
+.caja p:last-child, .caja ul:last-child { margin-bottom: 0; }
+
+/* ── Pasos numerados ─────────────────────────────────────── */
+.paso { display: flex; gap: 3.5mm; margin-bottom: 3mm; page-break-inside: avoid; }
+.paso .n {
+  flex: 0 0 6.5mm; height: 6.5mm; border-radius: 50%;
+  background: var(--naranja); color: #fff;
+  font-weight: 700; font-size: 10pt;
+  display: flex; align-items: center; justify-content: center;
+}
+.paso .cuerpo { flex: 1; }
+.paso .cuerpo > :last-child { margin-bottom: 0; }
+
+/* ── Índice ──────────────────────────────────────────────── */
+.indice { columns: 2; column-gap: 12mm; font-size: 10pt; }
+.indice div { break-inside: avoid; margin-bottom: 2.5mm; }
+.indice b { color: var(--naranja); margin-right: 2mm; }
+.indice span { color: var(--gris); font-size: 8.8pt; display: block; margin-left: 6mm; }
+
+/* Sin pie repetido: en impresión, un elemento fijo con desplazamiento negativo
+   desaparece del área imprimible y con desplazamiento cero pisa el texto. La
+   identidad la sostienen la portada, los numerales naranjas y el cierre. */
+
+.sinquiebre { page-break-before: auto; }
+.chico { font-size: 9pt; color: var(--gris); }
