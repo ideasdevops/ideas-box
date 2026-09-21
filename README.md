@@ -1,5 +1,7 @@
 # Stack de empresa online híbrida
 
+> Un proyecto de **IdeasDevOps & Disruptia**.
+
 Convierte una máquina con Ubuntu, Linux Mint o Debian recién instalado en un puesto de trabajo
 completo para operar una empresa con agentes de IA: agentes por área, skills, memoria canónica
 persistente y conectores MCP a las herramientas del negocio.
@@ -70,8 +72,16 @@ vendor/                 código propio que se distribuye con el stack
 - Las credenciales de los servicios que quieras conectar. Todo lo que no tengas a mano se puede
   agregar después con `empresa mcp add`.
 
+## Autores
+
+**IdeasDevOps & Disruptia.**
+
 ## Licencia y terceros
 
 Los packs de skills y los servidores MCP de terceros **no se redistribuyen**: se clonan de sus
-repositorios originales durante la instalación, cada uno bajo su propia licencia. `catalog/` lista
-el origen de cada uno.
+repositorios originales durante la instalación, cada uno bajo su propia licencia. `catalog/` y
+`docs/TERCEROS.md` listan el origen de cada uno.
+
+Este repositorio todavía **no declara una licencia propia**. Sin un archivo `LICENSE`, en la
+práctica queda como "todos los derechos reservados" aunque sea público: nadie puede reusarlo
+legalmente. Definila antes de difundirlo.

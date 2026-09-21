@@ -1,5 +1,7 @@
 # Arquitectura del stack
 
+> IdeasDevOps & Disruptia
+
 ## La idea
 
 El valor no está en Claude Code ni en los MCP: está en **la organización**. Un puesto de trabajo
