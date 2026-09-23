@@ -10,7 +10,7 @@ canónica persistente y conectores MCP a las herramientas del negocio.
 # Linux: una máquina limpia no trae git
 sudo apt update && sudo apt install -y git
 
-# macOS: el instalador se encarga de Homebrew, pero git viene con Xcode CLT
+# macOS (13 o posterior): git viene con Xcode CLT; del resto se encarga el instalador
 xcode-select --install     # si nunca lo instalaste
 
 git clone https://github.com/ideasdevops/ideas-box.git
@@ -83,7 +83,11 @@ vendor/                 código propio que se distribuye con el stack
 | Sistema | Qué necesita |
 |---|---|
 | Ubuntu · Linux Mint · Debian | `apt`, usuario con sudo, `git` para clonar |
-| macOS 12 o posterior (Intel y Apple Silicon) | Herramientas de línea de comandos de Xcode. Homebrew lo instala el script si falta |
+| macOS 13 o posterior (Intel y Apple Silicon) | Herramientas de línea de comandos de Xcode. En Apple Silicon con macOS 15+ el script instala Homebrew si falta; en Intel o en macOS más viejo usa el Homebrew que ya tengas o, si no hay, baja jq, Python y Node sueltos a `~/.local/bin` |
+
+macOS 12 (Monterey) y anteriores no sirven: Claude Code solo publica binarios para macOS 13 en
+adelante, y el instalador corta ahí con las alternativas. En Macs que no pasan de Monterey, lo
+recomendable es instalarles Linux Mint o Ubuntu.
 
 También:
 

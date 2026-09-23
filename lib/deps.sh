@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Dependencias de sistema: paquetes, Node, Python, Claude Code y Docker (opcional).
-# apt en Ubuntu/Mint/Debian, Homebrew en macOS.
+# apt en Ubuntu/Mint/Debian, Homebrew en macOS. En los Mac donde Homebrew ya no se
+# instala (Intel, o macOS viejo) lo imprescindible se baja suelto a ~/.local/bin.
 
 # Nombre del paquete por sistema. Lo que no aparece en el mapa se llama igual en los dos.
 APT_BASE=(ca-certificates curl wget git jq unzip rsync xz-utils
@@ -8,6 +9,40 @@ APT_BASE=(ca-certificates curl wget git jq unzip rsync xz-utils
 BREW_BASE=(curl wget git jq xz python@3.12)      # unzip, rsync y compiladores vienen con macOS + Xcode CLT
 APT_MEDIA=(ffmpeg imagemagick)
 BREW_MEDIA=(ffmpeg imagemagick)
+
+# Mínimos de macOS que imponen otros, no nosotros:
+# - Claude Code publica binarios compilados para macOS 13.0 en adelante; en 12 no arranca.
+# - El install.sh oficial de Homebrew aborta en Intel y por debajo de su
+#   MACOS_OLDEST_SUPPORTED (15.0 a septiembre de 2026). Un Homebrew ya instalado sigue sirviendo.
+# - Node 24 pide macOS 13.5; Node 22 corre desde macOS 11.
+CLAUDE_MACOS_MIN=13
+BREW_MACOS_MIN=15
+MAC_NOBREW=0
+USER_BIN="$HOME/.local/bin"
+
+# mac_version_ge <mayor> [menor] — compara contra la versión de macOS en curso
+mac_version_ge() {
+  local v maj min rest
+  v="$(sw_vers -productVersion 2>/dev/null || echo 0)"
+  maj="${v%%.*}"
+  case "$v" in *.*) rest="${v#*.}"; min="${rest%%.*}" ;; *) min=0 ;; esac
+  case "$maj" in ''|*[!0-9]*) maj=0 ;; esac
+  case "$min" in ''|*[!0-9]*) min=0 ;; esac
+  [ "$maj" -gt "$1" ] || { [ "$maj" -eq "$1" ] && [ "$min" -ge "${2:-0}" ]; }
+}
+
+# Se corta antes de instalar nada: sin Claude Code el resto del stack no tiene quién lo use.
+macos_preflight() {
+  mac_version_ge "$CLAUDE_MACOS_MIN" && return 0
+  err "macOS $OS_VERSION es anterior a macOS $CLAUDE_MACOS_MIN, el mínimo que pide Claude Code."
+  err "En este equipo Claude Code no arranca, así que no tiene sentido seguir con la instalación."
+  info "Salidas posibles:"
+  info "  1. Instalar Ubuntu, Linux Mint o Debian en este equipo: Ideas Box corre completo ahí."
+  info "  2. Subir de versión de macOS. Si Apple ya no la ofrece para este modelo, existe"
+  info "     OpenCore Legacy Patcher (no oficial): https://dortania.github.io/OpenCore-Legacy-Patcher/"
+  info "  3. Instalar Ideas Box en otro equipo."
+  exit 1
+}
 
 SUDO=""
 _need_sudo() {
@@ -33,21 +68,98 @@ apt_install() {
 
 # Homebrew se instala sin sudo y en el home del usuario; el script oficial pide
 # confirmación aparte y puede tardar varios minutos la primera vez.
+# Si Homebrew no se puede instalar en este Mac, deja MAC_NOBREW=1 y el resto de las
+# funciones toman el camino sin gestor.
 ensure_brew() {
+  _brew_to_path
   if have brew; then
     ok "Homebrew presente ($(brew --version 2>/dev/null | head -1))"
+    return 0
+  fi
+  if [ "$(uname -m)" != arm64 ] || ! mac_version_ge "$BREW_MACOS_MIN"; then
+    warn "Homebrew ya no se puede instalar en este Mac: solo soporta Apple Silicon con macOS $BREW_MACOS_MIN o posterior."
+    info "Sigo sin gestor de paquetes: lo imprescindible se instala en $USER_BIN, sin sudo."
+    MAC_NOBREW=1
     return 0
   fi
   warn "No hay Homebrew y macOS no trae gestor de paquetes."
   confirm "¿Instalar Homebrew ahora? (lo necesita el resto del proceso)" y \
     || die "Sin Homebrew no se pueden instalar las dependencias. Instalalo desde https://brew.sh y volvé a correr."
   run bash -c '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
-  # El shell actual todavía no lo tiene en el PATH
+  [ "$DRY_RUN" = 1 ] && return 0
+  _brew_to_path
+  have brew || die "Homebrew quedó instalado pero no está en el PATH de esta shell. Abrí una terminal nueva y volvé a correr."
+}
+
+# Un Homebrew recién instalado, o uno que el perfil de la shell no carga, no está en el PATH
+_brew_to_path() {
+  have brew && return 0
   local b
   for b in /opt/homebrew/bin/brew /usr/local/bin/brew; do
-    [ -x "$b" ] && eval "$("$b" shellenv)" && break
+    [ -x "$b" ] && eval "$("$b" shellenv)" && return 0
   done
-  have brew || die "Homebrew quedó instalado pero no está en el PATH de esta shell. Abrí una terminal nueva y volvé a correr."
+  return 0
+}
+
+# --- Mac sin Homebrew -------------------------------------------------------
+# git, curl, rsync y unzip vienen con macOS y las herramientas de Xcode; wget y xz
+# no los usa nadie del stack. Faltan jq y un Python que alcance para los conectores.
+
+# Los servidores MCP en Python piden 3.10 o posterior; el de Xcode CLT es 3.9.
+python_ok() {
+  have python3 && python3 -c 'import sys; sys.exit(sys.version_info < (3, 10))' 2>/dev/null
+}
+
+nobrew_jq() {
+  have jq && { ok "jq presente ($(jq --version 2>/dev/null))"; return 0; }
+  local arch=amd64 base="https://github.com/jqlang/jq/releases/latest/download" tmp esperado real
+  [ "$(uname -m)" = arm64 ] && arch=arm64
+  info "Instalando jq en $USER_BIN"
+  if [ "$DRY_RUN" = 1 ]; then run curl -fsSL -o "$USER_BIN/jq" "$base/jq-macos-$arch"; return 0; fi
+  tmp="$(mktemp -d)"
+  curl -fsSL -o "$tmp/jq" "$base/jq-macos-$arch" && curl -fsSL -o "$tmp/sums" "$base/sha256sum.txt" \
+    || { rm -rf "$tmp"; die "No se pudo bajar jq desde GitHub."; }
+  esperado="$(awk -v f="jq-macos-$arch" '$2 == f { print $1 }' "$tmp/sums")"
+  real="$(shasum -a 256 "$tmp/jq" | awk '{ print $1 }')"
+  [ -n "$esperado" ] && [ "$esperado" = "$real" ] || { rm -rf "$tmp"; die "El checksum de jq no coincide; no lo instalo."; }
+  mkdir -p "$USER_BIN"
+  install -m 755 "$tmp/jq" "$USER_BIN/jq"
+  rm -rf "$tmp"
+  ok "jq $("$USER_BIN/jq" --version 2>/dev/null) en $USER_BIN"
+}
+
+# Python de usuario con uv: binarios de python-build-standalone, sin sudo ni compilar.
+nobrew_python() {
+  python_ok && { ok "$(python3 -V 2>&1) en $(command -v python3)"; return 0; }
+  info "El python3 del sistema ($(python3 -V 2>&1 || echo 'ninguno')) no alcanza para los conectores; instalo Python 3.12 con uv"
+  if ! have uv; then
+    run env UV_NO_MODIFY_PATH=1 sh -c 'curl -LsSf https://astral.sh/uv/install.sh | sh' \
+      || die "No se pudo instalar uv. Instalalo a mano (https://docs.astral.sh/uv/) y volvé a correr."
+  fi
+  run uv python install 3.12 || die "uv no pudo instalar Python 3.12."
+  # uv deja python3.12 en ~/.local/bin; python3 lo creamos solo si no existe otro ahí
+  [ -e "$USER_BIN/python3" ] || run ln -s "$USER_BIN/python3.12" "$USER_BIN/python3"
+  [ "$DRY_RUN" = 1 ] && return 0
+  python_ok || die "Hay un python3 viejo en $USER_BIN que tapa al nuevo. Borralo o reemplazalo por $USER_BIN/python3.12 y volvé a correr."
+  ok "$(python3 -V 2>&1) en $(command -v python3)"
+}
+
+nobrew_install_base() {
+  run mkdir -p "$USER_BIN"
+  export PATH="$USER_BIN:$PATH"
+  nobrew_jq
+  nobrew_python
+}
+
+# ffmpeg e ImageMagick no tienen un binario oficial único para Mac: se indica de dónde bajarlos
+nobrew_install_media() {
+  if have ffmpeg && { have magick || have convert; }; then
+    ok "ffmpeg e ImageMagick presentes"
+    return 0
+  fi
+  warn "Sin Homebrew, ffmpeg e ImageMagick se instalan a mano (los agentes de contenido los usan, el resto no):"
+  have ffmpeg || info "  ffmpeg:      https://ffmpeg.org/download.html#build-mac — copiá ffmpeg y ffprobe a $USER_BIN"
+  have magick || have convert || info "  ImageMagick: https://imagemagick.org/script/download.php#macosx"
 }
 
 ensure_xcode_clt() {
@@ -71,8 +183,18 @@ brew_install() {
   run brew install "${faltan[@]}" || die "Falló la instalación de paquetes con Homebrew."
 }
 
-pkg_install_base()  { if is_mac; then brew_install "${BREW_BASE[@]}";  else apt_install "${APT_BASE[@]}";  fi; }
-pkg_install_media() { if is_mac; then brew_install "${BREW_MEDIA[@]}"; else apt_install "${APT_MEDIA[@]}"; fi; }
+pkg_install_base() {
+  if ! is_mac; then apt_install "${APT_BASE[@]}"
+  elif [ "$MAC_NOBREW" = 1 ]; then nobrew_install_base
+  else brew_install "${BREW_BASE[@]}"
+  fi
+}
+pkg_install_media() {
+  if ! is_mac; then apt_install "${APT_MEDIA[@]}"
+  elif [ "$MAC_NOBREW" = 1 ]; then nobrew_install_media
+  else brew_install "${BREW_MEDIA[@]}"
+  fi
+}
 
 # Node >= 20. Si el del sistema no alcanza, se instala uno de usuario con nvm.
 NODE_MIN_MAJOR=20
@@ -105,8 +227,11 @@ ensure_node() {
   if [ "$DRY_RUN" = 1 ]; then NODE_BIN="\$HOME/.nvm/.../node"; return 0; fi
   # shellcheck disable=SC1091
   . "$NVM_DIR/nvm.sh"
-  nvm install --lts >/dev/null
-  nvm alias default 'lts/*' >/dev/null
+  # La LTS vigente (24) pide macOS 13.5; debajo queda la 22, con soporte hasta abril de 2027
+  local target='lts/*'
+  is_mac && ! mac_version_ge 13 5 && target=22
+  nvm install "$target" >/dev/null
+  nvm alias default "$target" >/dev/null
   NODE_BIN="$(nvm which default)"
   [ -x "$NODE_BIN" ] || die "No se pudo resolver el binario de Node tras instalar nvm."
   ok "Node $("$NODE_BIN" -v) en $NODE_BIN"
@@ -156,6 +281,7 @@ deps_main() {
   detect_os
   info "Sistema detectado: $OS_PRETTY"
   if is_mac; then
+    macos_preflight
     ensure_xcode_clt
     ensure_brew
   fi

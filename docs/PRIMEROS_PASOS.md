@@ -72,4 +72,6 @@ Después de agregar uno, los agentes que lo usan se actualizan solos.
 | Editaste un agente y volvió atrás | No volvió: mirá si quedó un archivo `.nuevo` al lado con la versión del stack |
 | Tras actualizar falta una skill | `ideasbox skills update && ideasbox sync` |
 | En Mac: "command not found: brew" | Abrí una terminal nueva después de instalar Homebrew y repetí |
+| En Mac: "Homebrew on macOS is only supported on Apple Silicon processors" | Es el instalador oficial de Homebrew, que ya no soporta Intel. Actualizá Ideas Box (`git pull`): en esos Mac sigue sin Homebrew |
+| En Mac: corta diciendo que macOS es anterior a 13 | Claude Code no corre en Monterey o anteriores. Ver alternativas en el README (Linux en ese equipo, o subir de versión de macOS) |
 | En Mac: no aparece el disco externo | Tiene que estar montado en `/Volumes` y con permiso de escritura |

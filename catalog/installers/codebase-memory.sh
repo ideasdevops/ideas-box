@@ -11,9 +11,14 @@ REPO="DeusData/codebase-memory-mcp"
 DEST="${HOME}/.local/bin/codebase-memory-mcp"
 mkdir -p "$(dirname "$DEST")"
 
+case "$(uname -s)" in
+  Linux)  os='linux' ;;
+  Darwin) os='darwin' ;;
+  *) echo "Sistema no soportado: $(uname -s)" >&2; exit 1 ;;
+esac
 case "$(uname -m)" in
-  x86_64|amd64)  plat='linux-amd64' ;;
-  aarch64|arm64) plat='linux-arm64' ;;
+  x86_64|amd64)  plat="$os-amd64" ;;
+  aarch64|arm64) plat="$os-arm64" ;;
   *) echo "Arquitectura no soportada: $(uname -m)" >&2; exit 1 ;;
 esac
 
@@ -40,13 +45,16 @@ trap 'rm -rf "$tmp"' EXIT
 echo "→ Bajando $(basename "$url")"
 curl -fsSL "$url" -o "$tmp/asset.tar.gz"
 
-# Verificación de integridad si la release publica checksums
+# Verificación de integridad si la release publica checksums. macOS no trae sha256sum, sí shasum.
 sums="$(printf '%s\n' "$assets" | grep -E '/checksums\.txt$' | head -1 || true)"
-if [ -n "$sums" ] && command -v sha256sum >/dev/null; then
+if command -v sha256sum >/dev/null; then sha256() { sha256sum "$1"; }
+else sha256() { shasum -a 256 "$1"; }
+fi
+if [ -n "$sums" ]; then
   curl -fsSL "$sums" -o "$tmp/checksums.txt" || true
   esperado="$(grep -F "$(basename "$url")" "$tmp/checksums.txt" 2>/dev/null | awk '{print $1}' | head -1 || true)"
   if [ -n "$esperado" ]; then
-    real="$(sha256sum "$tmp/asset.tar.gz" | awk '{print $1}')"
+    real="$(sha256 "$tmp/asset.tar.gz" | awk '{print $1}')"
     [ "$esperado" = "$real" ] || { echo "Checksum no coincide para $(basename "$url")" >&2; exit 1; }
     echo "→ Checksum verificado"
   fi
