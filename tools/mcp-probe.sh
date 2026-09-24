@@ -25,7 +25,7 @@ for a in srv.get("args") or []:
 ' "$claude_json")
 
 req='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"doctor","version":"1"}}}'
-resp="$(printf '%s\n' "$req" | timeout 20 "$launcher" "${argv[@]}" 2>/dev/null | head -c 4000)"
+resp="$(printf '%s\n' "$req" | timeout 20 "$launcher" ${argv[@]+"${argv[@]}"} 2>/dev/null | head -c 4000)"
 
 case "$resp" in
   *serverInfo*) printf '%s\n' "$resp" | head -c 300; exit 0 ;;

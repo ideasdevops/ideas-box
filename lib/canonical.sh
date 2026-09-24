@@ -22,6 +22,7 @@ canonical_render() {
     "VAR_HOME=$HOME"
   )
 
+  # bash 3.2 (macOS) con set -u corta al expandir un array vacío: de ahí el ${a[@]+...}
   local extra=()
   [ "$force" = "--force" ] && extra+=(--force)
   [ "$DRY_RUN" = 1 ] && extra+=(--dry-run)
@@ -32,7 +33,7 @@ canonical_render() {
     --groups "$STACK_SRC/catalog/tool-groups.tsv" \
     --registry "$MCP_REGISTRY" \
     --state "$STACK_CONFIG_DIR/rendered.tsv" \
-    "${extra[@]}"
+    ${extra[@]+"${extra[@]}"}
 
   run env "${env_vars[@]}" python3 "$STACK_SRC/tools/render.py" \
     --src "$STACK_SRC/templates/home" \
@@ -40,7 +41,7 @@ canonical_render() {
     --groups "$STACK_SRC/catalog/tool-groups.tsv" \
     --registry "$MCP_REGISTRY" \
     --state "$STACK_CONFIG_DIR/rendered-home.tsv" \
-    "${extra[@]}"
+    ${extra[@]+"${extra[@]}"}
 
   ok "Árbol canónico en $DATA_ROOT/.claude"
 }

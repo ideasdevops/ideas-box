@@ -6,6 +6,7 @@
 STACK_STATE="$STACK_CONFIG_DIR/install.state"
 RESUME=0
 STATE_CURRENT=""
+STATE_MAX_RETRY=5
 
 # Nombres legibles de cada paso, para decirle al usuario dónde quedó
 _state_label() {
@@ -49,6 +50,13 @@ run_step() {
 
 state_offer_resume() {
   [ -s "$STACK_STATE" ] || return 0
+  # Relanzado por state_on_exit tras elegir reintentar: se retoma sin volver a preguntar
+  if [ "${IB_AUTO_RESUME:-0}" = 1 ]; then
+    RESUME=1
+    [ -f "$STACK_PROFILE" ] && state_is_done perfil && load_profile
+    ok "Reintento ${IB_INSTALL_RETRY:-1} de $STATE_MAX_RETRY: sigo desde lo que faltaba"
+    return 0
+  fi
   echo
   warn "La instalación anterior quedó a mitad."
   info "Ya estaba completo: $(_state_list)"
@@ -69,8 +77,30 @@ state_on_exit() {
   [ "$DRY_RUN" = 1 ] && return 0
   echo >&2
   [ -n "$STATE_CURRENT" ] && warn "La instalación se cortó durante el paso: $(_state_label "$STATE_CURRENT")."
+  [ -s "$STACK_STATE" ] && warn "Lo que ya completaste quedó guardado: $(_state_list)."
+  state_offer_retry "$rc"
   [ -s "$STACK_STATE" ] || return 0
-  warn "Lo que ya completaste quedó guardado: $(_state_list)."
   warn "Para seguir desde ahí, abrí de nuevo el menú de Ideas Box y elegí «Terminar de instalar»"
   warn "(o en la terminal: bash install.sh). Respondé que sí a retomar."
+}
+
+# Tras un corte, ofrece reintentar en el acto: el instalador se relanza a sí mismo (con el
+# código actualizado, si se corrigió algo mientras tanto) y sigue desde el paso que falló.
+# El paso fallido no quedó marcado, así que se repite; si fueron las dependencias, también.
+# No se ofrece con Ctrl+C, sin terminal, con --yes/--non-interactive (sería un bucle sin
+# fin ante un error que no cambia) ni después de STATE_MAX_RETRY intentos.
+state_offer_retry() {
+  local rc="$1" n="${IB_INSTALL_RETRY:-0}"
+  case "$rc" in 130|143) return 0 ;; esac
+  [ -n "$STACK_TTY" ] && [ "$NON_INTERACTIVE" != 1 ] && [ "$ASSUME_YES" != 1 ] || return 0
+  if [ "$n" -ge "$STATE_MAX_RETRY" ]; then
+    warn "Ya van $n reintentos con el mismo resultado: hace falta revisar el error de arriba."
+    return 0
+  fi
+  echo >&2
+  info "Si el error de arriba se puede resolver (conexión, credencial, instalar algo), resolvelo y seguí."
+  confirm "¿Reintentar ahora desde ese paso?" y || return 0
+  trap - EXIT
+  exec env IB_AUTO_RESUME=1 IB_INSTALL_RETRY=$((n + 1)) \
+    bash "$STACK_SRC/install.sh" ${INSTALL_ARGS[@]+"${INSTALL_ARGS[@]}"}
 }

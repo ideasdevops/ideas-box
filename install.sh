@@ -19,6 +19,9 @@ fi
 STACK_SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export STACK_SRC
 
+# Para relanzarse con las mismas opciones si un paso falla y el usuario pide reintentar
+INSTALL_ARGS=("$@")
+
 # shellcheck source=lib/common.sh
 . "$STACK_SRC/lib/common.sh"
 . "$STACK_SRC/lib/state.sh"
