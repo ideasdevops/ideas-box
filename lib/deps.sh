@@ -129,24 +129,49 @@ nobrew_jq() {
 }
 
 # Python de usuario con uv: binarios de python-build-standalone, sin sudo ni compilar.
+# Se repara solo: si ~/.local/bin/python3 está roto, es viejo o apunta a otro lado, se
+# reemplaza por el de uv (un archivo real se renombra, no se borra).
 nobrew_python() {
+  hash -r   # bash recuerda la ruta de python3 de la primera vez que lo ejecutó
   python_ok && { ok "$(python3 -V 2>&1) en $(command -v python3)"; return 0; }
-  info "El python3 del sistema ($(python3 -V 2>&1 || echo 'ninguno')) no alcanza para los conectores; instalo Python 3.12 con uv"
+  info "El python3 disponible ($(python3 -V 2>&1 || echo 'ninguno')) no alcanza para los conectores; instalo Python 3.12 con uv"
   if ! have uv; then
     run env UV_NO_MODIFY_PATH=1 sh -c 'curl -LsSf https://astral.sh/uv/install.sh | sh' \
-      || die "No se pudo instalar uv. Instalalo a mano (https://docs.astral.sh/uv/) y volvé a correr."
+      || die "No se pudo instalar uv desde https://astral.sh/uv/install.sh (¿hay conexión?)."
+    hash -r
   fi
   run uv python install 3.12 || die "uv no pudo instalar Python 3.12."
-  # uv deja python3.12 en ~/.local/bin; python3 lo creamos solo si no existe otro ahí
-  [ -e "$USER_BIN/python3" ] || run ln -s "$USER_BIN/python3.12" "$USER_BIN/python3"
-  [ "$DRY_RUN" = 1 ] && return 0
-  python_ok || die "Hay un python3 viejo en $USER_BIN que tapa al nuevo. Borralo o reemplazalo por $USER_BIN/python3.12 y volvé a correr."
-  ok "$(python3 -V 2>&1) en $(command -v python3)"
+  [ "$DRY_RUN" = 1 ] && { run ln -sfn "<python 3.12 de uv>" "$USER_BIN/python3"; return 0; }
+  have uv || die "uv quedó instalado fuera de $USER_BIN y no lo encuentro en el PATH."
+
+  # --system: que no devuelva el Python de un venv si se corre dentro de un proyecto
+  local py dest="$USER_BIN/python3"
+  py="$(uv python find --system 3.12 2>/dev/null)" && [ -x "$py" ] \
+    || die "uv dice que instaló Python 3.12 pero no lo encuentra."
+  if [ -e "$dest" ] && [ ! -L "$dest" ]; then
+    mv "$dest" "$dest.viejo-$(date +%Y%m%d-%H%M%S)"
+    warn "Había un python3 propio en $USER_BIN; quedó renombrado como $(basename "$dest").viejo-*"
+  fi
+  ln -sfn "$py" "$dest"
+  hash -r
+  python_ok || die "Python 3.12 quedó en $py pero python3 sigue resolviendo a $(command -v python3). Revisá el PATH."
+  ok "$(python3 -V 2>&1) en $dest"
+}
+
+# Para que python3, jq, claude e ideasbox se encuentren también en las próximas terminales.
+# zsh es la shell por defecto de macOS desde Catalina y lee ~/.zprofile al abrir sesión.
+persist_user_bin() {
+  local rc="$HOME/.zprofile"
+  grep -qs '\.local/bin' "$rc" && return 0
+  if [ "$DRY_RUN" = 1 ]; then run "agregar \$HOME/.local/bin al PATH en $rc"; return 0; fi
+  printf '\n# Ideas Box: binarios de usuario (python3, jq, claude, ideasbox)\nexport PATH="$HOME/.local/bin:$PATH"\n' >> "$rc"
+  ok "$USER_BIN agregado al PATH en $rc"
 }
 
 nobrew_install_base() {
   run mkdir -p "$USER_BIN"
   export PATH="$USER_BIN:$PATH"
+  persist_user_bin
   nobrew_jq
   nobrew_python
 }
