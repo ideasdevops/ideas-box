@@ -29,6 +29,7 @@ export STACK_SRC
 . "$STACK_SRC/lib/thirdparty.sh"
 . "$STACK_SRC/lib/canonical.sh"
 . "$STACK_SRC/lib/settings.sh"
+. "$STACK_SRC/lib/menu.sh"
 . "$STACK_SRC/lib/doctor.sh"
 
 SKIP_DEPS=0
@@ -99,6 +100,7 @@ install_cli() {
     *":$HOME/.local/bin:"*) ;;
     *) warn "Agregá \$HOME/.local/bin a tu PATH para usar '$STACK_NAME' directo." ;;
   esac
+  menu_install_shortcut
 }
 
 resumen() {
@@ -112,10 +114,11 @@ $(printf '%s' "$C_B")Listo.$(printf '%s' "$C_RESET")
   Runtime        $CLAUDE_CONFIG_DIR  (solo symlinks)
   Credenciales   $STACK_SECRETS_DIR  (600, fuera de ~/.claude.json)
 
-Próximos pasos:
-  1. $STACK_NAME doctor       — revisar que todo esté sano
-  2. claude                   — abrir Claude Code y pedirle "mostrame mis agentes"
-  3. $STACK_NAME mcp add <id> — sumar conectores cuando tengas las credenciales
+Cómo seguir:
+  · Abrí el ícono «Ideas Box» o escribí $STACK_NAME en una terminal. Ahí están
+    «Hablar con mis agentes», «Conectar una herramienta», «Crear una habilidad nueva»
+    y el resto de las opciones, en palabras comunes.
+  · La primera vez que hables con tus agentes, Claude te va a pedir iniciar sesión.
 
 Todo lo que genera el stack es texto plano: si algo no te sirve, editalo.
 TXT

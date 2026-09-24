@@ -71,5 +71,6 @@ state_on_exit() {
   [ -n "$STATE_CURRENT" ] && warn "La instalación se cortó durante el paso: $(_state_label "$STATE_CURRENT")."
   [ -s "$STACK_STATE" ] || return 0
   warn "Lo que ya completaste quedó guardado: $(_state_list)."
-  warn "Para seguir desde ahí, corré de nuevo: bash install.sh  (y respondé que sí a retomar)"
+  warn "Para seguir desde ahí, abrí de nuevo el menú de Ideas Box y elegí «Terminar de instalar»"
+  warn "(o en la terminal: bash install.sh). Respondé que sí a retomar."
 }

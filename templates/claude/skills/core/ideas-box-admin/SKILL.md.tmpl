@@ -1,0 +1,64 @@
+---
+name: ideas-box-admin
+description: Administra el Ideas Box de {{EMPRESA}} cuando la persona lo pide en palabras comunes — sumar habilidades, conectar herramientas, crear habilidades o conectores propios, revisar, actualizar o respaldar. Traduce el pedido al comando de {{STACK}} y lo explica sin jerga.
+argument-hint: "<lo que la persona quiere hacer>"
+allowed-tools: Read Write Edit Bash Glob Grep
+---
+
+# ideas-box-admin
+
+Quien usa Ideas Box puede no saber qué es una terminal. Hablale en palabras comunes, no le
+muestres comandos salvo que los pida, y hacé vos el trabajo técnico.
+
+## Qué pide y qué hacés
+
+| La persona dice algo como… | Qué hacés |
+|---|---|
+| "revisá que todo ande", "algo no funciona" | Corré `{{STACK}} doctor` y explicá el resultado en dos o tres frases |
+| "qué habilidades puedo sumar", "sumá marketing" | `{{STACK}} skills list`; para sumar, `{{STACK}} --yes skills add <pack>` |
+| "creá una habilidad para…" | Ver **Crear una habilidad** abajo |
+| "qué herramientas puedo conectar" | `{{STACK}} mcp list` y contalas por nombre, no por id |
+| "conectá mi Chatwoot / Instagram / …" | Ver **Conectar una herramienta** abajo |
+| "quiero conectar X y no está en la lista" | Ver **Crear un conector propio** abajo |
+| "actualizá todo" | `{{STACK}} update` |
+| "hacé un respaldo" | `{{STACK}} backup` y recordá que el archivo incluye credenciales: guardarlo cifrado |
+
+## Crear una habilidad
+1. Preguntá lo mínimo: cómo se llama, cuándo se usa y cómo lo hacen hoy (pasos, a quién se
+   avisa, qué nunca se hace sin aprobación).
+2. Elegí el área: core, dev, ops, qa, ventas, marketing, contenido, clientes o internos.
+3. Escribí `{{DATA_ROOT}}/.claude/skills/<área>/<nombre-corto>/SKILL.md` con encabezado
+   `name` y `description` (la descripción dice **cuándo** usarla), y secciones de cuándo
+   usarla, pasos y reglas.
+4. Corré `{{STACK}} sync` para que quede disponible, y contale en una frase qué va a hacer.
+
+Si ya existe (la creó el menú con «Crear una habilidad nueva»), completala en lugar de crear otra.
+
+## Conectar una herramienta
+Los datos de acceso (claves, tokens, contraseñas) **nunca se piden ni se escriben en el chat**.
+- Si el conector **no pide credenciales**, podés instalarlo vos: `{{STACK}} --yes mcp add <id>`.
+- Si **pide credenciales**, explicá qué datos va a necesitar y dónde se consiguen, y pedile que
+  abra el ícono «Ideas Box» → «Conectar una herramienta»: ahí los carga en privado.
+
+## Crear un conector propio
+1. Buscá un servidor MCP para esa herramienta. Preferí, en este orden: el oficial de la
+   empresa que hace la herramienta, uno muy usado y mantenido, y recién después uno chico.
+2. Antes de proponerlo, leé su código o su documentación: qué puede hacer, qué permisos pide,
+   si ejecuta comandos o manda datos a terceros. Contale a la persona en lenguaje común qué va a
+   poder hacer el agente y qué riesgo hay. **No sigas sin su aprobación.**
+3. Escribí la ficha en `{{DATA_ROOT}}/.claude/mcp-catalog/<id>.mcp`, con el mismo formato que
+   los de `catalog/mcp/` del repo de Ideas Box y `TIER="propio"`. Para un paquete npm:
+   `KIND="custom"`, `CMD="__NPX__"`, `ARGS_JSON='["-y","<paquete>"]'`,
+   `LAUNCH_ENV='PATH="__NODEDIR__:$PATH"'`,
+   `INSTALL_CUSTOM='PATH="__NODEDIR__:$PATH" "__NODEDIR__/npm" cache add <paquete>'`.
+   Para uno de Python: `KIND="python"`, `BUILD="venv/bin/pip install --quiet <paquete>"`,
+   `CMD="__SRC__/venv/bin/<comando>"`. Las variables de acceso van en `ENV_KEYS`, y las secretas
+   también en `ENV_SECRET`.
+4. Si pide credenciales, que la persona termine desde «Conectar una herramienta». Si no, instalalo
+   con `{{STACK}} --yes mcp add <id>`.
+
+## Reglas
+- No borres conectores, habilidades ni datos sin una confirmación explícita.
+- Si un comando falla, explicá qué pasó y qué opciones hay; no reintentes a ciegas.
+- Los comandos de {{STACK}} que preguntan cosas necesitan a la persona: en esos casos,
+  mandala al menú en lugar de correrlos vos.

@@ -20,11 +20,18 @@ export STACK_SRC
 . "$STACK_SRC/lib/thirdparty.sh"
 . "$STACK_SRC/lib/canonical.sh"
 . "$STACK_SRC/lib/settings.sh"
+. "$STACK_SRC/lib/create.sh"
+. "$STACK_SRC/lib/menu.sh"
 . "$STACK_SRC/lib/doctor.sh"
 
 usage() {
   cat <<TXT
-$STACK_NAME — mantenimiento del stack
+$STACK_NAME — tu Ideas Box
+
+  $STACK_NAME                        abre el menú (lo mismo que el ícono «Ideas Box»)
+  $STACK_NAME <lo que querés hacer>  en tus palabras, por ejemplo: $STACK_NAME conectar chatwoot
+
+Comandos técnicos (usuarios avanzados):
 
   $STACK_NAME doctor [--deep]        diagnóstico (--deep prueba cada conector de verdad)
   $STACK_NAME status                 resumen corto
@@ -32,9 +39,11 @@ $STACK_NAME — mantenimiento del stack
   $STACK_NAME mcp list               conectores del catálogo
   $STACK_NAME mcp installed          conectores instalados
   $STACK_NAME mcp add <id>           instalar un conector
+  $STACK_NAME mcp new                crear un conector propio a partir de su línea npx/uvx
   $STACK_NAME mcp remove <servidor>  quitar un conector
   $STACK_NAME skills list            packs de skills
   $STACK_NAME skills add <pack>      instalar un pack
+  $STACK_NAME skills new             crear una habilidad propia
   $STACK_NAME skills update          actualizar todos los packs
   $STACK_NAME backup                 respaldo del árbol canónico y la config
   $STACK_NAME update                 actualizar stack, packs y conectores
@@ -92,9 +101,13 @@ case "$cmd" in
         echo "Núcleo:";    mcp_catalog_list core
         echo "Negocio:";   mcp_catalog_list negocio
         echo "Opcional:";  mcp_catalog_list opcional
+        echo "Propios:";   mcp_catalog_list propio
         ;;
       installed)
         [ -s "$MCP_REGISTRY" ] && column -t -s$'\t' "$MCP_REGISTRY" || echo "(ninguno)"
+        ;;
+      new)
+        mcp_new
         ;;
       add)
         [ -n "${2:-}" ] || die "Falta el id. Verlos con: $STACK_NAME mcp list"
@@ -127,6 +140,7 @@ PY
     case "${1:-list}" in
       list)   column -t -s$'\t' "$STACK_SRC/catalog/skill-packs.tsv" ;;
       add)    [ -n "${2:-}" ] || die "Falta el pack."; thirdparty_install_pack "$2"; canonical_link ;;
+      new)    skills_new ;;
       update) thirdparty_update_all; canonical_link ;;
       *) usage; exit 1 ;;
     esac
@@ -169,6 +183,8 @@ PY
     canonical_main --force
     ;;
 
-  ""|help|-h|--help) usage ;;
-  *) err "Comando desconocido: $cmd"; usage; exit 1 ;;
+  ""|menu) menu_main ;;
+  help|-h|--help) usage ;;
+  # Cualquier otra cosa se toma como una frase: `ideasbox conectar chatwoot`
+  *) menu_main "$cmd" "$@" ;;
 esac

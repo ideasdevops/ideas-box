@@ -6,25 +6,26 @@ Convierte una máquina recién instalada —Ubuntu, Linux Mint, Debian o macOS�
 trabajo completo para operar una empresa con agentes de IA: agentes por área, skills, memoria
 canónica persistente y conectores MCP a las herramientas del negocio.
 
-```bash
-# Linux: una máquina limpia no trae git
-sudo apt update && sudo apt install -y git
+## Empezar
 
-# macOS (13 o posterior): git viene con Xcode CLT; del resto se encarga el instalador
-xcode-select --install     # si nunca lo instalaste
+1. **Bajá Ideas Box.** Abrí la Terminal (en Mac: Aplicaciones → Utilidades → Terminal) y pegá:
+   ```bash
+   git clone https://github.com/ideasdevops/ideas-box.git ~/ideas-box
+   ```
+   Si avisa que falta git: en Linux, `sudo apt install -y git`; en Mac, aceptá la ventana que
+   ofrece instalar las herramientas de Apple y volvé a pegar la línea.
+2. **Abrí el menú.** En Mac, doble clic en **Ideas Box.command**, dentro de la carpeta
+   `ideas-box` de tu usuario. En Linux, en la Terminal: `bash ~/ideas-box/bin/ideasbox`
+3. Elegí **«Instalar mi Ideas Box»** y respondé las preguntas.
 
-git clone https://github.com/ideasdevops/ideas-box.git
-cd ideas-box
-bash install.sh
-```
-
-Después de instalar, autenticá Claude Code una vez con `claude`.
+Al terminar queda el ícono **Ideas Box** en tu Escritorio (Mac) o en el menú de aplicaciones
+(Linux). Desde ahí se hace todo lo demás, sin escribir comandos.
 
 📄 **Manual de usuario completo, en PDF:** [`docs/manual/Manual-Ideas-Box.pdf`](docs/manual/Manual-Ideas-Box.pdf)
 — instalación en Linux y macOS, el asistente paso por paso, los agentes, los conectores y
 resolución de problemas. Se regenera con `bash docs/manual/build.sh`.
 
-Una sola pasada guiada. Al terminar, `claude` abre una sesión que ya conoce tu empresa.
+Una sola pasada guiada. Al terminar, «Hablar con mis agentes» abre una sesión que ya conoce tu empresa.
 
 ## Qué instala
 
@@ -48,13 +49,38 @@ Una sola pasada guiada. Al terminar, `claude` abre una sesión que ya conoce tu 
   durante la instalación.
 - **No despliega ni publica por su cuenta.** Toda acción irreversible hacia afuera pide aprobación.
 
-## Después de instalar
+## Usarlo día a día
+
+Abrí el ícono **Ideas Box** (o escribí `ideasbox` en una terminal) y elegí una opción, o escribí
+con tus palabras lo que querés hacer:
+
+| Querés… | En el menú |
+|---|---|
+| Trabajar con tus agentes | «Hablar con mis agentes» |
+| Saber si todo anda bien | «Revisar que todo esté bien» |
+| Sumar conocimientos (marketing, diseño, código…) | «Sumar habilidades» |
+| Conectar Chatwoot, Instagram, tu servidor… | «Conectar una herramienta» |
+| Enseñarles una forma de trabajo tuya | «Crear una habilidad nueva» |
+| Conectar algo que no está en la lista | «Crear un conector nuevo» |
+| Tener la última versión | «Actualizar todo» |
+| Guardar una copia de todo | «Hacer un respaldo» |
+
+La frase también se puede escribir directo: `ideasbox conectar chatwoot`, `ideasbox crear una
+habilidad`. Y dentro de Claude se pide como a una persona: *"conectá mi Instagram"*, *"creá una
+habilidad para responder presupuestos"*.
+
+### Para usuarios avanzados
+
+Todo lo del menú tiene su comando:
 
 ```bash
+bash install.sh          # instalar (= «Instalar mi Ideas Box»)
 ideasbox doctor          # ¿está todo sano?
 ideasbox status          # resumen corto
 ideasbox mcp list        # conectores disponibles
 ideasbox mcp add chatwoot
+ideasbox mcp new         # conector propio a partir de su línea npx/uvx
+ideasbox skills new      # habilidad propia
 ideasbox skills update   # actualizar los packs de terceros
 ideasbox sync            # regenerar agentes y symlinks
 ideasbox backup          # respaldo del árbol canónico
@@ -64,6 +90,7 @@ ideasbox update          # actualizar todo
 ## Cómo está organizado
 
 ```text
+Ideas Box.command       ícono de doble clic (macOS): abre el menú
 install.sh              instalador guiado, en 8 pasos
 bin/ideasbox            CLI de mantenimiento
 lib/                    un módulo por paso del instalador

@@ -11,16 +11,30 @@
 MCP_REGISTRY="$STACK_CONFIG_DIR/mcp-installed.tsv"
 MCP_LAUNCHERS="$STACK_CONFIG_DIR/launchers"
 
-mcp_catalog_files() { find "$STACK_SRC/catalog/mcp" -name '*.mcp' | sort; }
+# Conectores propios de la empresa (creados con `ideasbox mcp new`): viven en la raíz
+# de datos, junto al resto de lo canónico, y se listan después de los oficiales.
+mcp_user_catalog() { printf '%s' "${DATA_ROOT:+$DATA_ROOT/.claude/mcp-catalog}"; }
 
-# mcp_catalog_load <id> — carga un .mcp en el entorno actual
+mcp_catalog_files() {
+  find "$STACK_SRC/catalog/mcp" -name '*.mcp' | sort
+  local u; u="$(mcp_user_catalog)"
+  [ -n "$u" ] && [ -d "$u" ] && find "$u" -name '*.mcp' | sort
+  return 0
+}
+
+# Ids, no rutas: la raíz de datos puede tener espacios ("/Volumes/Mi Disco") y
+# recorrer rutas con `for f in $(…)` las partía.
+mcp_catalog_ids() { mcp_catalog_files | while IFS= read -r f; do basename "$f" .mcp; done; }
+
+# mcp_catalog_load <id> — carga un .mcp en el entorno actual (oficial primero, después propio)
 mcp_catalog_load() {
   local id="$1" f="$STACK_SRC/catalog/mcp/$1.mcp"
+  [ -f "$f" ] || f="$(mcp_user_catalog)/$1.mcp"
   [ -f "$f" ] || die "No existe el servidor MCP '$id' en el catálogo."
   # limpiar valores de una carga previa
   unset ID TITLE DESC TIER KIND REPO REF DIR BUILD CMD ARGS_JSON MULTI \
         INSTANCE_PROMPT ENV_KEYS ENV_SECRET REQUIRES_HOST NOTES TOOLGROUP \
-        LAUNCH_EXTRA_ARGS INSTALL_CUSTOM LAUNCH_ENV VENDOR
+        LAUNCH_EXTRA_ARGS INSTALL_CUSTOM LAUNCH_ENV VENDOR ORIGEN
   MULTI=0; REF="main"; BUILD=""; ENV_KEYS=""; ENV_SECRET=""; REQUIRES_HOST=""
   NOTES=""; LAUNCH_EXTRA_ARGS=""; INSTALL_CUSTOM=""; LAUNCH_ENV=""; VENDOR=""
   # shellcheck disable=SC1090
@@ -29,9 +43,9 @@ mcp_catalog_load() {
 }
 
 mcp_catalog_list() {
-  local tier_filter="${1:-}" f
-  for f in $(mcp_catalog_files); do
-    ( mcp_catalog_load "$(basename "$f" .mcp)"
+  local tier_filter="${1:-}" id
+  for id in $(mcp_catalog_ids); do
+    ( mcp_catalog_load "$id"
       [ -z "$tier_filter" ] || [ "$TIER" = "$tier_filter" ] || exit 0
       printf '  %-16s %-9s %s\n' "$ID" "[$TIER]" "$TITLE" )
   done
@@ -85,6 +99,18 @@ _mcp_fetch() {   # clona o actualiza el código fuente; deja SRC_DIR
   fi
 }
 
+# Marcadores que un .mcp puede usar: __SRC__ (código del conector), __NODE__ (binario
+# de node), __NODEDIR__ (su carpeta, para npm/npx) y __NPX__. Node puede venir de nvm
+# y no estar en el PATH de Claude Code, por eso se resuelve a rutas absolutas.
+_mcp_expand() {
+  local s="$1" nd; nd="$(dirname "${NODE_BIN:-node}")"
+  s="${s//__SRC__/$SRC_DIR}"
+  s="${s//__NODEDIR__/$nd}"
+  s="${s//__NODE__/$NODE_BIN}"
+  s="${s//__NPX__/$nd/npx}"
+  printf '%s' "$s"
+}
+
 _mcp_build() {
   case "$KIND" in
     node)
@@ -95,6 +121,13 @@ _mcp_build() {
       ;;
     python)
       info "Creando entorno Python de $ID"
+      # Un intento anterior fallido (sin ensurepip, o con el Python 3.9 de Apple) deja un
+      # venv roto que `python3 -m venv` reutiliza tal cual: si no sirve, se rehace.
+      if [ -d "$SRC_DIR/venv" ] && [ "$DRY_RUN" != 1 ] && ! "$SRC_DIR/venv/bin/python" -c \
+          'import sys, pip; sys.exit(sys.version_info < (3, 10))' >/dev/null 2>&1; then
+        warn "El entorno Python de $ID quedó roto de un intento anterior; lo rehago."
+        rm -rf "$SRC_DIR/venv"
+      fi
       run python3 -m venv "$SRC_DIR/venv" \
         || die "No se pudo crear el entorno Python de $ID. Instalá python3-venv: sudo apt install python3-venv"
       run "$SRC_DIR/venv/bin/pip" install --quiet --upgrade pip wheel
@@ -109,7 +142,7 @@ _mcp_build() {
     binary|custom)
       [ -n "$INSTALL_CUSTOM" ] || die "$ID declara KIND=$KIND pero no define INSTALL_CUSTOM"
       info "Instalando $ID"
-      run bash -c "$INSTALL_CUSTOM" || die "Falló la instalación de $ID"
+      run bash -c "$(_mcp_expand "$INSTALL_CUSTOM")" || die "Falló la instalación de $ID"
       ;;
     *) die "KIND desconocido en $ID: $KIND" ;;
   esac
@@ -151,7 +184,7 @@ _mcp_launcher() {   # crea el lanzador que carga el .env y ejecuta el servidor
   run mkdir -p "$MCP_LAUNCHERS"
   local launcher="$MCP_LAUNCHERS/$server.sh"
   local src_env="" load_env=""
-  [ -n "$LAUNCH_ENV" ] && src_env="export ${LAUNCH_ENV//__SRC__/$SRC_DIR}"
+  [ -n "$LAUNCH_ENV" ] && src_env="export $(_mcp_expand "$LAUNCH_ENV")"
   [ -n "$envfile" ] && load_env="if [ -f \"$envfile\" ]; then set -a; . \"$envfile\"; set +a; fi"
   write_file "$launcher" 700 <<EOF
 #!/usr/bin/env bash
@@ -205,11 +238,9 @@ mcp_install() {
   _mcp_build
   _mcp_env_wizard "$server"
 
-  local cmd="${CMD:-}"
-  cmd="${cmd//__SRC__/$SRC_DIR}"
-  cmd="${cmd//__NODE__/$NODE_BIN}"
-  local args="${ARGS_JSON:-[]}"
-  args="${args//__SRC__/$SRC_DIR}"
+  local cmd args
+  cmd="$(_mcp_expand "${CMD:-}")"
+  args="$(_mcp_expand "${ARGS_JSON:-[]}")"
 
   _mcp_launcher "$server" "${MCP_ENVFILE:-}" "$cmd"
   _mcp_register_claude "$server" "$MCP_LAUNCHER" "$args"
@@ -223,11 +254,10 @@ mcp_install() {
 mcp_wizard() {
   step "5/8 · Servidores MCP"
   require_cmds git python3
-  local f id
+  local id
 
   info "Instalando el núcleo (sin credenciales)"
-  for f in $(mcp_catalog_files); do
-    id="$(basename "$f" .mcp)"
+  for id in $(mcp_catalog_ids); do
     ( mcp_catalog_load "$id"; [ "$TIER" = core ] ) || continue
     # Retomando una instalación cortada no hace falta volver a compilar lo que ya quedó
     if [ "${RESUME:-0}" = 1 ] && mcp_id_installed "$id"; then ok "Ya instalado: $id"; continue; fi
@@ -244,8 +274,7 @@ mcp_wizard() {
   echo "Conectores de negocio — se instalan solo los que uses. Vas a necesitar"
   echo "las credenciales a mano; podés agregarlos después con: $STACK_NAME mcp add <id>"
   echo
-  for f in $(mcp_catalog_files); do
-    id="$(basename "$f" .mcp)"
+  for id in $(mcp_catalog_ids); do
     mcp_catalog_load "$id"
     [ "$TIER" = negocio ] || continue
     if mcp_id_installed "$id"; then
