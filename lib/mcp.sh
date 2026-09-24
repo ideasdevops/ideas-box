@@ -128,7 +128,9 @@ _mcp_build() {
         warn "El entorno Python de $ID quedó roto de un intento anterior; lo rehago."
         rm -rf "$SRC_DIR/venv"
       fi
-      run python3 -m venv "$SRC_DIR/venv" \
+      local py
+      py="$(python_venv_bin)" || die "$ID necesita Python 3.10 o posterior y no encontré ninguno (python3 es $(python3 -V 2>&1 || echo 'inexistente')). En Mac: brew install python@3.12; en Linux: sudo apt install python3-venv. Después retomá la instalación."
+      run "$py" -m venv "$SRC_DIR/venv" \
         || die "No se pudo crear el entorno Python de $ID. Instalá python3-venv: sudo apt install python3-venv"
       run "$SRC_DIR/venv/bin/pip" install --quiet --upgrade pip wheel
       if [ -n "$BUILD" ]; then

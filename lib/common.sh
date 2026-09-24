@@ -153,6 +153,25 @@ require_cmds() {
   [ ${#missing[@]} -eq 0 ] || die "Faltan comandos requeridos: ${missing[*]}"
 }
 
+# python_venv_bin — imprime un intérprete Python >= 3.10 para crear los venv de los conectores.
+# `python3` a secas no alcanza en Mac: el de Xcode CLT es 3.9 y python@3.12 de Homebrew solo
+# enlaza python3.12, no python3. Se prueban los versionados, el de Homebrew y el de uv.
+python_venv_bin() {
+  local c p brew_prefix
+  local cands=(python3.13 python3.12 python3.11 python3.10 python3 "$HOME/.local/bin/python3")
+  if have brew; then
+    brew_prefix="$(brew --prefix 2>/dev/null)"
+    [ -n "$brew_prefix" ] && cands+=("$brew_prefix/opt/python@3.12/libexec/bin/python3" "$brew_prefix/bin/python3.12")
+  fi
+  have uv && p="$(uv python find --system 3.12 2>/dev/null)" && cands+=("$p")
+  for c in "${cands[@]}"; do
+    p="$(command -v "$c" 2>/dev/null)" || continue
+    "$p" -c 'import sys; sys.exit(sys.version_info < (3, 10))' >/dev/null 2>&1 \
+      && { printf '%s\n' "$p"; return 0; }
+  done
+  return 1
+}
+
 load_profile() {
   [ -f "$STACK_PROFILE" ] || die "No hay perfil en $STACK_PROFILE. Ejecutá primero install.sh."
   # shellcheck disable=SC1090
