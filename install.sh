@@ -21,6 +21,7 @@ export STACK_SRC
 
 # shellcheck source=lib/common.sh
 . "$STACK_SRC/lib/common.sh"
+. "$STACK_SRC/lib/state.sh"
 . "$STACK_SRC/lib/deps.sh"
 . "$STACK_SRC/lib/profile.sh"
 . "$STACK_SRC/lib/datastore.sh"
@@ -46,6 +47,9 @@ Uso: bash install.sh [opciones]
   --non-interactive    no preguntar nada; toma el valor por defecto de cada opción
   --debug              salida detallada
   -h, --help           esta ayuda
+
+Si la instalación se corta, volvé a correr bash install.sh: ofrece retomar desde
+el paso que quedó, con las respuestas que ya diste.
 
 Qué hace, en orden:
   1. dependencias del sistema + Node + Claude Code
@@ -117,22 +121,36 @@ Todo lo que genera el stack es texto plano: si algo no te sirve, editalo.
 TXT
 }
 
+# Los pasos 2 y 3 guardan el perfil apenas terminan: si después algo corta la
+# instalación, las respuestas ya dadas no se pierden.
+perfil_step() { profile_wizard; profile_save; }
+datos_step()  { datastore_wizard; profile_save; }
+
 main() {
   banner
   init_input
   require_input
   [ "$DRY_RUN" = 1 ] && warn "Modo dry-run: no se modifica nada."
 
-  [ "$SKIP_DEPS" = 1 ] && { info "Salteo dependencias del sistema"; detect_os; ensure_node 2>/dev/null || true; } || deps_main
+  state_offer_resume
+  trap state_on_exit EXIT
 
-  profile_wizard
-  datastore_wizard
-  profile_save
-  thirdparty_wizard
-  mcp_wizard
-  canonical_main
-  settings_apply
-  install_cli
+  if [ "$SKIP_DEPS" = 1 ] || { [ "$RESUME" = 1 ] && state_is_done deps; }; then
+    info "Salteo dependencias del sistema"
+    deps_env_only
+  else
+    deps_main
+    state_done deps
+  fi
+
+  run_step perfil   perfil_step
+  run_step datos    datos_step
+  run_step packs    thirdparty_wizard
+  run_step mcp      mcp_wizard
+  run_step canonico canonical_main
+  run_step settings settings_apply
+  run_step cli      install_cli
+  state_clear
   resumen
 }
 

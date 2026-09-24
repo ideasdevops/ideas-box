@@ -58,6 +58,10 @@ mcp_is_installed() {
   [ -f "$MCP_REGISTRY" ] && awk -F'\t' -v s="$1" '$1==s {found=1} END{exit !found}' "$MCP_REGISTRY"
 }
 
+mcp_id_installed() {   # <id del catálogo> -> ¿hay al menos una instancia instalada?
+  [ -f "$MCP_REGISTRY" ] && awk -F'\t' -v id="$1" '$2==id {found=1} END{exit !found}' "$MCP_REGISTRY"
+}
+
 _mcp_fetch() {   # clona o actualiza el código fuente; deja SRC_DIR
   SRC_DIR="$STACK_MCP_SRC/${DIR:-$ID}"
   if [ -n "${REPO:-}" ]; then
@@ -225,6 +229,8 @@ mcp_wizard() {
   for f in $(mcp_catalog_files); do
     id="$(basename "$f" .mcp)"
     ( mcp_catalog_load "$id"; [ "$TIER" = core ] ) || continue
+    # Retomando una instalación cortada no hace falta volver a compilar lo que ya quedó
+    if [ "${RESUME:-0}" = 1 ] && mcp_id_installed "$id"; then ok "Ya instalado: $id"; continue; fi
     mcp_install "$id" || true
   done
 
@@ -242,6 +248,10 @@ mcp_wizard() {
     id="$(basename "$f" .mcp)"
     mcp_catalog_load "$id"
     [ "$TIER" = negocio ] || continue
+    if mcp_id_installed "$id"; then
+      ok "Ya instalado: $id (para sumar otra cuenta: $STACK_NAME mcp add $id)"
+      continue
+    fi
     printf '\n%s%s%s — %s\n' "$C_B" "$ID" "$C_RESET" "$DESC"
     confirm "¿Instalar $id?" n || continue
     mcp_install "$id" || continue

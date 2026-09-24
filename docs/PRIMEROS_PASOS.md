@@ -71,6 +71,7 @@ Después de agregar uno, los agentes que lo usan se actualizan solos.
 | Un conector no responde | Credenciales vencidas o vacías: revisá `~/.config/ideasbox/secrets/<servidor>.env` |
 | Editaste un agente y volvió atrás | No volvió: mirá si quedó un archivo `.nuevo` al lado con la versión del stack |
 | Tras actualizar falta una skill | `ideasbox skills update && ideasbox sync` |
+| La instalación se cortó (error, Ctrl+C, se cerró la terminal) | Volvé a correr `bash install.sh` y respondé que sí a retomar: sigue desde el paso que quedó, con las respuestas que ya diste |
 | En Mac: "command not found: brew" | Abrí una terminal nueva después de instalar Homebrew y repetí |
 | En Mac: "Homebrew on macOS is only supported on Apple Silicon processors" | Es el instalador oficial de Homebrew, que ya no soporta Intel. Actualizá Ideas Box (`git pull`): en esos Mac sigue sin Homebrew |
 | En Mac: corta diciendo que macOS es anterior a 13 | Claude Code no corre en Monterey o anteriores. Ver alternativas en el README (Linux en ese equipo, o subir de versión de macOS) |

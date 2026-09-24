@@ -301,6 +301,16 @@ ensure_docker() {
   warn "Cerrá sesión y volvé a entrar para que tu usuario tome el grupo docker."
 }
 
+# Cuando el paso 1 se saltea (--skip-deps, o retomando una instalación cortada), los
+# pasos siguientes igual necesitan el entorno que ese paso deja: PATH y Node.
+deps_env_only() {
+  detect_os
+  export PATH="$USER_BIN:$PATH"
+  is_mac && _brew_to_path
+  hash -r
+  ensure_node 2>/dev/null || true
+}
+
 deps_main() {
   step "1/8 · Dependencias del sistema"
   detect_os

@@ -74,6 +74,9 @@ thirdparty_wizard() {
         ;;
     esac
   done < <(_pack_rows)
+  # El bucle devuelve lo que dio la última pregunta: un "no" al último pack opcional
+  # hacía que install.sh (con set -e) terminara acá, en silencio.
+  return 0
 }
 
 thirdparty_update_all() {

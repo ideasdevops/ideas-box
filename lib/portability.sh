@@ -73,15 +73,18 @@ tsv_drop() {
   awk -F'\t' -v k="$key" '$1 != k' "$f"
 }
 
-# deaccent <texto> — transliteración mínima; el //TRANSLIT de iconv no es fiable en macOS
+# deaccent <texto> — transliteración mínima; el //TRANSLIT de iconv no es fiable en macOS.
+# Reemplazos s/// byte a byte y no `sed y/…/`: y cuenta caracteres, y sin un locale UTF-8
+# (LANG vacío, sudo, cron) una "á" son dos bytes, falla, y confirm() dejaba de reconocer el sí.
+_DEACCENT_SED=""
+for _par in á:a à:a ä:a â:a ã:a Á:A À:A Ä:A Â:A Ã:A é:e è:e ë:e ê:e É:E È:E Ë:E Ê:E \
+            í:i ì:i ï:i î:i Í:I Ì:I Ï:I Î:I ó:o ò:o ö:o ô:o õ:o Ó:O Ò:O Ö:O Ô:O Õ:O \
+            ú:u ù:u ü:u û:u Ú:U Ù:U Ü:U Û:U ñ:n Ñ:N ç:c Ç:C; do
+  _DEACCENT_SED="${_DEACCENT_SED}s/${_par%%:*}/${_par#*:}/g;"
+done
+unset _par
 deaccent() {
-  printf '%s' "$1" | sed \
-    -e 'y/áàäâãÁÀÄÂÃ/aaaaaAAAAA/' \
-    -e 'y/éèëêÉÈËÊ/eeeeEEEE/' \
-    -e 'y/íìïîÍÌÏÎ/iiiiIIII/' \
-    -e 'y/óòöôõÓÒÖÔÕ/oooooOOOOO/' \
-    -e 'y/úùüûÚÙÜÛ/uuuuUUUU/' \
-    -e 'y/ñÑçÇ/nNcC/'
+  printf '%s' "$1" | LC_ALL=C sed -e "$_DEACCENT_SED"
 }
 
 # tz_current — zona horaria del sistema
