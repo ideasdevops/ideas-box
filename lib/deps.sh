@@ -187,12 +187,64 @@ nobrew_install_media() {
   have magick || have convert || info "  ImageMagick: https://imagemagick.org/script/download.php#macosx"
 }
 
+# xcode-select -p puede devolver una ruta que ya no existe (CLT borradas a mano o una
+# actualización de macOS que las invalidó): se confirma que haya un git real adentro.
+_clt_ok() {
+  local d
+  d="$(xcode-select -p 2>/dev/null)" && [ -x "$d/usr/bin/git" ]
+}
+
+# Instalación sin ventana, igual que el instalador de Homebrew: el archivo de marca hace que
+# softwareupdate liste las CLT como disponibles. La ventana de xcode-select --install falla
+# seguido con "no disponible en el servidor de actualización"; este camino no.
+_clt_softwareupdate() {
+  local marca="/tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress" label
+  touch "$marca"
+  info "Buscando las herramientas en el servidor de Apple (puede tardar un minuto)"
+  label="$(softwareupdate -l 2>/dev/null \
+    | grep -B 1 -E 'Command Line Tools' \
+    | awk -F'*' '/^ *\*/ { print $2 }' \
+    | sed -e 's/^ *Label: //' -e 's/^ *//' \
+    | grep -vi beta \
+    | sort -V | tail -n 1)"
+  if [ -z "$label" ]; then
+    rm -f "$marca"
+    warn "softwareupdate no ofrece las herramientas de línea de comandos para este macOS."
+    return 1
+  fi
+  info "Instalando «$label» con softwareupdate: pide tu contraseña de administrador y tarda de 5 a 15 minutos"
+  _need_sudo
+  run $SUDO softwareupdate -i "$label" --verbose || { rm -f "$marca"; return 1; }
+  rm -f "$marca"
+  [ "$DRY_RUN" = 1 ] && return 0
+  run $SUDO xcode-select --switch /Library/Developer/CommandLineTools || true
+  _clt_ok
+}
+
 ensure_xcode_clt() {
-  xcode-select -p >/dev/null 2>&1 && { ok "Herramientas de línea de comandos de Xcode presentes"; return 0; }
+  _clt_ok && { ok "Herramientas de línea de comandos de Xcode presentes"; return 0; }
   warn "Faltan las herramientas de línea de comandos de Xcode (compilador, git, make)."
-  info "Se va a abrir el instalador gráfico de Apple; aceptalo y esperá a que termine."
+  if _clt_softwareupdate; then
+    ok "Herramientas de línea de comandos de Xcode instaladas"
+    return 0
+  fi
+
+  # Plan B: la ventana de Apple, y si tampoco anda, la descarga manual
+  warn "No se pudieron instalar con softwareupdate. Pruebo con el instalador gráfico de Apple."
   run xcode-select --install || true
-  die "Cuando termine la instalación de Xcode CLT, volvé a correr install.sh."
+  info "Si la ventana falla o no aparece, bajalas a mano (con tu Apple ID, gratis):"
+  info "  https://developer.apple.com/download/all/?q=command%20line%20tools"
+  info "  Elegí la versión más nueva que diga compatible con tu macOS ($OS_VERSION) e instalá el .dmg."
+  if [ "$NON_INTERACTIVE" = 1 ] || [ -z "$STACK_TTY" ]; then
+    die "Cuando termine la instalación de Xcode CLT, volvé a correr install.sh."
+  fi
+  # Se espera acá en vez de cortar: al terminar la instalación se sigue sin relanzar nada
+  until _clt_ok; do
+    confirm "¿Ya terminó la instalación? (Enter para comprobar, n para salir)" y \
+      || die "Cuando termine la instalación de Xcode CLT, volvé a correr install.sh."
+    _clt_ok || warn "Todavía no las encuentro."
+  done
+  ok "Herramientas de línea de comandos de Xcode instaladas"
 }
 
 brew_install() {
