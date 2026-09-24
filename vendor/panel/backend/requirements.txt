@@ -1,0 +1,5 @@
+# Dependencias del panel. Pines con límite superior: el panel se instala en
+# máquinas nuevas durante meses y una major de FastAPI o Pydantic rompe.
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.30,<1.0
+pydantic>=2.7,<3.0

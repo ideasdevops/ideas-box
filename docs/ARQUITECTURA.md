@@ -69,6 +69,7 @@ que él mismo creó.
 6. canonical   render de agentes, skills, docs, memoria     → $DATA_ROOT/.claude
 7. link        symlinks de runtime                          → ~/.claude
 8. settings    permisos, denegaciones y hook de arranque    → ~/.claude/settings.json
+9. panel       tablero web local de tareas (opcional)       → ~/.local/share/ideasbox/panel
 ```
 
 Cada paso es idempotente: volver a correr el instalador actualiza en vez de duplicar.
@@ -87,6 +88,23 @@ paquetes (`apt` contra Homebrew, en `lib/deps.sh`) y detección de discos (`lsbl
 Una restricción que conviene respetar al contribuir: **macOS trae bash 3.2**, así que nada de
 `mapfile`, `readarray`, `${var,,}`, `${var^^}` ni arrays asociativos. El instalador verifica la
 versión y avisa antes de fallar de forma rara.
+
+### 7. El panel programa tareas, no las ejecuta a escondidas
+
+El panel de control (`vendor/panel`) es un tablero de tareas sobre el mismo
+catálogo de agentes, skills y conectores que usa Claude Code. Dos decisiones lo
+mantienen honesto:
+
+- **Los catálogos son solo lectura.** Agentes y skills se escanean de la raíz de
+  datos; los servidores salen de `mcp-installed.tsv`, no de una lista escrita a
+  mano. Instalar un conector lo hace aparecer en el panel sin tocar nada.
+- **Nunca publica ni despliega solo.** Puede redactar contenido y avisar que
+  quedó listo; la acción irreversible hacia afuera la hace una persona, o un
+  agente en una sesión de Claude Code donde el control de aprobación existe de
+  verdad. El backend del panel no tiene credenciales de ninguna red social.
+
+Las tareas se guardan en `$DATA_ROOT/05-OPERACIONES/panel/`, no en el home: son
+datos de la empresa y tienen que viajar con el backup, igual que la memoria.
 
 ## Extender el stack
 

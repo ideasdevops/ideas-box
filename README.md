@@ -37,6 +37,7 @@ Una sola pasada guiada. Al terminar, «Hablar con mis agentes» abre una sesión
 | **~20 skills propios** | Procedimientos de trabajo: bugfix, release, propuestas, campañas, bitácoras, memoria |
 | **Packs de skills** | Marketing, diseño y disciplina de código, clonados de sus repos originales |
 | **Conectores MCP** | Búsqueda web, grafo de código, bandeja de atención, panel de servidores, SSH, redes sociales, video |
+| **Panel de control** | Tablero web local para programar tareas a los agentes (opcional) |
 | **Reglas** | Autonomía, zonas protegidas y qué requiere aprobación explícita |
 
 ## Lo que NO hace
@@ -85,13 +86,15 @@ ideasbox skills update   # actualizar los packs de terceros
 ideasbox sync            # regenerar agentes y symlinks
 ideasbox backup          # respaldo del árbol canónico
 ideasbox update          # actualizar todo
+ideasbox panel install   # tablero web local de tareas
+ideasbox panel start     # abrirlo en http://127.0.0.1:8420
 ```
 
 ## Cómo está organizado
 
 ```text
 Ideas Box.command       ícono de doble clic (macOS): abre el menú
-install.sh              instalador guiado, en 8 pasos
+install.sh              instalador guiado, en 9 pasos
 bin/ideasbox            CLI de mantenimiento
 lib/                    un módulo por paso del instalador
 catalog/mcp/*.mcp       un archivo declarativo por conector
@@ -100,6 +103,7 @@ catalog/tool-groups.tsv grupos de herramientas MCP que expanden los agentes
 templates/claude/       agentes, skills, docs y memoria (con variables {{EMPRESA}}, {{DATA_ROOT}})
 templates/home/         CLAUDE.md y hooks del home
 docs/manual/            manual de usuario en PDF, con su fuente HTML regenerable
+vendor/panel/           panel de control local (backend FastAPI + interfaz React)
 tools/render.py         renderizador de plantillas
 tools/check-leaks.sh    verifica que no se filtren datos ni credenciales
 vendor/                 código propio que se distribuye con el stack

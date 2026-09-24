@@ -22,6 +22,7 @@ export STACK_SRC
 . "$STACK_SRC/lib/settings.sh"
 . "$STACK_SRC/lib/create.sh"
 . "$STACK_SRC/lib/menu.sh"
+. "$STACK_SRC/lib/panel.sh"
 . "$STACK_SRC/lib/doctor.sh"
 
 usage() {
@@ -45,6 +46,7 @@ Comandos técnicos (usuarios avanzados):
   $STACK_NAME skills add <pack>      instalar un pack
   $STACK_NAME skills new             crear una habilidad propia
   $STACK_NAME skills update          actualizar todos los packs
+  $STACK_NAME panel <acción>         panel de control local (install/start/stop/status/logs)
   $STACK_NAME backup                 respaldo del árbol canónico y la config
   $STACK_NAME update                 actualizar stack, packs y conectores
   $STACK_NAME profile                editar la identidad de la empresa
@@ -86,12 +88,17 @@ case "$cmd" in
     printf '  skills   %s\n' "$(find "$DATA_ROOT/.claude/skills" -maxdepth 2 -mindepth 2 2>/dev/null | wc -l)"
     printf '  memoria  %s notas\n' "$(find "$DATA_ROOT/.claude/memory" -name '*.md' 2>/dev/null | wc -l)"
     printf '  MCP      %s conectores\n' "$([ -f "$MCP_REGISTRY" ] && wc -l < "$MCP_REGISTRY" || echo 0)"
+    panel_status
     ;;
 
   sync)
     load_profile
     canonical_main "${1:-}"
     settings_apply
+    ;;
+
+  panel)
+    panel_main "${1:-status}" "${2:-}"
     ;;
 
   mcp)

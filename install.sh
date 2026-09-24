@@ -33,6 +33,7 @@ INSTALL_ARGS=("$@")
 . "$STACK_SRC/lib/canonical.sh"
 . "$STACK_SRC/lib/settings.sh"
 . "$STACK_SRC/lib/menu.sh"
+. "$STACK_SRC/lib/panel.sh"
 . "$STACK_SRC/lib/doctor.sh"
 
 SKIP_DEPS=0
@@ -64,6 +65,7 @@ Qué hace, en orden:
   6. agentes, skills propios, documentación y memoria
   7. symlinks de runtime en ~/.claude
   8. permisos y hooks de Claude Code
+  9. panel de control local (opcional)
 TXT
 }
 
@@ -122,6 +124,7 @@ Cómo seguir:
     «Hablar con mis agentes», «Conectar una herramienta», «Crear una habilidad nueva»
     y el resto de las opciones, en palabras comunes.
   · La primera vez que hables con tus agentes, Claude te va a pedir iniciar sesión.
+  · Si instalaste el tablero de tareas: $STACK_NAME panel start
 
 Todo lo que genera el stack es texto plano: si algo no te sirve, editalo.
 TXT
@@ -156,6 +159,7 @@ main() {
   run_step canonico canonical_main
   run_step settings settings_apply
   run_step cli      install_cli
+  run_step panel    panel_wizard
   state_clear
   resumen
 }
