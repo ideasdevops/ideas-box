@@ -24,7 +24,7 @@
 
 <!-- ═══════════════ ÍNDICE ═══════════════ -->
 <h2 class="sinquiebre"><span class="num">—</span>Contenido</h2>
-<p class="sub">Trece secciones. Si venís a instalar y nada más, leé la 2, la 3 o la 4 según tu sistema, y la 6.</p>
+<p class="sub">Catorce secciones. Si venís a instalar y nada más, leé la 2, la 3 o la 4 según tu sistema, y la 6. La 14 reúne los comandos reales de todo el proceso.</p>
 
 <div class="indice">
   <div><b>1</b>Qué es Ideas Box<span>Qué instala y qué no hace por vos</span></div>
@@ -40,6 +40,7 @@
   <div><b>11</b>Reglas de seguridad<span>Aprobaciones, secretos y borrado</span></div>
   <div><b>12</b>Problemas frecuentes<span>Síntoma, causa y solución</span></div>
   <div><b>13</b>Soporte<span>Cómo reportar y dónde seguir</span></div>
+  <div><b>14</b>Referencia técnica<span>Los comandos reales de todo el proceso</span></div>
 </div>
 
 <!-- ═══════════════ 1 ═══════════════ -->
@@ -637,6 +638,97 @@ Si querés acompañamiento en esa etapa, <strong>IdeasDevOps</strong> lo hace co
   base de datos propietaria ni formato cerrado. Podés leerlo, editarlo, versionarlo con git y llevártelo.
   Es tuyo.</p>
 </div>
+
+<!-- ═══════════════ 14 ═══════════════ -->
+<h2><span class="num">14</span>Referencia técnica: todos los comandos</h2>
+<p class="sub">El proceso completo con los comandos reales que corre el menú, para quien prefiere la terminal o necesita diagnosticar.</p>
+
+<h3>1 · Bajar Ideas Box</h3>
+<pre><code><span class="c"># Linux (Ubuntu, Mint, Debian)</span>
+sudo apt update &amp;&amp; sudo apt install -y git
+git clone https://github.com/ideasdevops/ideas-box.git ~/ideas-box
+
+<span class="c"># macOS 13 o posterior: primero las herramientas de línea de comandos de Apple</span>
+xcode-select --install
+git clone https://github.com/ideasdevops/ideas-box.git ~/ideas-box
+
+<span class="c"># Si macOS bloquea «Ideas Box.command» por el origen (por ejemplo, si vino en un .zip)</span>
+xattr -d com.apple.quarantine ~/ideas-box/"Ideas Box.command"
+chmod +x ~/ideas-box/"Ideas Box.command"</code></pre>
+
+<h3>2 · Abrir el menú</h3>
+<pre><code>bash ~/ideas-box/bin/ideasbox        <span class="c"># antes de instalar</span>
+ideasbox                             <span class="c"># después de instalar (o el ícono «Ideas Box»)</span>
+ideasbox conectar chatwoot           <span class="c"># una frase directa, sin pasar por el menú</span></code></pre>
+
+<h3>3 · Instalar</h3>
+<pre><code>cd ~/ideas-box
+bash install.sh                      <span class="c"># = «Instalar mi Ideas Box»</span>
+bash install.sh --dry-run            <span class="c"># mostrar qué haría, sin tocar nada</span>
+bash install.sh --data-root ~/mi-empresa-data --empresa "Mi Empresa"
+bash install.sh --skip-deps          <span class="c"># sin instalar paquetes del sistema</span>
+bash install.sh --non-interactive    <span class="c"># sin preguntas: toma cada valor por defecto</span>
+bash install.sh --yes --debug        <span class="c"># aceptar todo y mostrar el detalle</span>
+
+<span class="c"># Si se cortó: volver a correrlo y responder que sí a retomar</span>
+bash install.sh
+
+<span class="c"># Guardar todo lo que pasa en un archivo, para mandarlo a soporte</span>
+script -q ~/ideasbox-install.log bash install.sh --debug</code></pre>
+
+<h3>4 · Cada opción del menú y su comando</h3>
+<table>
+  <tr><th style="width:38%">En el menú</th><th>Comando</th></tr>
+  <tr><td>Hablar con mis agentes</td><td><code>cd ~ &amp;&amp; claude</code></td></tr>
+  <tr><td>Revisar que todo esté bien</td><td><code>ideasbox doctor</code> · <code>ideasbox doctor --deep</code> (arranca cada conector)</td></tr>
+  <tr><td>Sumar habilidades</td><td><code>ideasbox skills list</code> · <code>ideasbox skills add marketing</code></td></tr>
+  <tr><td>Conectar una herramienta</td><td><code>ideasbox mcp list</code> · <code>ideasbox mcp add chatwoot</code></td></tr>
+  <tr><td>Crear una habilidad nueva</td><td><code>ideasbox skills new</code></td></tr>
+  <tr><td>Crear un conector nuevo</td><td><code>ideasbox mcp new</code> (pide la línea <code>npx …</code> o <code>uvx …</code>)</td></tr>
+  <tr><td>Actualizar todo</td><td><code>ideasbox update</code></td></tr>
+  <tr><td>Hacer un respaldo</td><td><code>ideasbox backup</code></td></tr>
+  <tr><td>Completar o rehacer la instalación</td><td><code>bash ~/ideas-box/install.sh</code></td></tr>
+</table>
+
+<h3>5 · Mantenimiento</h3>
+<pre><code>ideasbox status                      <span class="c"># resumen: agentes, skills, memoria y conectores</span>
+ideasbox sync                        <span class="c"># regenerar agentes y documentación, reparar enlaces</span>
+ideasbox sync --force                <span class="c"># regenerar pisando también lo que editaste</span>
+ideasbox mcp installed               <span class="c"># conectores instalados</span>
+ideasbox mcp remove chatwoot-ventas  <span class="c"># quitar un conector y sus credenciales</span>
+ideasbox skills update               <span class="c"># actualizar los packs de habilidades</span>
+ideasbox profile                     <span class="c"># editar los datos de la empresa y regenerar</span>
+ideasbox help                        <span class="c"># ayuda completa</span>
+
+<span class="c"># Opciones de cualquier comando: --dry-run (sin ejecutar), --yes (aceptar todo), --debug</span>
+ideasbox --yes mcp add ponytail
+
+<span class="c"># Actualizar solo el código de Ideas Box</span>
+cd ~/ideas-box &amp;&amp; git pull</code></pre>
+
+<h3>6 · Diagnóstico para soporte</h3>
+<pre><code>sw_vers &amp;&amp; uname -m                  <span class="c"># macOS (x86_64 = Intel, arm64 = Apple Silicon)</span>
+lsb_release -a &amp;&amp; uname -m           <span class="c"># Linux</span>
+ideasbox doctor --deep               <span class="c"># estado de todo, probando cada conector</span>
+bash ~/ideas-box/tools/mcp-probe.sh chatwoot-ventas   <span class="c"># probar un conector solo</span></code></pre>
+
+<h3>7 · Dónde queda cada cosa</h3>
+<table>
+  <tr><th style="width:44%">Ruta</th><th>Qué es</th></tr>
+  <tr><td><code>&lt;raíz de datos&gt;/.claude/</code></td><td>Agentes, habilidades, memoria y documentación: la fuente de verdad</td></tr>
+  <tr><td><code>&lt;raíz de datos&gt;/.claude/mcp-catalog/</code></td><td>Conectores propios creados con <code>ideasbox mcp new</code></td></tr>
+  <tr><td><code>~/.claude/</code></td><td>Solo enlaces a la raíz de datos, más la configuración de Claude Code</td></tr>
+  <tr><td><code>~/.claude.json</code></td><td>Registro de conectores para Claude Code (sin credenciales)</td></tr>
+  <tr><td><code>~/.config/ideasbox/empresa.conf</code></td><td>Datos de la empresa y ubicación de la raíz de datos</td></tr>
+  <tr><td><code>~/.config/ideasbox/secrets/</code></td><td>Credenciales, un archivo por conector, con permisos 600</td></tr>
+  <tr><td><code>~/.config/ideasbox/launchers/</code></td><td>Lanzador de cada conector: carga sus credenciales y lo arranca</td></tr>
+  <tr><td><code>~/.config/ideasbox/mcp-installed.tsv</code></td><td>Conectores instalados</td></tr>
+  <tr><td><code>~/.config/ideasbox/locks.tsv</code></td><td>Versiones instaladas de cada componente</td></tr>
+  <tr><td><code>~/.config/ideasbox/install.state</code></td><td>Avance de una instalación cortada; se borra al terminar bien</td></tr>
+  <tr><td><code>~/.local/share/mcp-servers/</code></td><td>Código de los conectores</td></tr>
+  <tr><td><code>~/.local/bin/</code></td><td><code>ideasbox</code>, <code>claude</code> y, en Mac sin Homebrew, <code>python3</code>, <code>jq</code> y <code>uv</code></td></tr>
+  <tr><td><code>~/Desktop/Ideas Box.command</code> · <code>~/.local/share/applications/ideas-box.desktop</code></td><td>El ícono, en macOS y en Linux</td></tr>
+</table>
 
 <p style="margin-top:12mm;padding-top:5mm;border-top:2px solid #e4e7ee;font-size:9pt;color:#6b7280">
   <strong style="color:#0d1220">Ideas Box</strong> · Manual de instalación y uso · versión 0.1.0<br>
