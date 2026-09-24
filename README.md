@@ -135,10 +135,18 @@ datos aparte" se resuelve con un volumen APFS o un disco externo montado en `/Vo
 
 ## Licencia
 
-Ideas Box se publica bajo licencia **MIT** — ver [LICENSE](LICENSE). Usalo, modificalo y
-vendé servicios sobre él; lo único que pedimos es que se mantenga el aviso de copyright.
+Copyright © 2026 IdeasDevOps & Disruptia AI.
+
+Ideas Box es software libre, publicado bajo la **GNU Affero General Public License v3.0**
+(AGPL-3.0) — ver [LICENSE](LICENSE). Podés usarlo, estudiarlo, modificarlo y vender servicios
+sobre él, también comercialmente. Usarlo tal cual no te obliga a publicar nada.
+
+La condición es una: si **distribuís una versión modificada**, o la **ofrecés a otros a través de
+una red** (por ejemplo, como servicio en línea), tenés que entregar su código fuente completo bajo
+esta misma licencia y conservar los avisos de copyright. Así Ideas Box sigue siendo abierto para
+todos, incluso cuando alguien lo mejora.
 
 Los packs de skills y los servidores MCP de terceros **no se redistribuyen**: se clonan de sus
 repositorios originales durante la instalación, cada uno **bajo su propia licencia**, que puede
-no ser MIT. `catalog/` y `docs/TERCEROS.md` listan el origen de cada uno: revisalos antes de
+no ser AGPL. `catalog/` y `docs/TERCEROS.md` listan el origen de cada uno: revisalos antes de
 usarlos comercialmente.
