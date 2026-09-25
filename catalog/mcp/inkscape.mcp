@@ -7,6 +7,10 @@ REPO="https://github.com/sandraschi/inkscape-mcp.git"
 REF="main"
 DIR="inkscape-mcp"
 CMD="__SRC__/venv/bin/python"
+# pyproject pide inkex, que arrastra PyGObject/pycairo y necesita las cabeceras de cairo y
+# gobject-introspection para compilar. Solo lo usan los plugins que corren dentro de Inkscape
+# (que trae su propio inkex): el servidor MCP arranca sin él.
+BUILD="venv/bin/python -c \"import tomllib; print('\\n'.join(d for d in tomllib.load(open('pyproject.toml','rb'))['project']['dependencies'] if not d.replace(' ','').lower().startswith('inkex')))\" > .ideasbox-reqs.txt && venv/bin/pip install --quiet -r .ideasbox-reqs.txt && venv/bin/pip install --quiet --no-deps ."
 ARGS_JSON='["-m", "inkscape_mcp.main", "--mode", "stdio"]'
 REQUIRES_HOST="inkscape"
 ENV_KEYS="INKSCAPE_PATH"

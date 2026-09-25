@@ -166,10 +166,27 @@ python_venv_bin() {
   have uv && p="$(uv python find --system 3.12 2>/dev/null)" && cands+=("$p")
   for c in "${cands[@]}"; do
     p="$(command -v "$c" 2>/dev/null)" || continue
-    "$p" -c 'import sys; sys.exit(sys.version_info < (3, 10))' >/dev/null 2>&1 \
+    # ensurepip: en Ubuntu puede haber un python3.X sin su paquete -venv, que no arma venvs
+    "$p" -c 'import sys, ensurepip; sys.exit(sys.version_info < (3, 10))' >/dev/null 2>&1 \
       && { printf '%s\n' "$p"; return 0; }
   done
   return 1
+}
+
+# python_uv_312 — imprime un Python 3.12 de uv, instalando uv si hace falta (sin sudo ni
+# compilar). Es el plan B cuando el Python del sistema es tan nuevo (Ubuntu con 3.14) que
+# alguna dependencia de un conector todavía no publica binarios para él.
+python_uv_312() {
+  local uv py
+  uv="$(command -v uv 2>/dev/null)" || uv="$HOME/.local/bin/uv"
+  if [ ! -x "$uv" ]; then
+    have curl || return 1
+    env UV_NO_MODIFY_PATH=1 sh -c 'curl -LsSf https://astral.sh/uv/install.sh | sh' >&2 || return 1
+    [ -x "$uv" ] || return 1
+  fi
+  "$uv" python install 3.12 >&2 || return 1
+  py="$("$uv" python find --system 3.12 2>/dev/null)" && [ -x "$py" ] || return 1
+  printf '%s\n' "$py"
 }
 
 load_profile() {

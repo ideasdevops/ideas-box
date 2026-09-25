@@ -6,7 +6,9 @@ KIND="python"
 REPO="https://github.com/misbahsy/video-audio-mcp.git"
 REF="main"
 DIR="video-audio-mcp"
-BUILD="venv/bin/pip install --quiet -r requirements.txt"
+# requirements.txt fija pillow==10.0.0 (solo para sus tests), que no tiene binarios para
+# Python 3.14 y no compila: se instala solo lo que server.py importa.
+BUILD="venv/bin/pip install --quiet 'mcp[cli]>=1.9.0,<2' 'ffmpeg-python>=0.2.0'"
 CMD="__SRC__/venv/bin/python"
 ARGS_JSON='["__SRC__/server.py"]'
 REQUIRES_HOST="ffmpeg"

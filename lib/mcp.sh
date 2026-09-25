@@ -111,6 +111,21 @@ _mcp_expand() {
   printf '%s' "$s"
 }
 
+# _mcp_python_env <python> — crea el venv del conector e instala sus dependencias.
+_mcp_python_env() {
+  local py="$1"
+  run "$py" -m venv "$SRC_DIR/venv" \
+    || die "No se pudo crear el entorno Python de $ID. Instalá python3-venv: sudo apt install python3-venv"
+  run "$SRC_DIR/venv/bin/pip" install --quiet --upgrade pip wheel || return 1
+  if [ -n "$BUILD" ]; then
+    run bash -c "cd '$SRC_DIR' && $BUILD"
+  elif [ -f "$SRC_DIR/pyproject.toml" ] || [ -f "$SRC_DIR/setup.py" ]; then
+    run "$SRC_DIR/venv/bin/pip" install --quiet "$SRC_DIR"
+  elif [ -f "$SRC_DIR/requirements.txt" ]; then
+    run "$SRC_DIR/venv/bin/pip" install --quiet -r "$SRC_DIR/requirements.txt"
+  fi
+}
+
 _mcp_build() {
   case "$KIND" in
     node)
@@ -130,16 +145,15 @@ _mcp_build() {
       fi
       local py
       py="$(python_venv_bin)" || die "$ID necesita Python 3.10 o posterior y no encontré ninguno (python3 es $(python3 -V 2>&1 || echo 'inexistente')). En Mac: brew install python@3.12; en Linux: sudo apt install python3-venv. Después retomá la instalación."
-      run "$py" -m venv "$SRC_DIR/venv" \
-        || die "No se pudo crear el entorno Python de $ID. Instalá python3-venv: sudo apt install python3-venv"
-      run "$SRC_DIR/venv/bin/pip" install --quiet --upgrade pip wheel
-      if [ -n "$BUILD" ]; then
-        run bash -c "cd '$SRC_DIR' && $BUILD" || die "Falló la instalación de $ID"
-      elif [ -f "$SRC_DIR/pyproject.toml" ] || [ -f "$SRC_DIR/setup.py" ]; then
-        run "$SRC_DIR/venv/bin/pip" install --quiet "$SRC_DIR"
-      elif [ -f "$SRC_DIR/requirements.txt" ]; then
-        run "$SRC_DIR/venv/bin/pip" install --quiet -r "$SRC_DIR/requirements.txt"
-      fi
+      _mcp_python_env "$py" && return 0
+      # Un Python muy nuevo (Ubuntu trae 3.14) puede no tener todavía binarios de alguna
+      # dependencia fijada por el conector: se reintenta una vez con un 3.12 de uv.
+      "$py" -c 'import sys; sys.exit(sys.version_info < (3, 14))' 2>/dev/null \
+        || die "Falló la instalación de $ID"
+      warn "$ID no se pudo instalar con $("$py" -V 2>&1); reintento con Python 3.12 (uv, sin sudo)."
+      py="$(python_uv_312)" || die "Falló la instalación de $ID y no pude conseguir Python 3.12 con uv (¿hay conexión?)."
+      rm -rf "$SRC_DIR/venv"
+      _mcp_python_env "$py" || die "Falló la instalación de $ID también con $("$py" -V 2>&1)"
       ;;
     binary|custom)
       [ -n "$INSTALL_CUSTOM" ] || die "$ID declara KIND=$KIND pero no define INSTALL_CUSTOM"
