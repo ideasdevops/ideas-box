@@ -17,6 +17,13 @@ os_detect_kernel
 
 is_mac() { [ "$STACK_OS" = macos ]; }
 
+# Windows 11 se soporta a través de Ubuntu en WSL: es Linux, salvo para lo que tiene que
+# verse del lado de Windows (el ícono del Escritorio).
+is_wsl() {
+  [ "$STACK_OS" = linux ] || return 1
+  [ -n "${WSL_DISTRO_NAME:-}" ] || grep -qi microsoft /proc/sys/kernel/osrelease 2>/dev/null
+}
+
 # path_resolve <ruta> — equivalente portable de `readlink -f`
 path_resolve() {
   local p="$1"

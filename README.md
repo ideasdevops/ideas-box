@@ -115,6 +115,7 @@ vendor/                 código propio que se distribuye con el stack
 | Sistema | Qué necesita |
 |---|---|
 | Ubuntu · Linux Mint · Debian | `apt`, usuario con sudo, `git` para clonar |
+| Windows 11 (dentro de Ubuntu en WSL) | Ubuntu instalado con `wsl --install`; Ideas Box se instala en esa terminal de Ubuntu como en cualquier Linux. El ícono queda en el Escritorio y el menú Inicio de Windows. No hay versión nativa para Windows |
 | macOS 13 o posterior (Intel y Apple Silicon) | Herramientas de línea de comandos de Xcode. En Apple Silicon con macOS 15+ el script instala Homebrew si falta; en Intel o en macOS más viejo usa el Homebrew que ya tengas o, si no hay, baja jq, Python y Node sueltos a `~/.local/bin` |
 
 macOS 12 (Monterey) y anteriores no sirven: Claude Code solo publica binarios para macOS 13 en

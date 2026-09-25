@@ -268,8 +268,64 @@ _linux_install_icon() {
   echo "$base/512x512/apps/ideas-box.png"
 }
 
+# WSL: un .desktop dentro de Ubuntu no aparece en Windows. Se crea un acceso directo .lnk
+# de Windows (menú Inicio y, si se acepta, Escritorio) que abre wsl.exe en esta distro y
+# lanza el menú. El .ico se copia a %LOCALAPPDATA%\IdeasBox: apuntarlo a \\wsl.localhost
+# deja el ícono en blanco mientras la distro está apagada.
+_wsl_powershell() {
+  local p
+  p="$(command -v powershell.exe 2>/dev/null)" && { echo "$p"; return 0; }
+  p="$(wslpath -u 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe' 2>/dev/null)"
+  [ -x "$p" ] && echo "$p"
+}
+
+_wsl_install_shortcut() {
+  local cli="$1" ps ico_win distro args desk_ps='$false' script
+  ps="$(_wsl_powershell)" || ps=""
+  if [ -z "$ps" ] || ! have wslpath || ! have iconv || ! have base64; then
+    warn "No pude hablar con Windows desde Ubuntu (¿interoperabilidad de WSL desactivada?)."
+    info "Abrí Ideas Box desde la terminal de Ubuntu escribiendo: $STACK_NAME"
+    return 0
+  fi
+  confirm "¿Crear también el ícono «Ideas Box» en tu Escritorio de Windows?" y && desk_ps='$true'
+  ico_win="$(wslpath -w "$STACK_SRC/assets/icon/ideas-box.ico")"
+  distro="${WSL_DISTRO_NAME:+-d $WSL_DISTRO_NAME }"
+  # bash -li: carga el PATH del usuario (nvm, ~/.local/bin) como una terminal normal
+  args="${distro}--cd ~ -e bash -lic \"exec '$cli' menu\""
+  script="\$ErrorActionPreference = 'Stop'
+\$dir = Join-Path \$env:LOCALAPPDATA 'IdeasBox'
+New-Item -ItemType Directory -Force -Path \$dir | Out-Null
+\$ico = Join-Path \$dir 'ideas-box.ico'
+Copy-Item -LiteralPath '${ico_win//\'/\'\'}' -Destination \$ico -Force
+\$targets = @([Environment]::GetFolderPath('Programs'))
+if ($desk_ps) { \$targets += [Environment]::GetFolderPath('Desktop') }
+\$wsh = New-Object -ComObject WScript.Shell
+foreach (\$d in \$targets) {
+  \$l = \$wsh.CreateShortcut((Join-Path \$d 'Ideas Box.lnk'))
+  \$l.TargetPath = Join-Path \$env:SystemRoot 'System32\\wsl.exe'
+  \$l.Arguments = '${args//\'/\'\'}'
+  \$l.IconLocation = \"\$ico,0\"
+  \$l.Description = 'Menú de tu empresa online híbrida'
+  \$l.WorkingDirectory = \$env:USERPROFILE
+  \$l.Save()
+}"
+  # -EncodedCommand (UTF-16LE en base64) evita pelear con las comillas entre bash y Windows
+  if run "$ps" -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand \
+      "$(printf '%s' "$script" | iconv -f UTF-8 -t UTF-16LE | base64 | tr -d '\n')" >/dev/null; then
+    ok "Ideas Box quedó en el menú Inicio de Windows"
+    [ "$desk_ps" = '$true' ] && ok "Ícono creado en el Escritorio de Windows"
+  else
+    warn "Windows no dejó crear el acceso directo. Abrí Ideas Box desde Ubuntu con: $STACK_NAME"
+  fi
+  return 0
+}
+
 menu_install_shortcut() {
   local cli="$HOME/.local/bin/$STACK_NAME" desk
+  if is_wsl; then
+    _wsl_install_shortcut "$cli"
+    return 0
+  fi
   if is_mac; then
     desk="$HOME/Desktop"
     [ -d "$desk" ] || return 0
