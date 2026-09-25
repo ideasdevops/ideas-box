@@ -41,7 +41,8 @@ _menu_run() {
 menu_open_claude() {
   local prompt="${1:-}"
   if ! have claude; then
-    warn "Claude Code no está disponible en esta terminal. Abrí una terminal nueva y escribí: claude"
+    warn "No encuentro Claude Code en este equipo (busqué en el PATH y en ~/.local/bin)."
+    info "Instalalo con: curl -fsSL https://claude.ai/install.sh | bash   y volvé a abrir Ideas Box."
     return 1
   fi
   info "Abriendo Claude. Para volver al menú, escribí /exit o apretá Ctrl+D dos veces."

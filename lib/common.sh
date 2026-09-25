@@ -17,6 +17,24 @@ STACK_MCP_SRC="${STACK_MCP_SRC:-$HOME/.local/share/mcp-servers}"
 CLAUDE_CONFIG_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 CLAUDE_JSON="${CLAUDE_JSON:-$HOME/.claude.json}"
 
+# El ícono abre el menú con el PATH de la sesión de escritorio, que no tiene ~/.local/bin
+# hasta el próximo inicio de sesión (Debian/MX) o nunca (Mac con Homebrew): ahí dejan
+# claude e ideasbox sus instaladores. Se agregan acá para no depender de eso.
+ib_user_path() {
+  local d n
+  for d in /usr/local/bin /opt/homebrew/bin "$HOME/.claude/local" "$HOME/.local/bin"; do
+    [ -d "$d" ] || continue
+    case ":$PATH:" in *":$d:"*) ;; *) PATH="$d:$PATH" ;; esac
+  done
+  # Node de nvm (y un claude instalado con npm): al final, para no tapar al del sistema
+  for n in "$HOME"/.nvm/versions/node/*/bin; do d="$n"; done
+  if [ -n "${d:-}" ] && [ -d "$d" ]; then
+    case ":$PATH:" in *":$d:"*) ;; *) PATH="$PATH:$d" ;; esac
+  fi
+  export PATH
+}
+ib_user_path
+
 DRY_RUN="${DRY_RUN:-0}"
 ASSUME_YES="${ASSUME_YES:-0}"
 NON_INTERACTIVE="${NON_INTERACTIVE:-0}"

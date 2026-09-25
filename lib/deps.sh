@@ -222,13 +222,20 @@ nobrew_python() {
 }
 
 # Para que python3, jq, claude e ideasbox se encuentren también en las próximas terminales.
-# zsh es la shell por defecto de macOS desde Catalina y lee ~/.zprofile al abrir sesión.
+# macOS: zsh (default desde Catalina) lee ~/.zprofile al abrir la Terminal. Linux: cada
+# terminal lee ~/.bashrc; ~/.profile de Debian suma ~/.local/bin recién al próximo inicio
+# de sesión y solo si ya existía, por eso no alcanza.
 persist_user_bin() {
-  local rc="$HOME/.zprofile"
-  grep -qs '\.local/bin' "$rc" && return 0
-  if [ "$DRY_RUN" = 1 ]; then run "agregar \$HOME/.local/bin al PATH en $rc"; return 0; fi
-  printf '\n# Ideas Box: binarios de usuario (python3, jq, claude, ideasbox)\nexport PATH="$HOME/.local/bin:$PATH"\n' >> "$rc"
-  ok "$USER_BIN agregado al PATH en $rc"
+  local rc rcs=()
+  if is_mac; then rcs=("$HOME/.zprofile"); [ -f "$HOME/.bash_profile" ] && rcs+=("$HOME/.bash_profile")
+  else rcs=("$HOME/.bashrc"); case "${SHELL:-}" in */zsh) rcs+=("$HOME/.zshrc") ;; esac
+  fi
+  for rc in "${rcs[@]}"; do
+    grep -qs '\.local/bin' "$rc" && continue
+    if [ "$DRY_RUN" = 1 ]; then run "agregar \$HOME/.local/bin al PATH en $rc"; continue; fi
+    printf '\n# Ideas Box: binarios de usuario (python3, jq, claude, ideasbox)\nexport PATH="$HOME/.local/bin:$PATH"\n' >> "$rc"
+    ok "$USER_BIN agregado al PATH en $rc"
+  done
 }
 
 nobrew_install_base() {
@@ -484,6 +491,7 @@ deps_main() {
   fi
   ensure_node
   ensure_claude
+  persist_user_bin
   ensure_docker
   lock_record "node" "$($NODE_BIN -v 2>/dev/null || echo desconocido)"
   lock_record "claude-code" "$(claude --version 2>/dev/null | head -1 || echo desconocido)"
