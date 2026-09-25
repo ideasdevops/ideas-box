@@ -51,6 +51,69 @@ _need_sudo() {
   SUDO="sudo"
 }
 
+# Un repo de terceros roto (clave vencida o rotada, repo sin firmar: Spotify, Chrome,
+# VS Code…) hace fallar apt-get update entero aunque lo que pedimos venga de Debian o
+# Ubuntu. Pasa seguido en MX Linux y en equipos con uso. Se detecta en la salida, se
+# nombra, y para esta instalación se actualiza sin esos archivos: el sistema no se toca.
+APT_OPTS=()
+APT_BROKEN=()
+APT_UPDATED=0
+APT_SOURCES_D="${APT_SOURCES_D:-/etc/apt/sources.list.d}"
+
+# Hosts de los repos que fallaron, sacados de las líneas de error de apt
+_apt_failed_hosts() {
+  grep -E '^(E:|Err:|W:.*(Failed to fetch|verification failed|NO_PUBKEY|Missing key|not signed|no está firmado))' "$1" \
+    | grep -oE 'https?://[^/ ]+' | sed -E 's#^https?://##' | sort -u
+}
+
+apt_update() {
+  [ "$APT_UPDATED" = 1 ] && return 0
+  if [ "$DRY_RUN" = 1 ]; then run $SUDO apt-get update -qq; APT_UPDATED=1; return 0; fi
+  local log rc h f tmp hosts=() sueltos=()
+  log="$(mktemp)"
+  rc=0
+  $SUDO apt-get update -qq 2>&1 | tee "$log" >&2 || rc=$?
+  if [ "$rc" = 0 ]; then rm -f "$log"; APT_UPDATED=1; return 0; fi
+
+  while IFS= read -r h; do [ -n "$h" ] && hosts+=("$h"); done < <(_apt_failed_hosts "$log")
+  rm -f "$log"
+  [ ${#hosts[@]} -gt 0 ] || die "apt-get update falló y no pude identificar qué repositorio. Probá «sudo apt-get update» a mano, resolvé el error y volvé a correr."
+
+  for h in "${hosts[@]}"; do
+    f="$(grep -lsF "$h" "$APT_SOURCES_D"/*.list "$APT_SOURCES_D"/*.sources 2>/dev/null || true)"
+    if [ -n "$f" ]; then
+      while IFS= read -r f; do
+        case " ${APT_BROKEN[*]-} " in *" $f "*) ;; *) APT_BROKEN+=("$f") ;; esac
+      done <<< "$f"
+    else
+      sueltos+=("$h")
+    fi
+  done
+  if [ ${#sueltos[@]} -gt 0 ]; then
+    err "apt-get update falla por repositorios que están en /etc/apt/sources.list: ${sueltos[*]}"
+    die "Corregilos o comentá esas líneas (sudo nano /etc/apt/sources.list) y volvé a correr."
+  fi
+
+  echo >&2
+  warn "Hay repositorios de terceros rotos en este equipo (no son de Ideas Box):"
+  for f in "${APT_BROKEN[@]}"; do info "  $f"; done
+  info "Sigo sin ellos solo para esta instalación; tu configuración de apt no se modifica."
+  info "Para arreglarlos: reinstalá la clave del proveedor según su sitio, o desactivalos con"
+  info "  sudo mv <archivo> <archivo>.disabled"
+
+  tmp="$(mktemp -d)"
+  for f in "$APT_SOURCES_D"/*; do
+    [ -e "$f" ] || continue
+    case " ${APT_BROKEN[*]} " in *" $f "*) continue ;; esac
+    ln -s "$f" "$tmp/"
+  done
+  APT_OPTS=(-o "Dir::Etc::SourceParts=$tmp")
+  $SUDO apt-get "${APT_OPTS[@]}" update -qq \
+    || die "apt-get update sigue fallando aun sin esos repositorios. Revisá el error de arriba y volvé a correr."
+  APT_UPDATED=1
+  ok "Índice de paquetes actualizado (sin los repositorios rotos)"
+}
+
 apt_install() {
   local pkgs=("$@") faltan=()
   for p in "${pkgs[@]}"; do
@@ -62,8 +125,8 @@ apt_install() {
   fi
   _need_sudo
   info "Instalando: ${faltan[*]}"
-  run $SUDO apt-get update -qq
-  run env DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y --no-install-recommends "${faltan[@]}"
+  apt_update
+  run $SUDO env DEBIAN_FRONTEND=noninteractive apt-get ${APT_OPTS[@]+"${APT_OPTS[@]}"} install -y --no-install-recommends "${faltan[@]}"
 }
 
 # Homebrew se instala sin sudo y en el home del usuario; el script oficial pide
@@ -345,6 +408,12 @@ ensure_docker() {
   fi
   if ! confirm "¿Instalar Docker? (recomendado si vas a levantar servicios propios en este equipo)" n; then
     info "Docker omitido."
+    return 0
+  fi
+  # El script oficial de Docker corre su propio apt-get update, que no sabe saltear repos rotos
+  if [ ${#APT_BROKEN[@]} -gt 0 ]; then
+    warn "Docker no se puede instalar mientras estén rotos los repositorios de arriba (${APT_BROKEN[*]})."
+    info "Arreglalos o desactivalos y después instalá Docker con: curl -fsSL https://get.docker.com | sh"
     return 0
   fi
   _need_sudo
