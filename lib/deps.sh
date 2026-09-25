@@ -362,7 +362,12 @@ ensure_node() {
   info "Instalando Node LTS con nvm (sin sudo, en \$HOME/.nvm)"
   export NVM_DIR="$HOME/.nvm"
   if [ ! -s "$NVM_DIR/nvm.sh" ]; then
+    # El instalador de nvm solo crea la carpeta si coincide con su default, que con
+    # XDG_CONFIG_HOME definido (MX Linux, entre otros) es ~/.config/nvm: si no, aborta
+    run mkdir -p "$NVM_DIR"
     run bash -c 'curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash'
+    [ "$DRY_RUN" = 1 ] || [ -s "$NVM_DIR/nvm.sh" ] \
+      || die "El instalador de nvm terminó pero no dejó $NVM_DIR/nvm.sh. Revisá el error de arriba (¿hay conexión a GitHub?)."
   fi
   if [ "$DRY_RUN" = 1 ]; then NODE_BIN="\$HOME/.nvm/.../node"; return 0; fi
   # shellcheck disable=SC1091
