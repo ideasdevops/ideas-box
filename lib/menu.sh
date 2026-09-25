@@ -83,6 +83,7 @@ menu_intent() {
     return
   fi
   case "$t" in
+    *icono*|*acceso*directo*|*escritorio*) echo icono ;;
     *revis*|*diagnost*|*doctor*|*chequ*|*control*|*estado*|*funciona*|*anda\ *|*problema*|*error*) echo revisar ;;
     *actualiz*|*update*) echo actualizar ;;
     *respald*|*backup*|*copia*|*resguard*) echo respaldo ;;
@@ -170,6 +171,7 @@ _menu_do() {
     mcp-new)    menu_mcp_new ;;
     actualizar) _menu_run update ;;
     respaldo)   _menu_run backup ;;
+    icono)      _menu_run icono ;;
     salir)      return 1 ;;
     *)          warn "No te entendí. Elegí un número de la lista o probá con otras palabras (ej: «conectar chatwoot»)." ;;
   esac
@@ -231,7 +233,41 @@ menu_main() {
 
 # --- Accesos directos ---------------------------------------------------------
 # Un ícono para abrir el menú sin escribir comandos: .command en macOS (Finder lo abre
-# en Terminal con doble clic) y una entrada .desktop en Linux.
+# en Terminal con doble clic) y una entrada .desktop en Linux. Los dos llevan el logo
+# de assets/icon/; sin él quedaban con el ícono genérico de script o de terminal.
+
+# macOS: el ícono propio de un archivo vive en sus atributos extendidos, no en el
+# contenido; NSWorkspace lo escribe sin pedir permisos de automatización. Si falla,
+# el acceso directo igual funciona con el ícono genérico.
+_mac_set_icon() {
+  local png="$1" file="$2"
+  [ -f "$png" ] && have osascript || return 0
+  run osascript -l JavaScript -e '
+    function run(argv) {
+      ObjC.import("AppKit");
+      var img = $.NSImage.alloc.initWithContentsOfFile(argv[0]);
+      if (!$.NSWorkspace.sharedWorkspace.setIconForFileOptions(img, argv[1], 0)) throw "setIcon";
+    }' "$png" "$file" >/dev/null 2>&1 || warn "No se pudo ponerle el logo al ícono; funciona igual."
+  return 0
+}
+
+# Linux: el logo va al tema de íconos del usuario, así no depende de dónde quedó el
+# repo. Imprime la ruta que va en Icon= (absoluta: sirve aunque el tema no se refresque).
+_linux_install_icon() {
+  local src="$STACK_SRC/assets/icon" base="$HOME/.local/share/icons/hicolor" s
+  [ -f "$src/ideas-box-512.png" ] || { echo utilities-terminal; return 0; }
+  {
+    for s in 256 512; do
+      run mkdir -p "$base/${s}x${s}/apps"
+      run cp "$src/ideas-box-$s.png" "$base/${s}x${s}/apps/ideas-box.png"
+    done
+    run mkdir -p "$base/scalable/apps"
+    run cp "$src/ideas-box.svg" "$base/scalable/apps/ideas-box.svg"
+    have gtk-update-icon-cache && [ -f "$base/index.theme" ] && run gtk-update-icon-cache -q "$base" 2>/dev/null
+  } >&2   # stdout queda solo para la ruta (en --dry-run, run también imprime)
+  echo "$base/512x512/apps/ideas-box.png"
+}
+
 menu_install_shortcut() {
   local cli="$HOME/.local/bin/$STACK_NAME" desk
   if is_mac; then
@@ -243,19 +279,21 @@ menu_install_shortcut() {
 # Doble clic: abre el menú de Ideas Box en una Terminal.
 exec "$cli" menu
 EOF
+    _mac_set_icon "$STACK_SRC/assets/icon/ideas-box-512.png" "$desk/Ideas Box.command"
     ok "Ícono creado: Escritorio → Ideas Box"
     return 0
   fi
 
-  local apps="$HOME/.local/share/applications"
+  local apps="$HOME/.local/share/applications" icon
+  icon="$(_linux_install_icon)"
   write_file "$apps/ideas-box.desktop" 755 <<EOF
 [Desktop Entry]
 Type=Application
 Name=Ideas Box
 Comment=Menú de tu empresa online híbrida
-Exec=bash -c '"$cli" menu'
+Exec="$cli" menu
 Terminal=true
-Icon=utilities-terminal
+Icon=$icon
 Categories=Office;Utility;
 EOF
   ok "Ideas Box quedó en el menú de aplicaciones"

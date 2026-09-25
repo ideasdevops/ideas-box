@@ -85,6 +85,7 @@ ideasbox skills new      # habilidad propia
 ideasbox skills update   # actualizar los packs de terceros
 ideasbox sync            # regenerar agentes y symlinks
 ideasbox backup          # respaldo del árbol canónico
+ideasbox icono           # volver a crear el ícono «Ideas Box» del Escritorio
 ideasbox update          # actualizar todo
 ideasbox panel install   # tablero web local de tareas
 ideasbox panel start     # abrirlo en http://127.0.0.1:8420
