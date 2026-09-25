@@ -400,6 +400,37 @@ ensure_claude() {
   have claude || warn "Claude quedó instalado pero no está en el PATH de esta shell. Agregá \$HOME/.local/bin a tu PATH."
 }
 
+# Los mismos pasos que la guía oficial de Docker para Debian/Ubuntu, pero con el apt que
+# saltea los repos rotos. Mint y otros derivados de Ubuntu usan el codename de Ubuntu.
+docker_apt_install() {
+  local distro codename arch
+  # shellcheck disable=SC1091
+  . /etc/os-release
+  case "${ID:-} ${ID_LIKE:-}" in
+    *ubuntu*) distro=ubuntu; codename="${UBUNTU_CODENAME:-${VERSION_CODENAME:-}}" ;;
+    *)        distro=debian; codename="${VERSION_CODENAME:-}" ;;
+  esac
+  [ -n "$codename" ] || die "No pude saber la versión de $distro de este equipo para elegir el repo de Docker."
+  arch="$(dpkg --print-architecture)"
+  info "Instalando Docker desde su repositorio oficial ($distro $codename), sin los repositorios rotos"
+  run $SUDO install -m 0755 -d /etc/apt/keyrings
+  run $SUDO curl -fsSL "https://download.docker.com/linux/$distro/gpg" -o /etc/apt/keyrings/docker.asc \
+    || die "No se pudo bajar la clave del repositorio de Docker (¿hay conexión?)."
+  run $SUDO chmod a+r /etc/apt/keyrings/docker.asc
+  if [ "$DRY_RUN" = 1 ]; then
+    run "escribir /etc/apt/sources.list.d/docker.sources"
+  else
+    printf 'Types: deb\nURIs: https://download.docker.com/linux/%s\nSuites: %s\nComponents: stable\nArchitectures: %s\nSigned-By: /etc/apt/keyrings/docker.asc\n' \
+      "$distro" "$codename" "$arch" | $SUDO tee /etc/apt/sources.list.d/docker.sources >/dev/null
+  fi
+  # Se vuelve a actualizar para que entre el repo nuevo (los rotos se detectan otra vez)
+  APT_UPDATED=0; APT_OPTS=(); APT_BROKEN=()
+  apt_update
+  run $SUDO env DEBIAN_FRONTEND=noninteractive apt-get ${APT_OPTS[@]+"${APT_OPTS[@]}"} install -y \
+    docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin \
+    || die "Falló la instalación de Docker. Revisá el error de arriba."
+}
+
 ensure_docker() {
   if have docker; then
     ok "Docker ya instalado ($(docker --version 2>/dev/null))"
@@ -415,14 +446,15 @@ ensure_docker() {
     info "Docker omitido."
     return 0
   fi
-  # El script oficial de Docker corre su propio apt-get update, que no sabe saltear repos rotos
-  if [ ${#APT_BROKEN[@]} -gt 0 ]; then
-    warn "Docker no se puede instalar mientras estén rotos los repositorios de arriba (${APT_BROKEN[*]})."
-    info "Arreglalos o desactivalos y después instalá Docker con: curl -fsSL https://get.docker.com | sh"
-    return 0
-  fi
   _need_sudo
-  run bash -c 'curl -fsSL https://get.docker.com | sh'
+  # El script oficial de Docker corre su propio apt-get update, que no sabe saltear repos
+  # rotos: se chequea antes (con los paquetes ya presentes, puede que no haya corrido)
+  apt_update
+  if [ ${#APT_BROKEN[@]} -gt 0 ]; then
+    docker_apt_install
+  else
+    run bash -c 'curl -fsSL https://get.docker.com | sh'
+  fi
   run $SUDO usermod -aG docker "$USER" || true
   warn "Cerrá sesión y volvé a entrar para que tu usuario tome el grupo docker."
 }
