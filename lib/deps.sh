@@ -282,7 +282,7 @@ _clt_softwareupdate() {
     warn "softwareupdate no ofrece las herramientas de línea de comandos para este macOS."
     return 1
   fi
-  info "Instalando «$label» con softwareupdate: pide tu contraseña de administrador y tarda de 5 a 15 minutos"
+  info "Instalando «${label}» con softwareupdate: pide tu contraseña de administrador y tarda de 5 a 15 minutos"
   _need_sudo
   run $SUDO softwareupdate -i "$label" --verbose || { rm -f "$marca"; return 1; }
   rm -f "$marca"

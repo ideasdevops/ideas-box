@@ -27,7 +27,7 @@ skills_new() {
   dom="${DOMINIOS[$((area_n-1))]}"
 
   dir="$DATA_ROOT/.claude/skills/$dom/$slug"
-  [ -e "$dir" ] && die "Ya existe una habilidad «$slug» en $(area_label "$dom"): $dir"
+  [ -e "$dir" ] && die "Ya existe una habilidad «${slug}» en $(area_label "$dom"): $dir"
   run mkdir -p "$dir"
   write_file "$dir/SKILL.md" 644 <<EOF
 ---
@@ -53,9 +53,9 @@ EOF
   info "Archivo: $dir/SKILL.md"
 
   if have claude && confirm "¿Abrimos Claude para completarla juntos? (te va a hacer preguntas y la escribe por vos)" y; then
-    (cd "$HOME" && claude "Completemos la habilidad «$nombre» que acabo de crear en $dir/SKILL.md. Sirve para: $desc. Hacéme las preguntas que necesites sobre cómo trabajamos y reescribí los pasos y las reglas con lo que te cuente. Mantené el encabezado name/description.") || true
+    (cd "$HOME" && claude "Completemos la habilidad «${nombre}» que acabo de crear en $dir/SKILL.md. Sirve para: $desc. Hacéme las preguntas que necesites sobre cómo trabajamos y reescribí los pasos y las reglas con lo que te cuente. Mantené el encabezado name/description.") || true
   else
-    info "Cuando quieras, abrí Claude y pedile: «completemos la habilidad $nombre»."
+    info "Cuando quieras, abrí Claude y pedile: «completemos la habilidad ${nombre}»."
   fi
 }
 
@@ -78,7 +78,7 @@ mcp_new() {
   [ -n "$titulo" ] || die "El conector necesita un nombre."
   id="$(slugify "$titulo")"
   if [ -f "$STACK_SRC/catalog/mcp/$id.mcp" ]; then
-    die "«$id» ya está en la lista oficial de conectores. Usá «Conectar una herramienta»."
+    die "«${id}» ya está en la lista oficial de conectores. Usá «Conectar una herramienta»."
   fi
   ask "¿Para qué la van a usar los agentes? (una línea)" desc "Conector propio de $titulo"
   echo "Si la documentación pide claves o datos de acceso (variables como GITHUB_TOKEN o API_KEY),"
@@ -148,7 +148,7 @@ for k, v in out.items():
     print(f"{k}={q(v)}")
 PY
   mv "$cat/$id.mcp.tmp" "$cat/$id.mcp"
-  ok "Conector «$titulo» creado en $cat/$id.mcp"
+  ok "Conector «${titulo}» creado en $cat/$id.mcp"
   if confirm "¿Lo conectamos ahora?" y; then
     mcp_install "$id"
     canonical_render >/dev/null

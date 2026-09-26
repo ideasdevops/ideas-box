@@ -60,6 +60,10 @@ revisar "Sin rutas absolutas de un home concreto"   "$HOMES"                 err
 revisar "Sin direcciones IP"                        "$IPS"                   warn
 
 echo
+# Y compatibilidad con el bash 3.2 de macOS, que desde Linux no se ve
+bash tools/check-bash32.sh || fails=$((fails+1))
+
+echo
 if [ "$fails" -gt 0 ]; then
   echo "✗ $fails chequeos fallaron: el repo NO está listo para compartirse."
   exit 1

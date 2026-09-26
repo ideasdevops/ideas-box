@@ -342,9 +342,9 @@ foreach (\$d in \$targets) {
   if run "$ps" -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand \
       "$(printf '%s' "$script" | iconv -f UTF-8 -t UTF-16LE | base64 | tr -d '\n')" >/dev/null; then
     ok "$name quedó en el menú Inicio de Windows"
-    [ "$desk_ps" = '$true' ] && ok "Ícono «$name» creado en el Escritorio de Windows"
+    [ "$desk_ps" = '$true' ] && ok "Ícono «${name}» creado en el Escritorio de Windows"
   else
-    warn "Windows no dejó crear el acceso directo «$name». Desde Ubuntu: $cmd"
+    warn "Windows no dejó crear el acceso directo «${name}». Desde Ubuntu: $cmd"
   fi
   return 0
 }
@@ -416,13 +416,13 @@ panel_install_shortcut() {
     # queda ninguna sesión de wsl.exe. Cerrarla apaga el panel.
     _wsl_make_shortcut "$name" "'$cli' panel open --keep" "Tablero de tareas y programación de tus agentes" \
       "$STACK_SRC/assets/icon/panel.ico" \
-      "¿Crear también el ícono «$name» en tu Escritorio de Windows?" 7
+      "¿Crear también el ícono «${name}» en tu Escritorio de Windows?" 7
     return 0
   fi
   if is_mac; then
     desk="$HOME/Desktop"
     [ -d "$desk" ] || return 0
-    confirm "¿Crear el ícono «$name» en tu Escritorio?" y || return 0
+    confirm "¿Crear el ícono «${name}» en tu Escritorio?" y || return 0
     if _mac_make_app "$desk/$name.app" "$cli" "panel open" "$STACK_SRC/assets/icon/panel-512.png"; then
       ok "Ícono creado: Escritorio → $name"
     else
@@ -451,5 +451,5 @@ Icon=$icon
 Categories=Office;ProjectManagement;
 EOF
   ok "$name quedó en el menú de aplicaciones"
-  _linux_desktop_to_desk "$apps/ideas-box-panel.desktop" "¿Crear también el ícono «$name» en tu Escritorio?"
+  _linux_desktop_to_desk "$apps/ideas-box-panel.desktop" "¿Crear también el ícono «${name}» en tu Escritorio?"
 }
