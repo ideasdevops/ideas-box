@@ -1,7 +1,7 @@
 # Panel de control
 
 Tablero web local para programar tareas a los agentes del stack. Se instala con
-`ideasbox panel install` y se levanta con `ideasbox panel start`.
+`ideasbox panel install` y se abre con el ícono «Panel Ideas Box» o con `ideasbox panel open`.
 
 No se distribuye compilado: el instalador copia esta carpeta a
 `~/.local/share/ideasbox/panel`, crea el entorno Python y compila la interfaz ahí.

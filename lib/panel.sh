@@ -21,6 +21,59 @@ panel_is_running() {
   [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null
 }
 
+panel_installed() { [ -x "$PANEL_SRC/backend/venv/bin/uvicorn" ]; }
+
+# Abre una URL en el navegador del usuario sin retener la terminal
+_open_url() {
+  local url="$1"
+  if is_mac; then
+    open "$url"
+  elif is_wsl; then
+    # explorer.exe devuelve 1 aunque abra bien
+    if have wslview; then wslview "$url"; else explorer.exe "$url" || true; fi
+  elif have xdg-open; then
+    xdg-open "$url" >/dev/null 2>&1 &
+  elif have gio; then
+    gio open "$url" >/dev/null 2>&1 &
+  else
+    info "Abrí en tu navegador: $url"
+  fi
+  return 0
+}
+
+# Avisos del acceso directo: sin terminal (Linux), el error tiene que verse igual
+_panel_notice() {
+  err "$1"
+  [ -t 2 ] || { have notify-send && notify-send "Panel Ideas Box" "$1" 2>/dev/null; } || true
+}
+
+# panel_open [--keep] — lo que corre el ícono «Panel Ideas Box»: levanta el panel si no
+# está corriendo y lo abre en el navegador. Con --keep (WSL) se queda esperando y apaga
+# el panel al cerrar la ventana.
+panel_open() {
+  local keep=0 started=0 url
+  [ "${1:-}" = --keep ] && keep=1
+  load_profile
+  url="http://127.0.0.1:$PANEL_PORT"
+  if ! panel_installed; then
+    _panel_notice "El panel no está instalado. Instalalo desde el menú de Ideas Box o con: $STACK_NAME panel install"
+    return 1
+  fi
+  if ! panel_is_running; then
+    panel_start || { _panel_notice "El panel no pudo arrancar. Detalle: $STACK_NAME panel logs"; return 1; }
+    started=1
+  fi
+  _open_url "$url"
+  if [ "$keep" = 1 ] && [ "$started" = 1 ]; then
+    trap 'panel_stop >/dev/null 2>&1; exit 0' HUP INT TERM
+    echo
+    echo "El panel está abierto en tu navegador ($url)."
+    echo "Podés minimizar esta ventana. Al cerrarla, el panel se apaga."
+    while panel_is_running; do sleep 5; done
+  fi
+  return 0
+}
+
 panel_env_seed() {
   [ -f "$PANEL_ENV_FILE" ] && return 0
   run mkdir -p "$STACK_SECRETS_DIR"
@@ -61,7 +114,8 @@ panel_install() {
 
   info "Entorno Python del panel"
   local py
-  py="$(python_venv_bin)" || die "El panel necesita Python 3.10 o posterior y no encontré ninguno. En Mac: brew install python@3.12; en Linux: sudo apt install python3-venv."
+  # Sin un Python que arme venvs (Ubuntu sin python3-venv) se usa un 3.12 de uv, sin sudo
+  py="$(python_venv_bin)" || py="$(python_uv_312)" || die "El panel necesita Python 3.10 o posterior y no encontré ninguno. En Mac: brew install python@3.12; en Linux: sudo apt install python3-venv."
   run "$py" -m venv "$PANEL_SRC/backend/venv" \
     || die "No se pudo crear el entorno Python. Instalá python3-venv: sudo apt install python3-venv"
   pip_platform_constraints
@@ -78,13 +132,13 @@ panel_install() {
 
   panel_env_seed
   run mkdir -p "$DATA_ROOT/05-OPERACIONES/panel"
-  ok "Panel instalado. Levantalo con: $STACK_NAME panel start"
+  ok "Panel instalado. Abrilo con el ícono «Panel Ideas Box» o con: $STACK_NAME panel open"
+  panel_install_shortcut
 }
 
 panel_start() {
   load_profile
-  [ -x "$PANEL_SRC/backend/venv/bin/uvicorn" ] \
-    || die "El panel no está instalado. Corré: $STACK_NAME panel install"
+  panel_installed || die "El panel no está instalado. Corré: $STACK_NAME panel install"
   if panel_is_running; then
     ok "El panel ya está corriendo en http://127.0.0.1:$PANEL_PORT"
     return 0
@@ -170,10 +224,11 @@ panel_main() {
   case "${1:-status}" in
     install) panel_install ;;
     start)   panel_start ;;
+    open)    panel_open "${2:-}" ;;
     stop)    panel_stop ;;
     restart) panel_stop; panel_start ;;
     status)  panel_status ;;
     logs)    tail -n "${2:-40}" "$PANEL_LOG_FILE" 2>/dev/null || info "Sin log todavía." ;;
-    *) die "Uso: $STACK_NAME panel [install|start|stop|restart|status|logs]" ;;
+    *) die "Uso: $STACK_NAME panel [install|open|start|stop|restart|status|logs]" ;;
   esac
 }

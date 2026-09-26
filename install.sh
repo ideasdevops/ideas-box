@@ -124,7 +124,8 @@ Cómo seguir:
     «Hablar con mis agentes», «Conectar una herramienta», «Crear una habilidad nueva»
     y el resto de las opciones, en palabras comunes.
   · La primera vez que hables con tus agentes, Claude te va a pedir iniciar sesión.
-  · Si instalaste el tablero de tareas: $STACK_NAME panel start
+  · Si instalaste el tablero de tareas: doble clic en el ícono «Panel Ideas Box»
+    (o $STACK_NAME panel open)
 
 Todo lo que genera el stack es texto plano: si algo no te sirve, editalo.
 TXT

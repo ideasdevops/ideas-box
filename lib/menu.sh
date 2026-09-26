@@ -85,6 +85,7 @@ menu_intent() {
   fi
   case "$t" in
     *icono*|*acceso*directo*|*escritorio*) echo icono ;;
+    *panel*|*tablero*|*tarea*|*programa*|*agenda*) echo panel ;;
     *revis*|*diagnost*|*doctor*|*chequ*|*control*|*estado*|*funciona*|*anda\ *|*problema*|*error*) echo revisar ;;
     *actualiz*|*update*) echo actualizar ;;
     *respald*|*backup*|*copia*|*resguard*) echo respaldo ;;
@@ -173,6 +174,7 @@ _menu_do() {
     actualizar) _menu_run update ;;
     respaldo)   _menu_run backup ;;
     icono)      _menu_run icono ;;
+    panel)      _menu_run panel open ;;
     salir)      return 1 ;;
     *)          warn "No te entendí. Elegí un número de la lista o probá con otras palabras (ej: «conectar chatwoot»)." ;;
   esac
@@ -206,6 +208,7 @@ menu_main() {
       echo "  7) Actualizar todo"
       echo "  8) Hacer un respaldo"
       echo "  9) Completar o rehacer la instalación"
+      echo " 10) Abrir el panel de tareas y programación"
     else
       if install_pending; then echo "  1) Terminar de instalar mi Ideas Box (quedó a mitad)"
       else echo "  1) Instalar mi Ideas Box"
@@ -220,7 +223,7 @@ menu_main() {
       case "$choice" in
         1) accion=hablar ;; 2) accion=revisar ;; 3) accion=skills-add ;; 4) accion=mcp-add ;;
         5) accion=skills-new ;; 6) accion=mcp-new ;; 7) accion=actualizar ;; 8) accion=respaldo ;;
-        9) accion=instalar ;; 0) accion=salir ;; '') continue ;; *) accion="$(menu_intent "$choice")" ;;
+        9) accion=instalar ;; 10) accion=panel ;; 0) accion=salir ;; '') continue ;; *) accion="$(menu_intent "$choice")" ;;
       esac
     else
       case "$choice" in
@@ -233,9 +236,11 @@ menu_main() {
 }
 
 # --- Accesos directos ---------------------------------------------------------
-# Un ícono para abrir el menú sin escribir comandos: .command en macOS (Finder lo abre
-# en Terminal con doble clic) y una entrada .desktop en Linux. Los dos llevan el logo
-# de assets/icon/; sin él quedaban con el ícono genérico de script o de terminal.
+# Dos íconos para no escribir comandos: «Ideas Box» abre el menú (en una terminal) y
+# «Panel Ideas Box» levanta el tablero de tareas y lo abre en el navegador (sin terminal).
+# Menú: .command en macOS (Finder lo abre en Terminal), .desktop en Linux, .lnk en WSL.
+# Panel: una mini app hecha con osacompile en macOS, .desktop sin terminal en Linux y
+# .lnk en WSL. Cada uno lleva su logo de assets/icon/ (ideas-box-* y panel-*).
 
 # macOS: el ícono propio de un archivo vive en sus atributos extendidos, no en el
 # contenido; NSWorkspace lo escribe sin pedir permisos de automatización. Si falla,
@@ -254,19 +259,35 @@ _mac_set_icon() {
 
 # Linux: el logo va al tema de íconos del usuario, así no depende de dónde quedó el
 # repo. Imprime la ruta que va en Icon= (absoluta: sirve aunque el tema no se refresque).
+# _linux_install_icon [origen] [nombre] — origen: prefijo en assets/icon (ideas-box, panel);
+# nombre: cómo queda en el tema de íconos.
 _linux_install_icon() {
+  local from="${1:-ideas-box}" name="${2:-ideas-box}" fallback="${3:-utilities-terminal}"
   local src="$STACK_SRC/assets/icon" base="$HOME/.local/share/icons/hicolor" s
-  [ -f "$src/ideas-box-512.png" ] || { echo utilities-terminal; return 0; }
+  [ -f "$src/$from-512.png" ] || { echo "$fallback"; return 0; }
   {
     for s in 256 512; do
       run mkdir -p "$base/${s}x${s}/apps"
-      run cp "$src/ideas-box-$s.png" "$base/${s}x${s}/apps/ideas-box.png"
+      run cp "$src/$from-$s.png" "$base/${s}x${s}/apps/$name.png"
     done
     run mkdir -p "$base/scalable/apps"
-    run cp "$src/ideas-box.svg" "$base/scalable/apps/ideas-box.svg"
+    run cp "$src/$from.svg" "$base/scalable/apps/$name.svg"
     have gtk-update-icon-cache && [ -f "$base/index.theme" ] && run gtk-update-icon-cache -q "$base" 2>/dev/null
   } >&2   # stdout queda solo para la ruta (en --dry-run, run también imprime)
-  echo "$base/512x512/apps/ideas-box.png"
+  echo "$base/512x512/apps/$name.png"
+}
+
+# _linux_desktop_to_desk <archivo .desktop> <pregunta> — copia opcional al Escritorio
+_linux_desktop_to_desk() {
+  local entry="$1" question="$2" desk
+  desk="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
+  if [ -d "$desk" ] && [ "$desk" != "$HOME" ] && confirm "$question" y; then
+    run cp "$entry" "$desk/$(basename "$entry")"
+    run chmod 755 "$desk/$(basename "$entry")"
+    have gio && run gio set "$desk/$(basename "$entry")" metadata::trusted true 2>/dev/null || true
+    ok "Ícono creado en el Escritorio"
+  fi
+  return 0
 }
 
 # WSL: un .desktop dentro de Ubuntu no aparece en Windows. Se crea un acceso directo .lnk
@@ -280,45 +301,58 @@ _wsl_powershell() {
   [ -x "$p" ] && echo "$p"
 }
 
-_wsl_install_shortcut() {
-  local cli="$1" ps ico_win distro args desk_ps='$false' script
+# _wsl_make_shortcut <nombre> <comando> <descripción> <.ico> <pregunta> <estilo>
+# Crea «<nombre>.lnk» en el menú Inicio y, si se acepta, en el Escritorio de Windows; el
+# acceso abre wsl.exe en esta distro y corre <comando> con el PATH del usuario.
+# Estilo de ventana: 1 normal, 7 minimizada.
+_wsl_make_shortcut() {
+  local name="$1" cmd="$2" desc="$3" ico_src="$4" question="$5" style="${6:-1}"
+  local ps ico_win ico_base distro args desk_ps='$false' script
   ps="$(_wsl_powershell)" || ps=""
   if [ -z "$ps" ] || ! have wslpath || ! have iconv || ! have base64; then
     warn "No pude hablar con Windows desde Ubuntu (¿interoperabilidad de WSL desactivada?)."
-    info "Abrí Ideas Box desde la terminal de Ubuntu escribiendo: $STACK_NAME"
+    info "Desde la terminal de Ubuntu: $cmd"
     return 0
   fi
-  confirm "¿Crear también el ícono «Ideas Box» en tu Escritorio de Windows?" y && desk_ps='$true'
-  ico_win="$(wslpath -w "$STACK_SRC/assets/icon/ideas-box.ico")"
+  confirm "$question" y && desk_ps='$true'
+  ico_win="$(wslpath -w "$ico_src")"
+  ico_base="$(basename "$ico_src")"
   distro="${WSL_DISTRO_NAME:+-d $WSL_DISTRO_NAME }"
   # bash -li: carga el PATH del usuario (nvm, ~/.local/bin) como una terminal normal
-  args="${distro}--cd ~ -e bash -lic \"exec '$cli' menu\""
+  args="${distro}--cd ~ -e bash -lic \"exec $cmd\""
   script="\$ErrorActionPreference = 'Stop'
 \$dir = Join-Path \$env:LOCALAPPDATA 'IdeasBox'
 New-Item -ItemType Directory -Force -Path \$dir | Out-Null
-\$ico = Join-Path \$dir 'ideas-box.ico'
+\$ico = Join-Path \$dir '${ico_base//\'/\'\'}'
 Copy-Item -LiteralPath '${ico_win//\'/\'\'}' -Destination \$ico -Force
 \$targets = @([Environment]::GetFolderPath('Programs'))
 if ($desk_ps) { \$targets += [Environment]::GetFolderPath('Desktop') }
 \$wsh = New-Object -ComObject WScript.Shell
 foreach (\$d in \$targets) {
-  \$l = \$wsh.CreateShortcut((Join-Path \$d 'Ideas Box.lnk'))
+  \$l = \$wsh.CreateShortcut((Join-Path \$d '${name//\'/\'\'}.lnk'))
   \$l.TargetPath = Join-Path \$env:SystemRoot 'System32\\wsl.exe'
   \$l.Arguments = '${args//\'/\'\'}'
   \$l.IconLocation = \"\$ico,0\"
-  \$l.Description = 'Menú de tu empresa online híbrida'
+  \$l.Description = '${desc//\'/\'\'}'
   \$l.WorkingDirectory = \$env:USERPROFILE
+  \$l.WindowStyle = $style
   \$l.Save()
 }"
   # -EncodedCommand (UTF-16LE en base64) evita pelear con las comillas entre bash y Windows
   if run "$ps" -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand \
       "$(printf '%s' "$script" | iconv -f UTF-8 -t UTF-16LE | base64 | tr -d '\n')" >/dev/null; then
-    ok "Ideas Box quedó en el menú Inicio de Windows"
-    [ "$desk_ps" = '$true' ] && ok "Ícono creado en el Escritorio de Windows"
+    ok "$name quedó en el menú Inicio de Windows"
+    [ "$desk_ps" = '$true' ] && ok "Ícono «$name» creado en el Escritorio de Windows"
   else
-    warn "Windows no dejó crear el acceso directo. Abrí Ideas Box desde Ubuntu con: $STACK_NAME"
+    warn "Windows no dejó crear el acceso directo «$name». Desde Ubuntu: $cmd"
   fi
   return 0
+}
+
+_wsl_install_shortcut() {
+  _wsl_make_shortcut "Ideas Box" "'$1' menu" "Menú de tu empresa online híbrida" \
+    "$STACK_SRC/assets/icon/ideas-box.ico" \
+    "¿Crear también el ícono «Ideas Box» en tu Escritorio de Windows?" 1
 }
 
 menu_install_shortcut() {
@@ -354,11 +388,68 @@ Icon=$icon
 Categories=Office;Utility;
 EOF
   ok "Ideas Box quedó en el menú de aplicaciones"
-  desk="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
-  if [ -d "$desk" ] && [ "$desk" != "$HOME" ] && confirm "¿Crear también el ícono en tu Escritorio?" y; then
-    run cp "$apps/ideas-box.desktop" "$desk/ideas-box.desktop"
-    run chmod 755 "$desk/ideas-box.desktop"
-    have gio && run gio set "$desk/ideas-box.desktop" metadata::trusted true 2>/dev/null || true
-    ok "Ícono creado en el Escritorio"
+  _linux_desktop_to_desk "$apps/ideas-box.desktop" "¿Crear también el ícono en tu Escritorio?"
+}
+
+# macOS: una app mínima (AppleScript compilado con osacompile, que viene con el sistema)
+# en vez de un .command, para que el doble clic no deje una Terminal abierta. `do shell
+# script` muestra solo el error si el comando falla. Se reemplaza únicamente una app que
+# hayamos creado nosotros (tiene nuestro script compilado adentro).
+_mac_make_app() {
+  local app="$1" cli="$2" args="$3" png="$4"
+  have osacompile || return 1
+  if [ -e "$app" ]; then
+    [ -f "$app/Contents/Resources/Scripts/main.scpt" ] || { warn "$app existe y no es nuestro; lo dejo como está."; return 0; }
+    run rm -rf "$app"
   fi
+  run osacompile -o "$app" \
+    -e "do shell script (quoted form of \"$cli\") & \" $args\"" >/dev/null 2>&1 || return 1
+  _mac_set_icon "$png" "$app"
+  return 0
+}
+
+# «Panel Ideas Box»: levanta el tablero de tareas si hace falta y lo abre en el navegador
+panel_install_shortcut() {
+  local cli="$HOME/.local/bin/$STACK_NAME" desk name="Panel Ideas Box"
+  if is_wsl; then
+    # Ventana minimizada que mantiene vivo el panel: WSL puede apagar la distro cuando no
+    # queda ninguna sesión de wsl.exe. Cerrarla apaga el panel.
+    _wsl_make_shortcut "$name" "'$cli' panel open --keep" "Tablero de tareas y programación de tus agentes" \
+      "$STACK_SRC/assets/icon/panel.ico" \
+      "¿Crear también el ícono «$name» en tu Escritorio de Windows?" 7
+    return 0
+  fi
+  if is_mac; then
+    desk="$HOME/Desktop"
+    [ -d "$desk" ] || return 0
+    confirm "¿Crear el ícono «$name» en tu Escritorio?" y || return 0
+    if _mac_make_app "$desk/$name.app" "$cli" "panel open" "$STACK_SRC/assets/icon/panel-512.png"; then
+      ok "Ícono creado: Escritorio → $name"
+    else
+      # Sin osacompile: un .command, que abre una Terminal pero funciona igual
+      write_file "$desk/$name.command" 755 <<EOF
+#!/bin/bash
+# Doble clic: levanta el panel de Ideas Box y lo abre en el navegador.
+exec "$cli" panel open
+EOF
+      _mac_set_icon "$STACK_SRC/assets/icon/panel-512.png" "$desk/$name.command"
+      ok "Ícono creado: Escritorio → $name"
+    fi
+    return 0
+  fi
+
+  local apps="$HOME/.local/share/applications" icon
+  icon="$(_linux_install_icon panel ideas-box-panel x-office-calendar)"
+  write_file "$apps/ideas-box-panel.desktop" 755 <<EOF
+[Desktop Entry]
+Type=Application
+Name=$name
+Comment=Tablero de tareas y programación de tus agentes
+Exec="$cli" panel open
+Terminal=false
+Icon=$icon
+Categories=Office;ProjectManagement;
+EOF
+  ok "$name quedó en el menú de aplicaciones"
+  _linux_desktop_to_desk "$apps/ideas-box-panel.desktop" "¿Crear también el ícono «$name» en tu Escritorio?"
 }

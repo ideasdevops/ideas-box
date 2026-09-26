@@ -37,7 +37,7 @@ Una sola pasada guiada. Al terminar, «Hablar con mis agentes» abre una sesión
 | **~20 skills propios** | Procedimientos de trabajo: bugfix, release, propuestas, campañas, bitácoras, memoria |
 | **Packs de skills** | Marketing, diseño y disciplina de código, clonados de sus repos originales |
 | **Conectores MCP** | Búsqueda web, grafo de código, bandeja de atención, panel de servidores, SSH, redes sociales, video, y generación con IA recomendada (ElevenLabs, Kling, Renoise) |
-| **Panel de control** | Tablero web local para programar tareas a los agentes (opcional) |
+| **Panel de control** | Tablero web local para programar tareas a los agentes (opcional), con su propio ícono «Panel Ideas Box» en el Escritorio |
 | **Reglas** | Autonomía, zonas protegidas y qué requiere aprobación explícita |
 
 ## Lo que NO hace
@@ -88,7 +88,7 @@ ideasbox backup          # respaldo del árbol canónico
 ideasbox icono           # volver a crear el ícono «Ideas Box» del Escritorio
 ideasbox update          # actualizar todo
 ideasbox panel install   # tablero web local de tareas
-ideasbox panel start     # abrirlo en http://127.0.0.1:8420
+ideasbox panel open      # levantarlo y abrirlo en el navegador (http://127.0.0.1:8420)
 ```
 
 ## Cómo está organizado

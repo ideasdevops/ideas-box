@@ -282,7 +282,8 @@ de los conectores que instalaste</strong>: si mañana agregás uno, los agentes 
 <h3>8 · Permisos y hook de arranque</h3>
 <p>Permisos de Claude Code (lectura libre; escritura y acciones sensibles bajo aprobación), bloqueo de
 lectura sobre tus credenciales y claves SSH, y un aviso de arranque que detecta si el disco de datos no
-está montado. Al final, te ofrece dejar el ícono <strong>Ideas Box</strong>.</p>
+está montado. Al final, te ofrece dejar el ícono <strong>Ideas Box</strong>, y si instalás el panel de
+tareas (paso 9, opcional), un segundo ícono: <strong>Panel Ideas Box</strong>, que lo abre en el navegador.</p>
 
 <div class="caja">
   <div class="t">Si se corta, retoma donde quedó</div>
@@ -462,6 +463,7 @@ confiables: corren en tu equipo, con tus credenciales.</p>
   <tr><td><b>Actualizar todo</b></td><td>Trae la última versión de Ideas Box, las habilidades y los conectores</td></tr>
   <tr><td><b>Hacer un respaldo</b></td><td>Guarda una copia comprimida de agentes, memoria, documentación y configuración</td></tr>
   <tr><td><b>Completar o rehacer la instalación</b></td><td>Vuelve a pasar por el asistente sin perder lo que ya tenés</td></tr>
+  <tr><td><b>Abrir el panel de tareas</b></td><td>Lo mismo que el ícono «Panel Ideas Box»: levanta el tablero y lo abre en el navegador</td></tr>
 </table>
 
 <p><strong>Con tus palabras:</strong> en vez del número, escribí <em>«conectar chatwoot»</em> o <em>«hacé
@@ -700,6 +702,7 @@ script -q ~/ideasbox-install.log bash install.sh --debug</code></pre>
   <tr><td>Actualizar todo</td><td><code>ideasbox update</code></td></tr>
   <tr><td>Hacer un respaldo</td><td><code>ideasbox backup</code></td></tr>
   <tr><td>Completar o rehacer la instalación</td><td><code>bash ~/ideas-box/install.sh</code></td></tr>
+  <tr><td>Abrir el panel de tareas</td><td><code>ideasbox panel open</code> · <code>ideasbox panel stop</code> para apagarlo</td></tr>
 </table>
 
 <h3>5 · Mantenimiento</h3>
@@ -739,7 +742,7 @@ bash ~/ideas-box/tools/mcp-probe.sh chatwoot-ventas   <span class="c"># probar u
   <tr><td><code>~/.config/ideasbox/install.state</code></td><td>Avance de una instalación cortada; se borra al terminar bien</td></tr>
   <tr><td><code>~/.local/share/mcp-servers/</code></td><td>Código de los conectores</td></tr>
   <tr><td><code>~/.local/bin/</code></td><td><code>ideasbox</code>, <code>claude</code> y, en Mac sin Homebrew, <code>python3</code>, <code>jq</code> y <code>uv</code></td></tr>
-  <tr><td><code>~/Desktop/Ideas Box.command</code> · <code>~/.local/share/applications/ideas-box.desktop</code></td><td>El ícono, en macOS y en Linux</td></tr>
+  <tr><td><code>~/Desktop/Ideas Box.command</code> · <code>~/.local/share/applications/ideas-box.desktop</code></td><td>El ícono, en macOS y en Linux (el del panel: <code>Panel Ideas Box.app</code> · <code>ideas-box-panel.desktop</code>)</td></tr>
 </table>
 
 <p style="margin-top:12mm;padding-top:5mm;border-top:2px solid #e4e7ee;font-size:9pt;color:#6b7280">
