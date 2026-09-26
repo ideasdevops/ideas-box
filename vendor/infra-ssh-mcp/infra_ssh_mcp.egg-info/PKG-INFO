@@ -1,0 +1,7 @@
+Metadata-Version: 2.4
+Name: infra-ssh-mcp
+Version: 0.1.0
+Summary: MCP server for controlled SSH/Docker access to Easypanel hosts
+Requires-Python: >=3.10
+Requires-Dist: asyncssh>=2.14.0
+Requires-Dist: mcp<2,>=1.2.0

@@ -1,0 +1,2 @@
+[console_scripts]
+infra-ssh-mcp = infra_ssh_mcp.server:main

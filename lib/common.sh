@@ -207,6 +207,21 @@ python_uv_312() {
   printf '%s\n' "$py"
 }
 
+# pip_platform_constraints — topes de versión para pip según la plataforma. En Mac Intel,
+# cryptography 49+ ya no publica wheels (solo arm64) y compilarla pide Rust y OpenSSL: la
+# trae cualquier conector vía mcp → pyjwt[crypto]. La 48.x sí trae wheel universal2.
+# PIP_PREFER_BINARY cubre al próximo paquete que abandone Intel: pip toma la última versión
+# con wheel en vez de intentar compilar la más nueva.
+pip_platform_constraints() {
+  is_mac && [ "$(uname -m)" = x86_64 ] || return 0
+  export PIP_PREFER_BINARY=1
+  [ -z "${PIP_CONSTRAINT:-}" ] || return 0
+  local f="$STACK_CONFIG_DIR/pip-constraints.txt"
+  mkdir -p "$STACK_CONFIG_DIR"
+  printf '%s\n' '# Generado por Ideas Box: sin wheels para Mac Intel desde la 49' 'cryptography<49' > "$f"
+  export PIP_CONSTRAINT="$f"
+}
+
 load_profile() {
   [ -f "$STACK_PROFILE" ] || die "No hay perfil en $STACK_PROFILE. Ejecutá primero install.sh."
   # shellcheck disable=SC1090

@@ -121,6 +121,7 @@ _mcp_expand() {
 # _mcp_python_env <python> — crea el venv del conector e instala sus dependencias.
 _mcp_python_env() {
   local py="$1"
+  pip_platform_constraints
   run "$py" -m venv "$SRC_DIR/venv" \
     || die "No se pudo crear el entorno Python de $ID. Instalá python3-venv: sudo apt install python3-venv"
   run "$SRC_DIR/venv/bin/pip" install --quiet --upgrade pip wheel || return 1

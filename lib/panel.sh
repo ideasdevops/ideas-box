@@ -64,6 +64,7 @@ panel_install() {
   py="$(python_venv_bin)" || die "El panel necesita Python 3.10 o posterior y no encontré ninguno. En Mac: brew install python@3.12; en Linux: sudo apt install python3-venv."
   run "$py" -m venv "$PANEL_SRC/backend/venv" \
     || die "No se pudo crear el entorno Python. Instalá python3-venv: sudo apt install python3-venv"
+  pip_platform_constraints
   run "$PANEL_SRC/backend/venv/bin/pip" install --quiet --upgrade pip wheel
   run "$PANEL_SRC/backend/venv/bin/pip" install --quiet -r "$PANEL_SRC/backend/requirements.txt" \
     || die "No se pudieron instalar las dependencias del panel"
