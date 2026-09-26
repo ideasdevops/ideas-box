@@ -1,0 +1,11 @@
+ID="renoise"
+TITLE="Renoise — dirección y producción de video con IA"
+DESC="Plugin de Claude Code con director creativo, storyboards, remakes y variantes de video, más su CLI con los principales modelos de video, imagen y música (Seedance, Kling, MiniMax, Midjourney, Nano Banana, GPT Image y otros) desde una sola cuenta."
+TIER="negocio"
+RECOMMENDED=1
+KIND="tool"
+INSTALL_CUSTOM="NODE_BIN=__NODE__ bash \"$STACK_SRC/catalog/installers/renoise.sh\""
+CHECK_CMD="$HOME/.local/bin/renoise"
+AUTH_CHECK="\"$HOME/.local/bin/renoise\" auth status --json | grep -q '\"authenticated\": *true'"
+LOGIN_CMD="\"$HOME/.local/bin/renoise\" auth login --web"
+NOTES="Funciona con créditos de Renoise (plan mensual o recarga). Dentro de Claude Code: /renoise:director para producir un video, /renoise:setup para revisar la instalación."

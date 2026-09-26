@@ -64,6 +64,26 @@ doctor_main() {
   if [ -s "$MCP_REGISTRY" ]; then
     local server id toolgroup label launcher envfile
     while IFS=$'\t' read -r server id toolgroup label; do
+      # Remotos (URL + OAuth) y herramientas (CLI/plugin) no tienen lanzador
+      local kind check
+      kind="$( (mcp_catalog_load "$id" && printf '%s' "$KIND") 2>/dev/null || true)"
+      case "$kind" in
+        remote)
+          if grep -q "\"$server\"" "$CLAUDE_JSON" 2>/dev/null; then
+            _chk "MCP $server ($id) remoto registrado — si pide login: /mcp dentro de Claude Code"
+          else
+            _bad "MCP $server: no está en $CLAUDE_JSON (reinstalalo con: $STACK_NAME mcp add $id)"
+          fi
+          continue ;;
+        tool)
+          check="$( (mcp_catalog_load "$id" && printf '%s' "$CHECK_CMD") 2>/dev/null || true)"
+          if [ -z "$check" ] || [ -x "$check" ]; then
+            _chk "Herramienta $server lista"
+          else
+            _bad "Herramienta $server: falta $check (reinstalala con: $STACK_NAME mcp add $id)"
+          fi
+          continue ;;
+      esac
       launcher="$MCP_LAUNCHERS/$server.sh"
       if [ ! -x "$launcher" ]; then
         _bad "MCP $server: falta el lanzador $launcher"

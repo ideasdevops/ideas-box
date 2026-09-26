@@ -36,7 +36,7 @@ Una sola pasada guiada. Al terminar, «Hablar con mis agentes» abre una sesión
 | **16 agentes** | core, dev, ops, qa, ventas, marketing, contenido, clientes — con el nombre de *tu* empresa |
 | **~20 skills propios** | Procedimientos de trabajo: bugfix, release, propuestas, campañas, bitácoras, memoria |
 | **Packs de skills** | Marketing, diseño y disciplina de código, clonados de sus repos originales |
-| **Conectores MCP** | Búsqueda web, grafo de código, bandeja de atención, panel de servidores, SSH, redes sociales, video |
+| **Conectores MCP** | Búsqueda web, grafo de código, bandeja de atención, panel de servidores, SSH, redes sociales, video, y generación con IA recomendada (ElevenLabs, Kling, Renoise) |
 | **Panel de control** | Tablero web local para programar tareas a los agentes (opcional) |
 | **Reglas** | Autonomía, zonas protegidas y qué requiere aprobación explícita |
 

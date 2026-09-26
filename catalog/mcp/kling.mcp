@@ -1,0 +1,10 @@
+ID="kling"
+TITLE="Kling AI — generación de imagen y video"
+DESC="Texto a video, imagen a video, texto a imagen, personajes reutilizables y control de movimiento. Conector oficial remoto: entrás con tu cuenta de kling.ai, sin claves que guardar."
+TIER="negocio"
+RECOMMENDED=1
+KIND="remote"
+URL="https://kling.ai/mcp"
+TOOLGROUP="kling"
+SUGGEST="kling-cli"
+NOTES="La primera vez que un agente lo use, Claude Code abre el navegador para autorizar tu cuenta (también desde /mcp). Cada generación gasta créditos de Kling."

@@ -1,0 +1,19 @@
+ID="elevenlabs"
+TITLE="ElevenLabs — voces, locución, música y efectos de sonido"
+DESC="Locución con voces realistas en español, transcripción, efectos de sonido, música y limpieza de audio. Pago por uso con tu cuenta de ElevenLabs."
+TIER="negocio"
+RECOMMENDED=1
+KIND="python"
+REPO="https://github.com/elevenlabs/elevenlabs-mcp.git"
+REF="main"
+DIR="elevenlabs-mcp"
+PY_MIN="3.11"
+CMD="__SRC__/venv/bin/elevenlabs-mcp"
+ARGS_JSON='[]'
+ENV_KEYS="ELEVENLABS_API_KEY"
+ENV_SECRET="ELEVENLABS_API_KEY"
+ENV_PROMPT_ELEVENLABS_API_KEY="API key de ElevenLabs (elevenlabs.io → Developers → API Keys)"
+# Lo que genera cae en la carpeta de material de proceso, no en el home.
+LAUNCH_ENV="ELEVENLABS_MCP_BASE_PATH=$DATA_ROOT/06-CONTENIDO/10-CRUDOS/elevenlabs"
+TOOLGROUP="elevenlabs"
+NOTES="Cada locución o pista consume créditos de tu plan de ElevenLabs. Los agentes solo reciben las herramientas de audio: clonar voces, agentes telefónicos y llamadas salientes quedan fuera."

@@ -7,6 +7,10 @@
 #  - Cada servidor instalado queda anotado en mcp-installed.tsv; de ahí salen los
 #    `tools:` reales de cada agente (sin eso, un agente declara MCPs que no existen
 #    y se queda sin capacidad).
+#  - Tres clases de entrada en el catálogo: conectores locales (KIND node/python/custom,
+#    con lanzador), remotos (KIND=remote: una URL con OAuth, sin código ni secretos en
+#    disco; la autorización la hace Claude Code) y herramientas (KIND=tool: un CLI o
+#    plugin que los agentes usan por Bash, sin servidor MCP que registrar).
 
 MCP_REGISTRY="$STACK_CONFIG_DIR/mcp-installed.tsv"
 MCP_LAUNCHERS="$STACK_CONFIG_DIR/launchers"
@@ -34,9 +38,11 @@ mcp_catalog_load() {
   # limpiar valores de una carga previa
   unset ID TITLE DESC TIER KIND REPO REF DIR BUILD CMD ARGS_JSON MULTI \
         INSTANCE_PROMPT ENV_KEYS ENV_SECRET REQUIRES_HOST NOTES TOOLGROUP \
-        LAUNCH_EXTRA_ARGS INSTALL_CUSTOM LAUNCH_ENV VENDOR ORIGEN
+        LAUNCH_EXTRA_ARGS INSTALL_CUSTOM LAUNCH_ENV VENDOR ORIGEN \
+        URL RECOMMENDED PY_MIN CHECK_CMD AUTH_CHECK LOGIN_CMD SUGGEST SKILL_PACK
   MULTI=0; REF="main"; BUILD=""; ENV_KEYS=""; ENV_SECRET=""; REQUIRES_HOST=""
   NOTES=""; LAUNCH_EXTRA_ARGS=""; INSTALL_CUSTOM=""; LAUNCH_ENV=""; VENDOR=""
+  URL=""; RECOMMENDED=0; PY_MIN=""; CHECK_CMD=""; AUTH_CHECK=""; LOGIN_CMD=""; SUGGEST=""; SKILL_PACK=""
   # shellcheck disable=SC1090
   . "$f"
   [ -n "${ID:-}" ] || die "Catálogo inválido: $f (falta ID)"
@@ -47,7 +53,8 @@ mcp_catalog_list() {
   for id in $(mcp_catalog_ids); do
     ( mcp_catalog_load "$id"
       [ -z "$tier_filter" ] || [ "$TIER" = "$tier_filter" ] || exit 0
-      printf '  %-16s %-9s %s\n' "$ID" "[$TIER]" "$TITLE" )
+      mark=""; [ "$RECOMMENDED" = 1 ] && mark=" (recomendado)"
+      printf '  %-16s %-9s %s%s\n' "$ID" "[$TIER]" "$TITLE" "$mark" )
   done
 }
 
@@ -144,7 +151,15 @@ _mcp_build() {
         rm -rf "$SRC_DIR/venv"
       fi
       local py
-      py="$(python_venv_bin)" || die "$ID necesita Python 3.10 o posterior y no encontré ninguno (python3 es $(python3 -V 2>&1 || echo 'inexistente')). En Mac: brew install python@3.12; en Linux: sudo apt install python3-venv. Después retomá la instalación."
+      # Sin un Python que arme venvs (Ubuntu sin python3-venv), antes de cortar se prueba
+      # con un 3.12 de uv, que no pide sudo.
+      py="$(python_venv_bin)" || py="$(python_uv_312)" || die "$ID necesita Python 3.10 o posterior y no encontré ninguno (python3 es $(python3 -V 2>&1 || echo 'inexistente')). En Mac: brew install python@3.12; en Linux: sudo apt install python3-venv. Después retomá la instalación."
+      # Conectores que piden más que el mínimo general (PY_MIN="3.11"): con un Python del
+      # sistema más viejo (Ubuntu 22.04 trae 3.10) se va directo al 3.12 de uv.
+      if [ -n "$PY_MIN" ] && ! "$py" -c "import sys; sys.exit(sys.version_info < tuple(map(int, '$PY_MIN'.split('.'))))" 2>/dev/null; then
+        info "$ID pide Python $PY_MIN o posterior y el del sistema es $("$py" -V 2>&1); uso un 3.12 de uv (sin sudo)."
+        py="$(python_uv_312)" || die "$ID necesita Python $PY_MIN y no pude conseguir un 3.12 con uv (¿hay conexión?)."
+      fi
       _mcp_python_env "$py" && return 0
       # Un Python muy nuevo (Ubuntu trae 3.14) puede no tener todavía binarios de alguna
       # dependencia fijada por el conector: se reintenta una vez con un 3.12 de uv.
@@ -155,7 +170,8 @@ _mcp_build() {
       rm -rf "$SRC_DIR/venv"
       _mcp_python_env "$py" || die "Falló la instalación de $ID también con $("$py" -V 2>&1)"
       ;;
-    binary|custom)
+    remote) ;;   # nada que bajar ni compilar: vive en el servidor del proveedor
+    binary|custom|tool)
       [ -n "$INSTALL_CUSTOM" ] || die "$ID declara KIND=$KIND pero no define INSTALL_CUSTOM"
       info "Instalando $ID"
       run bash -c "$(_mcp_expand "$INSTALL_CUSTOM")" || die "Falló la instalación de $ID"
@@ -199,8 +215,12 @@ _mcp_launcher() {   # crea el lanzador que carga el .env y ejecuta el servidor
   local server="$1" envfile="$2" cmd="$3"
   run mkdir -p "$MCP_LAUNCHERS"
   local launcher="$MCP_LAUNCHERS/$server.sh"
-  local src_env="" load_env=""
-  [ -n "$LAUNCH_ENV" ] && src_env="export $(_mcp_expand "$LAUNCH_ENV")"
+  local src_env="" load_env="" kv
+  # Entre comillas: el valor puede ser una ruta con espacios ("/Volumes/Mi Disco/…")
+  if [ -n "$LAUNCH_ENV" ]; then
+    kv="$(_mcp_expand "$LAUNCH_ENV")"
+    src_env="export ${kv%%=*}=\"${kv#*=}\""
+  fi
   [ -n "$envfile" ] && load_env="if [ -f \"$envfile\" ]; then set -a; . \"$envfile\"; set +a; fi"
   write_file "$launcher" 700 <<EOF
 #!/usr/bin/env bash
@@ -229,6 +249,34 @@ print(json.dumps({"mcpServers": {os.environ["SERVER"]: {
 PY
 }
 
+_mcp_register_remote() {   # entrada http: Claude Code hace el OAuth la primera vez que se usa
+  local server="$1" url="$2"
+  SERVER="$server" URL="$url" python3 - <<'PY' | json_merge "$CLAUDE_JSON"
+import json, os
+print(json.dumps({"mcpServers": {os.environ["SERVER"]: {"type": "http", "url": os.environ["URL"]}}}))
+PY
+}
+
+# Herramientas con login por navegador (Renoise, Kling CLI): se ofrece el login en el acto
+# solo si hay una persona respondiendo y todavía no hay sesión iniciada.
+_mcp_tool_login() {
+  [ -n "$LOGIN_CMD" ] || return 0
+  if [ -n "$AUTH_CHECK" ] && bash -c "$AUTH_CHECK" >/dev/null 2>&1; then
+    ok "  $ID ya tiene la sesión iniciada"
+    return 0
+  fi
+  if [ "$NON_INTERACTIVE" = 1 ] || [ "$ASSUME_YES" = 1 ] || [ -z "$STACK_TTY" ]; then
+    info "  Para conectar tu cuenta de $ID corré después: $LOGIN_CMD"
+    return 0
+  fi
+  if confirm "  ¿Conectar ahora tu cuenta de $ID? (se abre el navegador)" y; then
+    run bash -c "$LOGIN_CMD" || warn "No se completó el login de $ID. Reintentalo con: $LOGIN_CMD"
+  else
+    info "  Para conectarla más tarde: $LOGIN_CMD"
+  fi
+  return 0
+}
+
 # mcp_install <id> [label]
 mcp_install() {
   local id="$1" label="${2:-}"
@@ -252,6 +300,32 @@ mcp_install() {
 
   _mcp_fetch
   _mcp_build
+
+  case "$KIND" in
+    remote)
+      [ -n "$URL" ] || die "$ID declara KIND=remote pero no define URL"
+      _mcp_register_remote "$server" "$URL"
+      mcp_registry_add "$ID" "$server" "${TOOLGROUP:-$ID}" "${label:-}"
+      ok "MCP listo: $server ($URL)"
+      info "   Para autorizarlo: abrí Claude Code, escribí /mcp, elegí $server y seguí el login en el navegador."
+      [ -n "$NOTES" ] && info "   nota: $NOTES"
+      return 0
+      ;;
+    tool)
+      # Sin servidor MCP: se anota igual en el registro para que doctor y update lo vean,
+      # con grupo "-" (no aporta herramientas mcp__ a los agentes).
+      mcp_registry_add "$ID" "$server" "-" "${label:-}"
+      # Su skill oficial, si trae, se clona como pack de terceros (catalog/skill-packs.tsv)
+      if [ -n "$SKILL_PACK" ]; then
+        thirdparty_install_pack "$SKILL_PACK" || warn "No se pudo instalar el skill de $ID"
+      fi
+      ok "Herramienta lista: $server"
+      _mcp_tool_login
+      [ -n "$NOTES" ] && info "   nota: $NOTES"
+      return 0
+      ;;
+  esac
+
   _mcp_env_wizard "$server"
 
   local cmd args
@@ -287,12 +361,33 @@ mcp_wizard() {
   fi
 
   echo
+  echo "Recomendados para crear contenido con IA (voz, imagen y video). Son servicios"
+  echo "pagos por uso: cada uno pide su clave o su login, y nada se genera sin tu aprobación."
+  local suggest
+  for id in $(mcp_catalog_ids); do
+    mcp_catalog_load "$id"
+    [ "$RECOMMENDED" = 1 ] || continue
+    if mcp_id_installed "$id"; then ok "Ya instalado: $id"; continue; fi
+    printf '\n%s%s%s (recomendado) — %s\n' "$C_B" "$ID" "$C_RESET" "$DESC"
+    confirm "¿Instalar $id?" y || continue
+    suggest="$SUGGEST"
+    mcp_install "$id" || continue
+    # Un complemento del mismo proveedor (el CLI de Kling junto a su MCP) se ofrece
+    # solo después de aceptar el principal, y con "no" por defecto.
+    if [ -n "$suggest" ] && ! mcp_id_installed "$suggest"; then
+      mcp_catalog_load "$suggest"
+      printf '  %s\n' "$DESC"
+      confirm "  ¿Instalar también $suggest?" n && { mcp_install "$suggest" || true; }
+    fi
+  done
+
+  echo
   echo "Conectores de negocio — se instalan solo los que uses. Vas a necesitar"
   echo "las credenciales a mano; podés agregarlos después con: $STACK_NAME mcp add <id>"
   echo
   for id in $(mcp_catalog_ids); do
     mcp_catalog_load "$id"
-    [ "$TIER" = negocio ] || continue
+    { [ "$TIER" = negocio ] && [ "$RECOMMENDED" != 1 ]; } || continue
     if mcp_id_installed "$id"; then
       ok "Ya instalado: $id (para sumar otra cuenta: $STACK_NAME mcp add $id)"
       continue

@@ -60,7 +60,7 @@ escritos, memoria que sobrevive a la sesión y conexiones a las herramientas que
   <tr><td><b>16 agentes</b></td><td>Dirección, desarrollo, operaciones, QA, ventas, marketing, contenido y clientes — con el nombre de <em>tu</em> empresa</td></tr>
   <tr><td><b>~20 procedimientos</b></td><td>Cómo se resuelve un bug, cómo se arma una propuesta, cómo se registra una operación</td></tr>
   <tr><td><b>Packs de skills</b></td><td>Marketing, diseño y disciplina de código, de repositorios abiertos</td></tr>
-  <tr><td><b>17 conectores</b></td><td>Búsqueda web, bandeja de atención, servidores, redes sociales, video, código</td></tr>
+  <tr><td><b>21 conectores</b></td><td>Búsqueda web, bandeja de atención, servidores, redes sociales, video, código</td></tr>
   <tr><td><b>Reglas</b></td><td>Qué puede hacer un agente solo y qué necesita tu aprobación</td></tr>
 </table>
 
@@ -121,6 +121,7 @@ podés dejarlo corriendo y volver.</p>
   <tr><td>Servidores por SSH</td><td>IP, usuario y ruta de tu clave privada</td><td>Tu proveedor de VPS</td></tr>
   <tr><td>Instagram / Facebook</td><td>Tokens de página y de cuenta business</td><td>Meta for Developers</td></tr>
   <tr><td>YouTube</td><td>API key de YouTube Data API v3</td><td>Google Cloud Console</td></tr>
+  <tr><td>Contenido con IA</td><td>API key de ElevenLabs; cuentas de Kling y Renoise (login en el navegador)</td><td>elevenlabs.io · kling.ai · renoise.ai</td></tr>
 </table>
 
 <div class="caja gris">
@@ -265,8 +266,9 @@ explica cómo crearlo y podés seguir con una carpeta mientras tanto.</p>
 (siempre), marketing y criterio de diseño (recomendados) y dos opcionales más pesados.</p>
 
 <h3>5 · Conectores</h3>
-<p>Instala primero los tres del núcleo, que no piden credenciales. Después te ofrece uno por uno los de
-negocio. Para cada uno que aceptes te va a pedir sus credenciales y, si admite varias cuentas —como
+<p>Instala primero los tres del núcleo, que no piden credenciales. Después te ofrece los
+<strong>recomendados para crear contenido con IA</strong> —ElevenLabs, Kling y Renoise—, que vienen con
+«sí» por defecto, y a continuación, uno por uno, los de negocio. Para cada uno que aceptes te va a pedir sus credenciales y, si admite varias cuentas —como
 Chatwoot, Easypanel o las redes sociales—, te deja agregar tantas como tengas, cada una con su etiqueta.</p>
 
 <p class="chico"><strong>La etiqueta importa:</strong> con dos servidores quedan <code>easypanel-produccion</code>
@@ -381,7 +383,7 @@ está montado. Al final, te ofrece dejar el ícono <strong>Ideas Box</strong>.</
 
 <!-- ═══════════════ 8 ═══════════════ -->
 <h2><span class="num">8</span>Conectores</h2>
-<p class="sub">Diecisiete integraciones disponibles. Instalás solo las que uses, cuando las necesites.</p>
+<p class="sub">Veintiún integraciones disponibles. Instalás solo las que uses, cuando las necesites.</p>
 
 <h3>Núcleo — se instalan siempre</h3>
 <table>
@@ -401,6 +403,15 @@ está montado. Al final, te ofrece dejar el ícono <strong>Ideas Box</strong>.</
   <tr><td><code>facebook</code> <span class="chico">· multi-página</span></td><td>Publicar, responder comentarios y leer métricas</td><td>Token de página e ID</td></tr>
   <tr><td><code>youtube</code></td><td>Investigar canales, videos y transcripciones</td><td>API key de YouTube</td></tr>
   <tr><td><code>video-audio</code></td><td>Cortar, subtitular y convertir video con ffmpeg</td><td>Ninguna</td></tr>
+</table>
+
+<h3>Recomendados — contenido con IA</h3>
+<p class="chico">Servicios pagos por uso. Los agentes estiman el gasto y piden aprobación antes de generar.</p>
+<table>
+  <tr><th style="width:24%">Conector</th><th>Para qué sirve</th><th style="width:26%">Credencial</th></tr>
+  <tr><td><code>elevenlabs</code></td><td>Locución con voces realistas, transcripción, efectos de sonido y música</td><td>API key de ElevenLabs</td></tr>
+  <tr><td><code>kling</code></td><td>Texto a video, imagen a video y texto a imagen. Opcional: su CLI (<code>kling-cli</code>)</td><td>Login con tu cuenta de Kling</td></tr>
+  <tr><td><code>renoise</code></td><td>Director creativo y producción de video con varios modelos desde una cuenta</td><td>Login con tu cuenta de Renoise</td></tr>
 </table>
 
 <h3 style="break-before: page">Opcionales — se agregan después, cuando hagan falta</h3>

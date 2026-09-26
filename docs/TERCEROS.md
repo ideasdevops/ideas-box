@@ -14,6 +14,7 @@ su propia licencia; revisala antes de usarlo comercialmente.
 | taste | github.com/Leonxlnx/taste-skill | dev |
 | open-design | github.com/nexu-io/open-design | dev |
 | strix | github.com/usestrix/strix | qa |
+| kling | github.com/klingai-tech/skills (lo instala el conector `kling-cli`) | contenido |
 
 ## Servidores MCP (`catalog/mcp/*.mcp`)
 
@@ -35,6 +36,17 @@ su propia licencia; revisala antes de usarlo comercialmente.
 | gimp | github.com/maorcc/gimp-mcp |
 | obs | github.com/royshil/obs-mcp |
 | obsidian | github.com/cyanheads/obsidian-mcp-server |
+| elevenlabs | github.com/elevenlabs/elevenlabs-mcp (oficial) |
+| kling | https://kling.ai/mcp — servidor remoto oficial, no se descarga código (OAuth) |
+
+## Herramientas CLI y plugins (`catalog/mcp/*.mcp` con `KIND="tool"`)
+
+No son servidores MCP: los agentes las usan por Bash o como skills de Claude Code.
+
+| Herramienta | Origen |
+|---|---|
+| renoise | plugin github.com/ArcoCodes/renoise-plugins-official + CLI que baja su propio instalador |
+| kling-cli | paquete npm `@klingai/cli-global` (oficial) |
 
 ## Código propio distribuido con el stack
 
