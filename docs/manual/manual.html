@@ -282,8 +282,9 @@ de los conectores que instalaste</strong>: si mañana agregás uno, los agentes 
 <h3>8 · Permisos y hook de arranque</h3>
 <p>Permisos de Claude Code (lectura libre; escritura y acciones sensibles bajo aprobación), bloqueo de
 lectura sobre tus credenciales y claves SSH, y un aviso de arranque que detecta si el disco de datos no
-está montado. Al final, te ofrece dejar el ícono <strong>Ideas Box</strong>, y si instalás el panel de
-tareas (paso 9, opcional), un segundo ícono: <strong>Panel Ideas Box</strong>, que lo abre en el navegador.</p>
+está montado. Al final, te ofrece dejar en el Escritorio el ícono <strong>Ideas Box</strong> y el acceso
+<strong>Archivos Ideas Box</strong> (la carpeta donde los agentes guardan lo que generan); si instalás el panel
+de tareas (paso 9, opcional), también <strong>Panel Ideas Box</strong>, que lo abre en el navegador.</p>
 
 <div class="caja">
   <div class="t">Si se corta, retoma donde quedó</div>
@@ -464,6 +465,7 @@ confiables: corren en tu equipo, con tus credenciales.</p>
   <tr><td><b>Hacer un respaldo</b></td><td>Guarda una copia comprimida de agentes, memoria, documentación y configuración</td></tr>
   <tr><td><b>Completar o rehacer la instalación</b></td><td>Vuelve a pasar por el asistente sin perder lo que ya tenés</td></tr>
   <tr><td><b>Abrir el panel de tareas</b></td><td>Lo mismo que el ícono «Panel Ideas Box»: levanta el tablero y lo abre en el navegador</td></tr>
+  <tr><td><b>Abrir la carpeta de archivos</b></td><td>Lo mismo que «Archivos Ideas Box»: todo lo que generan tus agentes, por área</td></tr>
 </table>
 
 <p><strong>Con tus palabras:</strong> en vez del número, escribí <em>«conectar chatwoot»</em> o <em>«hacé
@@ -703,6 +705,7 @@ script -q ~/ideasbox-install.log bash install.sh --debug</code></pre>
   <tr><td>Hacer un respaldo</td><td><code>ideasbox backup</code></td></tr>
   <tr><td>Completar o rehacer la instalación</td><td><code>bash ~/ideas-box/install.sh</code></td></tr>
   <tr><td>Abrir el panel de tareas</td><td><code>ideasbox panel open</code> · <code>ideasbox panel stop</code> para apagarlo</td></tr>
+  <tr><td>Abrir la carpeta de archivos</td><td><code>ideasbox carpeta</code> · <code>ideasbox icono</code> rehace los accesos del Escritorio</td></tr>
 </table>
 
 <h3>5 · Mantenimiento</h3>

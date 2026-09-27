@@ -106,6 +106,7 @@ install_cli() {
     *) warn "Agregá \$HOME/.local/bin a tu PATH para usar '$STACK_NAME' directo." ;;
   esac
   menu_install_shortcut
+  data_install_shortcut
 }
 
 resumen() {

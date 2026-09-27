@@ -48,7 +48,8 @@ Comandos técnicos (usuarios avanzados):
   $STACK_NAME skills update          actualizar todos los packs
   $STACK_NAME panel <acción>         panel de control local (install/open/start/stop/status/logs)
   $STACK_NAME backup                 respaldo del árbol canónico y la config
-  $STACK_NAME icono                  volver a crear el ícono «Ideas Box» (Escritorio y menú)
+  $STACK_NAME icono                  volver a crear los íconos del Escritorio (Ideas Box, archivos y panel)
+  $STACK_NAME carpeta                abrir la carpeta con lo que generan tus agentes
   $STACK_NAME update                 actualizar stack, packs y conectores
   $STACK_NAME profile                editar la identidad de la empresa
 
@@ -189,8 +190,14 @@ PY
     ;;
 
   icono)
+    load_profile
     menu_install_shortcut
-    if panel_installed; then load_profile; panel_install_shortcut; fi
+    data_install_shortcut
+    if panel_installed; then panel_install_shortcut; fi
+    ;;
+
+  carpeta)
+    data_open_folder
     ;;
 
   profile)

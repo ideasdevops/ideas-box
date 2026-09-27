@@ -89,6 +89,7 @@ ideasbox icono           # volver a crear el ícono «Ideas Box» del Escritorio
 ideasbox update          # actualizar todo
 ideasbox panel install   # tablero web local de tareas
 ideasbox panel open      # levantarlo y abrirlo en el navegador (http://127.0.0.1:8420)
+ideasbox carpeta         # abrir la carpeta con lo que generan los agentes
 ```
 
 ## Cómo está organizado

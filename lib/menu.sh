@@ -89,6 +89,7 @@ menu_intent() {
     *revis*|*diagnost*|*doctor*|*chequ*|*control*|*estado*|*funciona*|*anda\ *|*problema*|*error*) echo revisar ;;
     *actualiz*|*update*) echo actualizar ;;
     *respald*|*backup*|*copia*|*resguard*) echo respaldo ;;
+    *archivo*|*carpeta*|*generad*|*entregable*|*documento*) echo carpeta ;;
     *instal*|*configur*|*empezar\ de*|*rehacer*) echo instalar ;;
     *hablar*|*agente*|*claude*|*abrir*|*chat*|*trabaj*|*empez*|*preguntar*) echo hablar ;;
     *) echo nada ;;
@@ -175,6 +176,7 @@ _menu_do() {
     respaldo)   _menu_run backup ;;
     icono)      _menu_run icono ;;
     panel)      _menu_run panel open ;;
+    carpeta)    _menu_run carpeta ;;
     salir)      return 1 ;;
     *)          warn "No te entendí. Elegí un número de la lista o probá con otras palabras (ej: «conectar chatwoot»)." ;;
   esac
@@ -209,6 +211,7 @@ menu_main() {
       echo "  8) Hacer un respaldo"
       echo "  9) Completar o rehacer la instalación"
       echo " 10) Abrir el panel de tareas y programación"
+      echo " 11) Abrir la carpeta con lo que generan mis agentes"
     else
       if install_pending; then echo "  1) Terminar de instalar mi Ideas Box (quedó a mitad)"
       else echo "  1) Instalar mi Ideas Box"
@@ -223,7 +226,7 @@ menu_main() {
       case "$choice" in
         1) accion=hablar ;; 2) accion=revisar ;; 3) accion=skills-add ;; 4) accion=mcp-add ;;
         5) accion=skills-new ;; 6) accion=mcp-new ;; 7) accion=actualizar ;; 8) accion=respaldo ;;
-        9) accion=instalar ;; 10) accion=panel ;; 0) accion=salir ;; '') continue ;; *) accion="$(menu_intent "$choice")" ;;
+        9) accion=instalar ;; 10) accion=panel ;; 11) accion=carpeta ;; 0) accion=salir ;; '') continue ;; *) accion="$(menu_intent "$choice")" ;;
       esac
     else
       case "$choice" in
@@ -301,6 +304,12 @@ _wsl_powershell() {
   [ -x "$p" ] && echo "$p"
 }
 
+# -EncodedCommand (UTF-16LE en base64) evita pelear con las comillas entre bash y Windows
+_wsl_ps_run() {
+  run "$1" -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand \
+    "$(printf '%s' "$2" | iconv -f UTF-8 -t UTF-16LE | base64 | tr -d '\n')" >/dev/null
+}
+
 # _wsl_make_shortcut <nombre> <comando> <descripción> <.ico> <pregunta> <estilo>
 # Crea «<nombre>.lnk» en el menú Inicio y, si se acepta, en el Escritorio de Windows; el
 # acceso abre wsl.exe en esta distro y corre <comando> con el PATH del usuario.
@@ -338,9 +347,7 @@ foreach (\$d in \$targets) {
   \$l.WindowStyle = $style
   \$l.Save()
 }"
-  # -EncodedCommand (UTF-16LE en base64) evita pelear con las comillas entre bash y Windows
-  if run "$ps" -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand \
-      "$(printf '%s' "$script" | iconv -f UTF-8 -t UTF-16LE | base64 | tr -d '\n')" >/dev/null; then
+  if _wsl_ps_run "$ps" "$script"; then
     ok "$name quedó en el menú Inicio de Windows"
     [ "$desk_ps" = '$true' ] && ok "Ícono «${name}» creado en el Escritorio de Windows"
   else
@@ -452,4 +459,65 @@ Categories=Office;ProjectManagement;
 EOF
   ok "$name quedó en el menú de aplicaciones"
   _linux_desktop_to_desk "$apps/ideas-box-panel.desktop" "¿Crear también el ícono «${name}» en tu Escritorio?"
+}
+
+# «Archivos Ideas Box»: la raíz de datos, donde cada agente guarda lo que genera en su
+# carpeta (06-CONTENIDO, 07-DOCUMENTOS, 10-PROSPECCIONES…). En macOS y Linux es un enlace
+# simbólico en el Escritorio (Finder y los gestores de archivos lo abren como carpeta); en
+# WSL, un .lnk de Windows a la ruta \\wsl.localhost\… que da wslpath.
+FOLDER_SHORTCUT_NAME="Archivos Ideas Box"
+
+data_install_shortcut() {
+  local name="$FOLDER_SHORTCUT_NAME" desk link q
+  q="¿Crear en tu Escritorio el acceso «${name}», la carpeta donde tus agentes guardan lo que generan?"
+  if [ -z "${DATA_ROOT:-}" ] || [ ! -d "$DATA_ROOT" ]; then
+    warn "La raíz de datos no está disponible; no creo el acceso «${name}»."
+    return 0
+  fi
+  if is_wsl; then
+    local ps target
+    ps="$(_wsl_powershell)" || ps=""
+    if [ -z "$ps" ] || ! have wslpath || ! have iconv || ! have base64; then
+      info "Tus archivos están en: $DATA_ROOT"
+      return 0
+    fi
+    confirm "$q" y || return 0
+    target="$(wslpath -w "$DATA_ROOT")"
+    if _wsl_ps_run "$ps" "\$ErrorActionPreference = 'Stop'
+\$l = (New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path ([Environment]::GetFolderPath('Desktop')) '${name//\'/\'\'}.lnk'))
+\$l.TargetPath = '${target//\'/\'\'}'
+\$l.Description = 'Lo que generan tus agentes'
+\$l.Save()"; then
+      ok "Acceso «${name}» creado en el Escritorio de Windows"
+    else
+      warn "Windows no dejó crear el acceso «${name}». Tus archivos están en: $DATA_ROOT"
+    fi
+    return 0
+  fi
+
+  if is_mac; then desk="$HOME/Desktop"
+  else desk="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
+  fi
+  [ -d "$desk" ] && [ "$desk" != "$HOME" ] || return 0
+  link="$desk/$name"
+  # Solo se reemplaza un enlace; una carpeta o archivo real con ese nombre es del usuario
+  if [ -e "$link" ] && [ ! -L "$link" ]; then
+    warn "Ya hay algo llamado «${name}» en tu Escritorio y no es un acceso nuestro; lo dejo como está."
+    return 0
+  fi
+  confirm "$q" y || return 0
+  run ln -sfn "$DATA_ROOT" "$link"
+  ok "Acceso creado: Escritorio → $name"
+}
+
+# Abre la raíz de datos en el explorador de archivos del sistema
+data_open_folder() {
+  load_profile
+  [ -d "$DATA_ROOT" ] || die "La raíz de datos no está disponible: $DATA_ROOT"
+  if is_wsl && have wslpath && have explorer.exe; then
+    explorer.exe "$(wslpath -w "$DATA_ROOT")" || true   # devuelve 1 aunque abra bien
+  else
+    _open_url "$DATA_ROOT"
+  fi
+  ok "Tus archivos: $DATA_ROOT"
 }
