@@ -9,7 +9,12 @@ from config import DATA_ROOT, EMPRESA_NOMBRE, EMPRESA_RESPONSABLE, EMPRESA_RUBRO
 from routers import agents, skills, tasks, servers, chat, runs, hilos, sesiones, programacion, mantenimiento
 from services import scheduler
 
-app = FastAPI(title=f"Panel de {EMPRESA_NOMBRE}", version="0.1.0")
+# Versión del contrato entre este backend y la interfaz. Subirla cada vez que cambie la
+# forma de algún endpoint que usa el frontend (y la misma constante en frontend/src/api.ts):
+# si no coinciden, la interfaz pide reiniciar el panel en vez de romperse.
+PANEL_API = 2
+
+app = FastAPI(title=f"Panel de {EMPRESA_NOMBRE}", version="0.2.0")
 
 # Local-only, un solo usuario -- CORS abierto para el dev server de Vite (localhost:5173).
 app.add_middleware(
@@ -46,7 +51,8 @@ def profile():
     """Identidad de la empresa: el panel se rotula con ella, no con una marca fija."""
     from services.runner import claude_bin  # noqa: PLC0415
     return {"empresa": EMPRESA_NOMBRE, "rubro": EMPRESA_RUBRO, "sitio": EMPRESA_SITIO,
-            "responsable": EMPRESA_RESPONSABLE, "claude": bool(claude_bin()), "raiz": str(DATA_ROOT)}
+            "responsable": EMPRESA_RESPONSABLE, "claude": bool(claude_bin()), "raiz": str(DATA_ROOT),
+            "api": PANEL_API}
 
 
 _FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"

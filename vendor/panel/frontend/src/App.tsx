@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
-import { NavLink, Route, Routes } from 'react-router-dom'
-import { api, type Profile } from './api'
+import { Component, useEffect, useState, type ReactNode } from 'react'
+import { NavLink, Route, Routes, useLocation } from 'react-router-dom'
+import { api, PANEL_API, type Profile } from './api'
 import { usePoll } from './components/run'
 import { Pulse } from './components/ui'
 import HoyPage from './pages/Hoy'
@@ -36,6 +36,59 @@ const NAV: { grupo: string; items: Item[] }[] = [
   { grupo: 'Sistema', items: [{ to: '/mantenimiento', label: 'Mantenimiento' }] },
 ]
 
+// Si una sección falla, se muestra un aviso en vez de dejar la página en blanco
+class Resguardo extends Component<{ children: ReactNode; ruta: string }, { error: string | null }> {
+  state = { error: null as string | null }
+  static getDerivedStateFromError(e: Error) {
+    return { error: e.message || String(e) }
+  }
+  componentDidUpdate(prev: { ruta: string }) {
+    if (prev.ruta !== this.props.ruta && this.state.error) this.setState({ error: null })
+  }
+  render() {
+    if (!this.state.error) return this.props.children
+    return (
+      <div className="border border-rose-500/30 bg-rose-500/5 p-5 text-sm">
+        <div className="text-rose-200 font-medium mb-1">Esta sección no se pudo mostrar</div>
+        <div className="text-muted mb-3">
+          Casi siempre pasa después de actualizar, si quedó corriendo la versión anterior del panel. Reinicialo
+          desde Mantenimiento o con <span className="font-mono text-white">ideasbox panel restart</span>.
+        </div>
+        <div className="text-[11px] text-muted font-mono">{this.state.error}</div>
+      </div>
+    )
+  }
+}
+
+function AvisoVersion() {
+  const [reiniciando, setReiniciando] = useState(false)
+  const reiniciar = async () => {
+    setReiniciando(true)
+    try {
+      await api.restart()
+    } catch {
+      // un backend muy viejo no tiene este endpoint: queda el comando de la terminal
+      setReiniciando(false)
+      return
+    }
+    const esperar = async () => {
+      try { const p = await api.profile(); if (p.api === PANEL_API) window.location.reload(); else setTimeout(esperar, 1500) } catch { setTimeout(esperar, 1500) }
+    }
+    setTimeout(esperar, 3000)
+  }
+  return (
+    <div className="mb-6 border border-amber-500/40 bg-amber-500/10 px-4 py-3 flex items-center gap-4">
+      <div className="text-sm text-amber-100 flex-1">
+        El panel se actualizó, pero sigue corriendo la versión anterior. Reinicialo para que todo funcione
+        (o en la terminal: <span className="font-mono">ideasbox panel restart</span>).
+      </div>
+      <button onClick={reiniciar} disabled={reiniciando} className="text-sm font-medium px-3 py-1.5 bg-accent text-black hover:bg-accent-dim hover:text-white disabled:opacity-50">
+        {reiniciando ? 'Reiniciando…' : 'Reiniciar el panel'}
+      </button>
+    </div>
+  )
+}
+
 export default function App() {
   // El panel se rotula con la empresa del perfil del stack, no con una marca fija.
   const [perfil, setPerfil] = useState<Profile | null>(null)
@@ -48,6 +101,8 @@ export default function App() {
     }).catch(() => setPerfil(null))
   }, [])
 
+  const location = useLocation()
+  const desactualizado = perfil !== null && perfil.api !== PANEL_API
   const enCurso = (prog?.corriendo.length ?? 0) + (prog?.en_cola.length ?? 0)
   const paraRevisar = prog?.sugerencias.filter((s) => s.tipo === 'recordatorio').length ?? 0
 
@@ -98,6 +153,8 @@ export default function App() {
         </div>
       </aside>
       <main className="flex-1 p-8 min-w-0 max-w-6xl">
+        {desactualizado && <AvisoVersion />}
+        <Resguardo ruta={location.pathname}>
         <Routes>
           <Route path="/" element={<HoyPage perfil={perfil} />} />
           <Route path="/conversar" element={<ConversarPage />} />
@@ -110,6 +167,7 @@ export default function App() {
           <Route path="/servers" element={<ServersPage />} />
           <Route path="/mantenimiento" element={<MantenimientoPage />} />
         </Routes>
+        </Resguardo>
       </main>
     </div>
   )

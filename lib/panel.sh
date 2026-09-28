@@ -136,6 +136,13 @@ panel_install() {
   run mkdir -p "$DATA_ROOT/05-OPERACIONES/panel"
   ok "Panel instalado. Abrilo con el ícono «Panel Ideas Box» o con: $STACK_NAME panel open"
   panel_install_shortcut
+  # Si ya estaba corriendo, sigue con el código viejo en memoria hasta reiniciarlo: se
+  # reinicia acá, salvo que la instalación la haya pedido el propio panel (se cortaría a
+  # sí mismo a mitad de la tarea; ahí la interfaz ofrece el botón «Reiniciar»).
+  if [ "${IB_DESDE_PANEL:-0}" != 1 ] && { panel_is_running || [ -n "$(_panel_huerfanos)" ]; }; then
+    info "Reiniciando el panel para que tome la versión nueva"
+    panel_stop && panel_start
+  fi
 }
 
 panel_start() {
@@ -145,6 +152,8 @@ panel_start() {
     ok "El panel ya está corriendo en http://127.0.0.1:$PANEL_PORT"
     return 0
   fi
+  # Un panel viejo sin archivo de PID seguiría respondiendo con el código anterior
+  [ -n "$(_panel_huerfanos)" ] && panel_stop >/dev/null
   [ -d "$DATA_ROOT" ] || die "La raíz de datos no está disponible: $DATA_ROOT"
 
   run mkdir -p "$PANEL_STATE_DIR"
@@ -181,16 +190,46 @@ panel_start() {
   return 1
 }
 
+# Procesos del panel que no figuran en el archivo de PID (lo perdió un reinicio a medias,
+# o se levantó de otra forma): se reconocen por el uvicorn de su entorno, que es único del
+# panel. Nada más amplio: un patrón como la carpeta del código cerraría también, por
+# ejemplo, un editor abierto sobre un archivo del panel.
+_panel_huerfanos() {
+  # pgrep sale con 1 si no encuentra nada: con pipefail y set -e eso cortaba el script
+  { pgrep -f "$PANEL_SRC/backend/venv/bin/uvicorn" 2>/dev/null || true; } | while IFS= read -r p; do
+    [ "$p" = "$$" ] || printf '%s\n' "$p"
+  done
+  return 0
+}
+
 panel_stop() {
-  if ! panel_is_running; then
-    info "El panel no estaba corriendo."
-    rm -f "$PANEL_PID_FILE"
-    return 0
+  local pid="" huerfanos="" n=0
+  if panel_is_running; then
+    pid="$(cat "$PANEL_PID_FILE")"
+    run kill "$pid" 2>/dev/null || true
   fi
-  local pid; pid="$(cat "$PANEL_PID_FILE")"
-  run kill "$pid"
   rm -f "$PANEL_PID_FILE"
-  ok "Panel detenido."
+  huerfanos="$(_panel_huerfanos)"
+  if [ -n "$huerfanos" ]; then
+    # shellcheck disable=SC2086 — lista de PIDs, uno por palabra
+    run kill $huerfanos 2>/dev/null || true
+  fi
+  # Esperar a que suelte el puerto: si no, el panel nuevo no puede arrancar
+  while [ "$DRY_RUN" != 1 ] && { [ -n "$(_panel_huerfanos)" ] || curl -fsS -m 1 "http://127.0.0.1:$PANEL_PORT/api/health" >/dev/null 2>&1; }; do
+    n=$((n+1))
+    if [ "$n" -ge 10 ]; then
+      huerfanos="$(_panel_huerfanos)"
+      # shellcheck disable=SC2086
+      [ -n "$huerfanos" ] && kill -9 $huerfanos 2>/dev/null
+      break
+    fi
+    sleep 0.5
+  done
+  if [ -z "$pid" ] && [ -z "$huerfanos" ]; then
+    info "El panel no estaba corriendo."
+  else
+    ok "Panel detenido."
+  fi
 }
 
 panel_status() {

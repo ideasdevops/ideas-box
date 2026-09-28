@@ -64,7 +64,11 @@ export type TaskTemplate = { id: number; nombre: string; titulo: string; descrip
 
 export type ServerEntry = { alias: string; label: string; mcps: string[]; toolgroups: string[] }
 
-export type Profile = { empresa: string; rubro: string; sitio: string; responsable: string; claude: boolean; raiz: string }
+// Misma constante que PANEL_API en backend/main.py: si el backend que responde es de otra
+// versión (quedó corriendo el viejo después de actualizar), la interfaz lo avisa.
+export const PANEL_API = 2
+
+export type Profile = { empresa: string; rubro: string; sitio: string; responsable: string; claude: boolean; raiz: string; api?: number }
 
 export type Run = {
   id: number

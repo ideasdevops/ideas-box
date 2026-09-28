@@ -331,7 +331,7 @@ class Runner:
             return
         # IB_GUI=1: las respuestas que manda el panel (IB_ANS_*) se usan en vez de preguntar;
         # lo que no venga, toma el valor por defecto (no hay terminal).
-        env = dict(os.environ, NO_COLOR="1", IB_GUI="1", **env_extra)
+        env = dict(os.environ, NO_COLOR="1", IB_GUI="1", IB_DESDE_PANEL="1", **env_extra)
         self._evento(run_id, "sistema", "ideasbox " + " ".join(args))
         p = self._popen(run_id, ["bash", str(IDEASBOX), *args], env, HOME)
         ultimas = []
