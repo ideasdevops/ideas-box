@@ -8,18 +8,26 @@ canónica persistente y conectores MCP a las herramientas del negocio.
 
 ## Empezar
 
-1. **Bajá Ideas Box.** Abrí la Terminal (en Mac: Aplicaciones → Utilidades → Terminal) y pegá:
+1. **Abrí la Terminal** (en Mac: Aplicaciones → Utilidades → Terminal; en Windows 11: Ubuntu, ver
+   abajo) y pegá esta línea:
    ```bash
-   git clone https://github.com/ideasdevops/ideas-box.git ~/ideas-box
+   curl -fsSL https://raw.githubusercontent.com/ideasdevops/ideas-box/main/instalar.sh | bash
    ```
-   Si avisa que falta git: en Linux, `sudo apt install -y git`; en Mac, aceptá la ventana que
-   ofrece instalar las herramientas de Apple y volvé a pegar la línea.
-2. **Abrí el menú.** En Mac, doble clic en **Ideas Box.command**, dentro de la carpeta
-   `ideas-box` de tu usuario. En Linux, en la Terminal: `bash ~/ideas-box/bin/ideasbox`
-3. Elegí **«Instalar mi Ideas Box»** y respondé las preguntas.
+2. **Seguí el asistente en el navegador.** Se abre solo: te pregunta el nombre y el rubro de tu
+   empresa, dónde guardar los datos, qué habilidades y qué herramientas conectar, y muestra el
+   avance de la instalación. No hace falta volver a la Terminal (dejala abierta hasta el final).
+   Si se necesita la contraseña de tu equipo, la pide una ventana del sistema.
 
-Al terminar queda el ícono **Ideas Box** en tu Escritorio (Mac) o en el menú de aplicaciones
-(Linux). Desde ahí se hace todo lo demás, sin escribir comandos.
+En Mac, la primera vez aparece la ventana de Apple para instalar sus herramientas de desarrollo:
+aceptala y el asistente sigue solo. En **Windows 11**, primero instalá Ubuntu (en una terminal de
+administrador: `wsl --install -d Ubuntu`), abrilo, y pegá la línea de arriba ahí; la contraseña de
+Ubuntu se pide una vez en esa ventana.
+
+Al terminar quedan en el Escritorio **Ideas Box** (el menú), **Archivos Ideas Box** y, si lo
+instalaste, **Panel Ideas Box**. Desde ahí se hace todo lo demás, sin escribir comandos.
+
+¿Preferís la terminal? `bash ~/ideas-box/install.sh` hace la misma instalación con preguntas
+en la terminal (útil por SSH o en servidores).
 
 📄 **Manual de usuario completo, en PDF:** [`docs/manual/Manual-Ideas-Box.pdf`](docs/manual/Manual-Ideas-Box.pdf)
 — instalación en Linux y macOS, el asistente paso por paso, los agentes, los conectores y
@@ -75,7 +83,8 @@ habilidad para responder presupuestos"*.
 Todo lo del menú tiene su comando:
 
 ```bash
-bash install.sh          # instalar (= «Instalar mi Ideas Box»)
+bash install.sh --gui    # asistente gráfico en el navegador
+bash install.sh          # la misma instalación, con preguntas en la terminal
 ideasbox doctor          # ¿está todo sano?
 ideasbox status          # resumen corto
 ideasbox mcp list        # conectores disponibles

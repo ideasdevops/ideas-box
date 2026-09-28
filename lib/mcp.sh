@@ -186,7 +186,7 @@ _mcp_env_wizard() {
   local server="$1" key val prompt_var envfile="$STACK_SECRETS_DIR/$server.env" body=""
   [ -n "$ENV_KEYS" ] || { MCP_ENVFILE=""; return 0; }
 
-  if [ -f "$envfile" ] && confirm "Ya hay credenciales para $server. ¿Reusarlas?" y; then
+  if [ -f "$envfile" ] && confirm "Ya hay credenciales para $server. ¿Reusarlas?" y "reuse_$ID"; then
     MCP_ENVFILE="$envfile"; return 0
   fi
 
@@ -194,9 +194,9 @@ _mcp_env_wizard() {
     prompt_var="ENV_PROMPT_$key"
     local prompt="${!prompt_var:-$key}"
     if [[ " $ENV_SECRET " == *" $key "* ]]; then
-      ask_secret "  $prompt" val
+      ask_secret "  $prompt" val "cred_${ID}_$key"
     else
-      ask "  $prompt" val ""
+      ask "  $prompt" val "" "cred_${ID}_$key"
     fi
     if [ -z "$val" ]; then
       warn "$key quedó vacío: el servidor $server va a fallar hasta que lo completes en $envfile"
@@ -270,7 +270,7 @@ _mcp_tool_login() {
     info "  Para conectar tu cuenta de $ID corré después: $LOGIN_CMD"
     return 0
   fi
-  if confirm "  ¿Conectar ahora tu cuenta de $ID? (se abre el navegador)" y; then
+  if confirm "  ¿Conectar ahora tu cuenta de $ID? (se abre el navegador)" y "login_$ID"; then
     run bash -c "$LOGIN_CMD" || warn "No se completó el login de $ID. Reintentalo con: $LOGIN_CMD"
   else
     info "  Para conectarla más tarde: $LOGIN_CMD"
@@ -293,7 +293,7 @@ mcp_install() {
   local server="$ID"
   if [ "${MULTI:-0}" = 1 ]; then
     if [ -z "$label" ]; then
-      ask "  ${INSTANCE_PROMPT:-Etiqueta para esta instancia}" label "$EMPRESA_SLUG"
+      ask "  ${INSTANCE_PROMPT:-Etiqueta para esta instancia}" label "$EMPRESA_SLUG" "label_$ID"
     fi
     label="$(slugify "$label")"
     server="$ID-$label"
@@ -370,7 +370,7 @@ mcp_wizard() {
     [ "$RECOMMENDED" = 1 ] || continue
     if mcp_id_installed "$id"; then ok "Ya instalado: $id"; continue; fi
     printf '\n%s%s%s (recomendado) — %s\n' "$C_B" "$ID" "$C_RESET" "$DESC"
-    confirm "¿Instalar $id?" y || continue
+    confirm "¿Instalar $id?" y "mcp_$id" || continue
     suggest="$SUGGEST"
     mcp_install "$id" || continue
     # Un complemento del mismo proveedor (el CLI de Kling junto a su MCP) se ofrece
@@ -378,7 +378,7 @@ mcp_wizard() {
     if [ -n "$suggest" ] && ! mcp_id_installed "$suggest"; then
       mcp_catalog_load "$suggest"
       printf '  %s\n' "$DESC"
-      confirm "  ¿Instalar también $suggest?" n && { mcp_install "$suggest" || true; }
+      confirm "  ¿Instalar también $suggest?" n "mcp_$suggest" && { mcp_install "$suggest" || true; }
     fi
   done
 
@@ -394,12 +394,12 @@ mcp_wizard() {
       continue
     fi
     printf '\n%s%s%s — %s\n' "$C_B" "$ID" "$C_RESET" "$DESC"
-    confirm "¿Instalar $id?" n || continue
+    confirm "¿Instalar $id?" n "mcp_$id" || continue
     mcp_install "$id" || continue
     # Varias cuentas del mismo conector solo se ofrecen con una persona respondiendo:
     # con --yes esto sería un bucle infinito.
     if [ "${MULTI:-0}" = 1 ] && [ "$ASSUME_YES" != 1 ]; then
-      while confirm "  ¿Agregar otra cuenta o servidor de $id?" n; do
+      while confirm "  ¿Agregar otra cuenta o servidor de $id?" n "mcp_more_$id"; do
         mcp_install "$id" || break
       done
     fi

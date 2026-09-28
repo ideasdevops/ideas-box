@@ -280,11 +280,11 @@ _linux_install_icon() {
   echo "$base/512x512/apps/$name.png"
 }
 
-# _linux_desktop_to_desk <archivo .desktop> <pregunta> — copia opcional al Escritorio
+# _linux_desktop_to_desk <archivo .desktop> <pregunta> [clave del asistente] — copia opcional al Escritorio
 _linux_desktop_to_desk() {
-  local entry="$1" question="$2" desk
+  local entry="$1" question="$2" key="${3:-}" desk
   desk="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
-  if [ -d "$desk" ] && [ "$desk" != "$HOME" ] && confirm "$question" y; then
+  if [ -d "$desk" ] && [ "$desk" != "$HOME" ] && confirm "$question" y "$key"; then
     run cp "$entry" "$desk/$(basename "$entry")"
     run chmod 755 "$desk/$(basename "$entry")"
     have gio && run gio set "$desk/$(basename "$entry")" metadata::trusted true 2>/dev/null || true
@@ -310,12 +310,12 @@ _wsl_ps_run() {
     "$(printf '%s' "$2" | iconv -f UTF-8 -t UTF-16LE | base64 | tr -d '\n')" >/dev/null
 }
 
-# _wsl_make_shortcut <nombre> <comando> <descripción> <.ico> <pregunta> <estilo>
+# _wsl_make_shortcut <nombre> <comando> <descripción> <.ico> <pregunta> <estilo> [clave del asistente]
 # Crea «<nombre>.lnk» en el menú Inicio y, si se acepta, en el Escritorio de Windows; el
 # acceso abre wsl.exe en esta distro y corre <comando> con el PATH del usuario.
 # Estilo de ventana: 1 normal, 7 minimizada.
 _wsl_make_shortcut() {
-  local name="$1" cmd="$2" desc="$3" ico_src="$4" question="$5" style="${6:-1}"
+  local name="$1" cmd="$2" desc="$3" ico_src="$4" question="$5" style="${6:-1}" key="${7:-}"
   local ps ico_win ico_base distro args desk_ps='$false' script
   ps="$(_wsl_powershell)" || ps=""
   if [ -z "$ps" ] || ! have wslpath || ! have iconv || ! have base64; then
@@ -323,7 +323,7 @@ _wsl_make_shortcut() {
     info "Desde la terminal de Ubuntu: $cmd"
     return 0
   fi
-  confirm "$question" y && desk_ps='$true'
+  confirm "$question" y "$key" && desk_ps='$true'
   ico_win="$(wslpath -w "$ico_src")"
   ico_base="$(basename "$ico_src")"
   distro="${WSL_DISTRO_NAME:+-d $WSL_DISTRO_NAME }"
@@ -359,7 +359,7 @@ foreach (\$d in \$targets) {
 _wsl_install_shortcut() {
   _wsl_make_shortcut "Ideas Box" "'$1' menu" "Menú de tu empresa online híbrida" \
     "$STACK_SRC/assets/icon/ideas-box.ico" \
-    "¿Crear también el ícono «Ideas Box» en tu Escritorio de Windows?" 1
+    "¿Crear también el ícono «Ideas Box» en tu Escritorio de Windows?" 1 shortcut_menu
 }
 
 menu_install_shortcut() {
@@ -371,7 +371,7 @@ menu_install_shortcut() {
   if is_mac; then
     desk="$HOME/Desktop"
     [ -d "$desk" ] || return 0
-    confirm "¿Crear el ícono «Ideas Box» en tu Escritorio? (macOS puede pedir permiso para acceder al Escritorio)" y || return 0
+    confirm "¿Crear el ícono «Ideas Box» en tu Escritorio? (macOS puede pedir permiso para acceder al Escritorio)" y shortcut_menu || return 0
     write_file "$desk/Ideas Box.command" 755 <<EOF
 #!/bin/bash
 # Doble clic: abre el menú de Ideas Box en una Terminal.
@@ -395,7 +395,7 @@ Icon=$icon
 Categories=Office;Utility;
 EOF
   ok "Ideas Box quedó en el menú de aplicaciones"
-  _linux_desktop_to_desk "$apps/ideas-box.desktop" "¿Crear también el ícono en tu Escritorio?"
+  _linux_desktop_to_desk "$apps/ideas-box.desktop" "¿Crear también el ícono en tu Escritorio?" shortcut_menu
 }
 
 # macOS: una app mínima (AppleScript compilado con osacompile, que viene con el sistema)
@@ -423,13 +423,13 @@ panel_install_shortcut() {
     # queda ninguna sesión de wsl.exe. Cerrarla apaga el panel.
     _wsl_make_shortcut "$name" "'$cli' panel open --keep" "Tablero de tareas y programación de tus agentes" \
       "$STACK_SRC/assets/icon/panel.ico" \
-      "¿Crear también el ícono «${name}» en tu Escritorio de Windows?" 7
+      "¿Crear también el ícono «${name}» en tu Escritorio de Windows?" 7 shortcut_panel
     return 0
   fi
   if is_mac; then
     desk="$HOME/Desktop"
     [ -d "$desk" ] || return 0
-    confirm "¿Crear el ícono «${name}» en tu Escritorio?" y || return 0
+    confirm "¿Crear el ícono «${name}» en tu Escritorio?" y shortcut_panel || return 0
     if _mac_make_app "$desk/$name.app" "$cli" "panel open" "$STACK_SRC/assets/icon/panel-512.png"; then
       ok "Ícono creado: Escritorio → $name"
     else
@@ -458,7 +458,7 @@ Icon=$icon
 Categories=Office;ProjectManagement;
 EOF
   ok "$name quedó en el menú de aplicaciones"
-  _linux_desktop_to_desk "$apps/ideas-box-panel.desktop" "¿Crear también el ícono «${name}» en tu Escritorio?"
+  _linux_desktop_to_desk "$apps/ideas-box-panel.desktop" "¿Crear también el ícono «${name}» en tu Escritorio?" shortcut_panel
 }
 
 # «Archivos Ideas Box»: la raíz de datos, donde cada agente guarda lo que genera en su
@@ -481,7 +481,7 @@ data_install_shortcut() {
       info "Tus archivos están en: $DATA_ROOT"
       return 0
     fi
-    confirm "$q" y || return 0
+    confirm "$q" y shortcut_data || return 0
     target="$(wslpath -w "$DATA_ROOT")"
     if _wsl_ps_run "$ps" "\$ErrorActionPreference = 'Stop'
 \$l = (New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path ([Environment]::GetFolderPath('Desktop')) '${name//\'/\'\'}.lnk'))
@@ -505,7 +505,7 @@ data_install_shortcut() {
     warn "Ya hay algo llamado «${name}» en tu Escritorio y no es un acceso nuestro; lo dejo como está."
     return 0
   fi
-  confirm "$q" y || return 0
+  confirm "$q" y shortcut_data || return 0
   run ln -sfn "$DATA_ROOT" "$link"
   ok "Acceso creado: Escritorio → $name"
 }

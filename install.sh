@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Ideas Box — instalador del stack de empresa online híbrida.
 #
-#   bash install.sh                 instalación guiada
+#   bash install.sh                 instalación guiada en la terminal
+#   bash install.sh --gui           asistente gráfico en el navegador (lib/gui.sh)
 #   bash install.sh --dry-run       muestra qué haría, sin tocar nada
 #   bash install.sh --help          opciones
 #
@@ -35,8 +36,12 @@ INSTALL_ARGS=("$@")
 . "$STACK_SRC/lib/menu.sh"
 . "$STACK_SRC/lib/panel.sh"
 . "$STACK_SRC/lib/doctor.sh"
+. "$STACK_SRC/lib/gui.sh"
 
 SKIP_DEPS=0
+GUI_MODE=""
+GUI_ANSWERS=""
+GUI_PROBE_SLUG=""
 
 usage() {
   cat <<TXT
@@ -51,6 +56,7 @@ Uso: bash install.sh [opciones]
   --yes                aceptar todas las confirmaciones
   --non-interactive    no preguntar nada; toma el valor por defecto de cada opción
   --debug              salida detallada
+  --gui                asistente gráfico en el navegador (sin usar la terminal)
   -h, --help           esta ayuda
 
 Si la instalación se corta, volvé a correr bash install.sh: ofrece retomar desde
@@ -80,6 +86,11 @@ while [ $# -gt 0 ]; do
     --yes|-y) ASSUME_YES=1; shift ;;
     --non-interactive) NON_INTERACTIVE=1; shift ;;
     --debug) STACK_DEBUG=1; shift ;;
+    --gui) GUI_MODE=launch; shift ;;
+    # Internos del asistente (los usa installer/server.py)
+    --gui-run) GUI_MODE=run; shift ;;
+    --answers) GUI_ANSWERS="$2"; shift 2 ;;
+    --gui-probe) GUI_MODE=probe; GUI_PROBE_SLUG="${2:-}"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) die "Opción desconocida: $1 (probá --help)" ;;
   esac
@@ -139,6 +150,7 @@ datos_step()  { datastore_wizard; profile_save; }
 
 main() {
   banner
+  [ "$GUI_MODE" = run ] && gui_run_setup "$GUI_ANSWERS"
   init_input
   require_input
   [ "$DRY_RUN" = 1 ] && warn "Modo dry-run: no se modifica nada."
@@ -150,9 +162,12 @@ main() {
     info "Salteo dependencias del sistema"
     deps_env_only
   else
+    ib_event step deps start
     deps_main
     state_done deps
+    ib_event step deps done
   fi
+  stack_git_adopt
 
   run_step perfil   perfil_step
   run_step datos    datos_step
@@ -163,7 +178,14 @@ main() {
   run_step cli      install_cli
   run_step panel    panel_wizard
   state_clear
+  ib_event done "$EMPRESA_NOMBRE" "$DATA_ROOT"
   resumen
 }
+
+case "$GUI_MODE" in
+  probe) gui_probe_dataroots "$GUI_PROBE_SLUG"; exit 0 ;;
+  # Si no se puede mostrar el asistente (sin Python), sigue en la terminal
+  launch) gui_launch || true ;;
+esac
 
 main "$@"

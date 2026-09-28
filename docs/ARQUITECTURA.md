@@ -117,3 +117,24 @@ para lo que necesite. Aparece en el runtime con `ideasbox sync`.
 
 **Otro idioma o rubro**: todo el texto visible sale de plantillas. Un fork con `templates/`
 traducido es un stack en otro idioma sin tocar una línea de código.
+
+## Asistente gráfico de instalación
+
+`instalar.sh` (la línea de la landing) baja el repo y corre `install.sh --gui`. De ahí:
+
+- `lib/gui.sh` resuelve lo mínimo para mostrar una página —herramientas de Apple en Mac, Python,
+  cómo se pide la contraseña— y arranca `installer/server.py`, que abre el navegador.
+- `installer/server.py` (solo biblioteca estándar, **Python 3.8+**: en Mac corre con el 3.9 de
+  Apple) sirve `installer/web/dist` y una API local con token. Al confirmar, corre
+  `install.sh --gui-run --answers <archivo>`: **la instalación es la misma que en la terminal**.
+- Las respuestas llegan como `IB_ANS_<clave>`; `confirm`/`ask`/`ask_secret` (lib/common.sh) las
+  consultan antes de preguntar. Toda pregunta nueva del instalador **lleva su clave** (tercer
+  argumento de `confirm`, cuarto de `ask`, tercero de `ask_secret`) y el formulario que la
+  responde; si no, aparece como modal en vivo (evento `::ib::ask`, respuesta por el FIFO del
+  descriptor 3). Eso es correcto para lo excepcional (reintentar, esperar a Apple), no para lo
+  que se puede preguntar antes.
+- La contraseña de administrador nunca pasa por el asistente: `sudo -A` con
+  `installer/askpass.sh` (ventana nativa) o, en WSL, `sudo -v` una vez en la terminal.
+- La interfaz (`installer/web`, React + Tailwind con el sistema visual del panel) se compila y
+  **`dist/` va al repo**: se muestra antes de que haya Node. Después de tocarla:
+  `cd installer/web && npm install && npm run build`, y commitear `dist/`.

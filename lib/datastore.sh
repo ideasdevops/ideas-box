@@ -149,35 +149,46 @@ _previous_roots() {
   done
 }
 
-_choose_data_root() {
-  local -a paths=() labels=()
-  local d mnt size fstype label nombre docs recommended="" note
+# _data_root_candidates — llena DR_PATHS, DR_LABELS y DR_RECOMMENDED (número, desde 1).
+# La usan el menú de la terminal y el asistente gráfico (gui_probe_dataroots).
+_data_root_candidates() {
+  DR_PATHS=(); DR_LABELS=(); DR_RECOMMENDED=""
+  local d mnt size fstype label nombre docs note
 
   # 1. Instalaciones previas
   while IFS= read -r d; do
     nombre="$(awk -F= '$1 == "nombre" { print $2 }' "$d/.ideas-box" 2>/dev/null)"
-    paths+=("$d"); labels+=("ya existe: instalación anterior de Ideas Box${nombre:+ ($nombre)}")
-    [ -n "$recommended" ] || recommended=${#paths[@]}
+    DR_PATHS+=("$d"); DR_LABELS+=("ya existe: instalación anterior de Ideas Box${nombre:+ ($nombre)}")
+    [ -n "$DR_RECOMMENDED" ] || DR_RECOMMENDED=${#DR_PATHS[@]}
   done < <(_previous_roots)
 
   # 2. Carpetas principales del usuario
   d="$HOME/$EMPRESA_SLUG-data"
   if [ ! -f "$d/.ideas-box" ]; then
-    paths+=("$d"); labels+=("carpeta nueva en tu usuario")
-    [ -n "$recommended" ] || recommended=${#paths[@]}
+    DR_PATHS+=("$d"); DR_LABELS+=("carpeta nueva en tu usuario")
+    [ -n "$DR_RECOMMENDED" ] || DR_RECOMMENDED=${#DR_PATHS[@]}
   fi
   if docs="$(_documents_dir)" && [ ! -f "$docs/$EMPRESA_SLUG-data/.ideas-box" ]; then
     note="carpeta nueva dentro de $(basename "$docs")"
     is_mac && note="$note — macOS va a pedir permiso de acceso, y si iCloud sincroniza Documentos puede dejar archivos a medio bajar"
-    paths+=("$docs/$EMPRESA_SLUG-data"); labels+=("$note")
+    DR_PATHS+=("$docs/$EMPRESA_SLUG-data"); DR_LABELS+=("$note")
   fi
 
   # 3. Discos y volúmenes aparte
   while IFS=$'\t' read -r mnt size fstype label; do
     [ -n "$mnt" ] || continue
     [ -f "$mnt/$EMPRESA_SLUG/.ideas-box" ] && continue   # ya listado como instalación previa
-    paths+=("$mnt/$EMPRESA_SLUG"); labels+=("disco aparte: $label, $size, $fstype — si no está conectado, los agentes no ven los datos")
+    DR_PATHS+=("$mnt/$EMPRESA_SLUG"); DR_LABELS+=("disco aparte: $label, $size, $fstype — si no está conectado, los agentes no ven los datos")
   done < <(_candidate_mounts)
+  return 0
+}
+
+_choose_data_root() {
+  local -a paths=() labels=()
+  local recommended
+  _data_root_candidates
+  paths=(${DR_PATHS[@]+"${DR_PATHS[@]}"}); labels=(${DR_LABELS[@]+"${DR_LABELS[@]}"})
+  recommended="$DR_RECOMMENDED"
 
   local n=${#paths[@]}
   local opt_manual=$((n+1)) opt_guide=$((n+2)) intentos=0

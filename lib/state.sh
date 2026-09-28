@@ -40,11 +40,14 @@ run_step() {
   local id="$1"; shift
   if [ "$RESUME" = 1 ] && state_is_done "$id"; then
     ok "Ya hecho en la corrida anterior: $(_state_label "$id")"
+    ib_event step "$id" done
     return 0
   fi
   STATE_CURRENT="$id"
+  ib_event step "$id" start
   "$@"
   state_done "$id"
+  ib_event step "$id" done
   STATE_CURRENT=""
 }
 
@@ -60,7 +63,7 @@ state_offer_resume() {
   echo
   warn "La instalación anterior quedó a mitad."
   info "Ya estaba completo: $(_state_list)"
-  if confirm "¿Retomar desde donde quedó? (se reusan las respuestas que ya diste)" y; then
+  if confirm "¿Retomar desde donde quedó? (se reusan las respuestas que ya diste)" y resume; then
     RESUME=1
     [ -f "$STACK_PROFILE" ] && state_is_done perfil && load_profile
     ok "Retomando${EMPRESA_NOMBRE:+ la instalación de $EMPRESA_NOMBRE}"
@@ -77,9 +80,11 @@ state_on_exit() {
   [ "$DRY_RUN" = 1 ] && return 0
   echo >&2
   [ -n "$STATE_CURRENT" ] && warn "La instalación se cortó durante el paso: $(_state_label "$STATE_CURRENT")."
+  ib_event failed "${STATE_CURRENT:-deps}" "$rc"
   [ -s "$STACK_STATE" ] && warn "Lo que ya completaste quedó guardado: $(_state_list)."
   state_offer_retry "$rc"
   [ -s "$STACK_STATE" ] || return 0
+  [ "$IB_GUI" = 1 ] && return 0   # el asistente muestra sus propios botones para seguir
   warn "Para seguir desde ahí, abrí de nuevo el menú de Ideas Box y elegí «Terminar de instalar»"
   warn "(o en la terminal: bash install.sh). Respondé que sí a retomar."
 }

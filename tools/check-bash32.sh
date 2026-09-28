@@ -13,7 +13,7 @@
 set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-FILES=(install.sh bin/ideasbox "Ideas Box.command")
+FILES=(install.sh instalar.sh bin/ideasbox "Ideas Box.command" installer/askpass.sh)
 while IFS= read -r f; do FILES+=("$f"); done < <(find lib catalog/installers tools -name '*.sh' | sort)
 
 fails=0

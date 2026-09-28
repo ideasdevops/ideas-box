@@ -52,7 +52,7 @@ ok()    { printf '%s✓%s %s\n' "$C_OK" "$C_RESET" "$*"; }
 warn()  { printf '%s!%s %s\n' "$C_WARN" "$C_RESET" "$*" >&2; }
 err()   { printf '%s✗%s %s\n' "$C_ERR" "$C_RESET" "$*" >&2; }
 die()   { err "$*"; exit 1; }
-step()  { printf '\n%s%s%s\n' "$C_B" "$*" "$C_RESET"; }
+step()  { printf '\n%s%s%s\n' "$C_B" "$*" "$C_RESET"; ib_event title "$*"; }
 debug() { [ "${STACK_DEBUG:-0}" = 1 ] && printf '%s  %s%s\n' "$C_DIM" "$*" "$C_RESET" >&2 || true; }
 
 # run <cmd...> — respeta DRY_RUN
@@ -71,7 +71,9 @@ have() { command -v "$1" >/dev/null 2>&1; }
 # por eso init_input() lo resuelve una vez y el instalador corta si no hay.
 STACK_TTY=""
 init_input() {
-  if { : >/dev/tty; } 2>/dev/null; then
+  if [ "$IB_GUI" = 1 ] && [ -p "${IB_GUI_FIFO:-}" ]; then
+    STACK_TTY="$IB_GUI_FIFO"
+  elif { : >/dev/tty; } 2>/dev/null; then
     STACK_TTY=/dev/tty
   elif [ -t 0 ]; then
     STACK_TTY=/dev/stdin
@@ -93,25 +95,56 @@ require_input() {
   exit 1
 }
 
-# confirm <pregunta> [default:y|n]
+# --- Asistente gráfico ---------------------------------------------------------
+# Con el asistente (install.sh --gui) el instalador corre igual, pero sin terminal: las
+# respuestas de los formularios llegan como IB_ANS_<clave> (archivo de respuestas) y lo
+# que no se preguntó en ellos se le pide al navegador con un evento `::ib::ask`, cuya
+# respuesta vuelve por el FIFO abierto en el descriptor 3. Ver lib/gui.sh.
+IB_GUI="${IB_GUI:-0}"
+
+# ib_event <tipo> [campos…] — línea que el servidor del asistente interpreta (separada por tabs)
+ib_event() {
+  [ "$IB_GUI" = 1 ] || return 0
+  local IFS=$'\t'
+  printf '::ib::%s\n' "$*"
+}
+
+# ib_preset <clave> <variable> — si el asistente ya respondió <clave>, la deja en <variable>
+ib_preset() {
+  [ "$IB_GUI" = 1 ] && [ -n "$1" ] || return 1
+  local __k
+  __k="IB_ANS_$(printf '%s' "$1" | tr -c 'A-Za-z0-9_' '_')"
+  [ -n "${!__k+x}" ] || return 1
+  printf -v "$2" '%s' "${!__k}"
+}
+
+# confirm <pregunta> [default:y|n] [clave del asistente]
 confirm() {
-  local q="$1" def="${2:-n}" ans hint
+  local q="$1" def="${2:-n}" key="${3:-}" ans hint
   [ "$ASSUME_YES" = 1 ] && return 0
-  if [ "$NON_INTERACTIVE" = 1 ] || [ -z "$STACK_TTY" ]; then
+  if ib_preset "$key" ans; then
+    :
+  elif [ "$NON_INTERACTIVE" = 1 ] || [ -z "$STACK_TTY" ]; then
     [ "$def" = y ] && return 0 || return 1
+  else
+    [ "$def" = y ] && hint="[S/n]" || hint="[s/N]"
+    ib_event ask confirm "$def" "$q"
+    read -r -u 3 -p "$q $hint " ans || ans=""
   fi
-  [ "$def" = y ] && hint="[S/n]" || hint="[s/N]"
-  read -r -u 3 -p "$q $hint " ans || ans=""
   ans="${ans:-$def}"
   case "$(normaliza "$ans")" in s|si|y|yes|ok) return 0 ;; *) return 1 ;; esac
 }
 
-# ask <pregunta> <variable-destino> [default]
+# ask <pregunta> <variable-destino> [default] [clave del asistente, por defecto la variable]
 ask() {
-  local q="$1" __var="$2" def="${3:-}" ans
+  local q="$1" __var="$2" def="${3:-}" key="${4:-$2}" ans
+  if ib_preset "$key" ans; then
+    printf -v "$__var" '%s' "${ans:-$def}"; return 0
+  fi
   if [ "$NON_INTERACTIVE" = 1 ] || [ -z "$STACK_TTY" ]; then
     printf -v "$__var" '%s' "$def"; return 0
   fi
+  ib_event ask text "$def" "$q"
   if [ -n "$def" ]; then
     read -r -u 3 -p "$q [$def]: " ans || ans=""
   else
@@ -120,12 +153,16 @@ ask() {
   printf -v "$__var" '%s' "${ans:-$def}"
 }
 
-# ask_secret <pregunta> <variable-destino> — no hace echo de lo tipeado
+# ask_secret <pregunta> <variable-destino> [clave del asistente] — no hace echo de lo tipeado
 ask_secret() {
-  local q="$1" __var="$2" ans
+  local q="$1" __var="$2" key="${3:-}" ans
+  if ib_preset "$key" ans; then
+    printf -v "$__var" '%s' "$ans"; return 0
+  fi
   if [ "$NON_INTERACTIVE" = 1 ] || [ -z "$STACK_TTY" ]; then
     printf -v "$__var" '%s' ""; return 0
   fi
+  ib_event ask secret "" "$q"
   read -r -s -u 3 -p "$q: " ans || ans=""
   printf '\n'
   printf -v "$__var" '%s' "$ans"

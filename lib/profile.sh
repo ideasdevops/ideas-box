@@ -18,7 +18,7 @@ profile_wizard() {
 
   if [ -f "$STACK_PROFILE" ] && [ "$NON_INTERACTIVE" != 1 ]; then
     warn "Ya existe un perfil en $STACK_PROFILE"
-    if confirm "¿Reusar el perfil existente?" y; then
+    if confirm "¿Reusar el perfil existente?" y reuse_profile; then
       load_profile
       ok "Perfil reusado: $EMPRESA_NOMBRE"
       return 0

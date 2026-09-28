@@ -66,11 +66,11 @@ thirdparty_wizard() {
         ;;
       negocio)
         printf '\n%s%s%s — %s\n' "$C_B" "$id" "$C_RESET" "$desc"
-        confirm "¿Instalar el pack $id?" y && { thirdparty_install_pack "$id" || true; }
+        confirm "¿Instalar el pack $id?" y "pack_$id" && { thirdparty_install_pack "$id" || true; }
         ;;
       opcional)
         printf '\n%s%s%s — %s\n' "$C_B" "$id" "$C_RESET" "$desc"
-        confirm "¿Instalar el pack $id? (grande, opcional)" n && { thirdparty_install_pack "$id" || true; }
+        confirm "¿Instalar el pack $id? (grande, opcional)" n "pack_$id" && { thirdparty_install_pack "$id" || true; }
         ;;
     esac
   done < <(_pack_rows)

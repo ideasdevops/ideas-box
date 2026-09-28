@@ -48,7 +48,8 @@ SUDO=""
 _need_sudo() {
   [ "$(id -u)" = 0 ] && { SUDO=""; return 0; }
   have sudo || die "Se necesita sudo para instalar paquetes del sistema. Instalalo o corré el script como root."
-  SUDO="sudo"
+  # Con el asistente, -A: la contraseña la pide la ventana nativa (installer/askpass.sh)
+  SUDO="sudo${IB_SUDO_FLAGS:+ $IB_SUDO_FLAGS}"
 }
 
 # Un repo de terceros roto (clave vencida o rotada, repo sin firmar: Spotify, Chrome,
@@ -146,7 +147,7 @@ ensure_brew() {
     return 0
   fi
   warn "No hay Homebrew y macOS no trae gestor de paquetes."
-  confirm "¿Instalar Homebrew ahora? (lo necesita el resto del proceso)" y \
+  confirm "¿Instalar Homebrew ahora? (lo necesita el resto del proceso)" y brew \
     || die "Sin Homebrew no se pueden instalar las dependencias. Instalalo desde https://brew.sh y volvé a correr."
   run bash -c '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
   [ "$DRY_RUN" = 1 ] && return 0
@@ -449,7 +450,7 @@ ensure_docker() {
     info "No es obligatorio para el stack; instalalo si vas a levantar servicios en esta máquina."
     return 0
   fi
-  if ! confirm "¿Instalar Docker? (recomendado si vas a levantar servicios propios en este equipo)" n; then
+  if ! confirm "¿Instalar Docker? (recomendado si vas a levantar servicios propios en este equipo)" n docker; then
     info "Docker omitido."
     return 0
   fi
@@ -486,7 +487,7 @@ deps_main() {
     ensure_brew
   fi
   pkg_install_base
-  if confirm "¿Instalar herramientas de media (ffmpeg, imagemagick)? Las usan los agentes de contenido y video" y; then
+  if confirm "¿Instalar herramientas de media (ffmpeg, imagemagick)? Las usan los agentes de contenido y video" y media; then
     pkg_install_media
   fi
   ensure_node

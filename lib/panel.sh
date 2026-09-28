@@ -101,6 +101,8 @@ EOF
 }
 
 panel_install() {
+  # En --dry-run no hay perfil escrito (load_profile cortaría): alcanza con avisar
+  if [ "$DRY_RUN" = 1 ]; then info "(dry-run) se instalaría el panel en $PANEL_SRC"; return 0; fi
   load_profile
   [ -d "$DATA_ROOT" ] || die "La raíz de datos no está disponible: $DATA_ROOT"
 
@@ -213,7 +215,7 @@ catálogo de agentes, skills y servidores del stack ya enchufado.
 Se puede instalar después con: $STACK_NAME panel install
 
 TXT
-  if ! confirm "¿Instalar el panel ahora? (compila la interfaz, tarda unos minutos)" n; then
+  if ! confirm "¿Instalar el panel ahora? (compila la interfaz, tarda unos minutos)" n panel; then
     info "Panel salteado."
     return 0
   fi

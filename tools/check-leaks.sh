@@ -20,7 +20,7 @@ PROHIBIDO='merchlabs|somosmerch|labinstrumental|lab-instrumental|digitaldev|sump
 
 # Marca propia: permitida solo en autoría, licencia, URL del repo y el manual.
 MARCA_PROPIA='ideasdevops'
-CONTEXTO_OK='IdeasDevOps & Disruptia AI|Copyright \(c\) [0-9]{4} IdeasDevOps|github\.com[:/]ideasdevops/|^\./AUTHORS:|^\./docs/manual/'
+CONTEXTO_OK='IdeasDevOps & Disruptia AI|Copyright \(c\) [0-9]{4} IdeasDevOps|github\.com[:/]ideasdevops/|githubusercontent\.com/ideasdevops/|^\./AUTHORS:|^\./docs/manual/'
 
 SECRETOS='EAA[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|-----BEGIN [A-Z ]*PRIVATE KEY-----'
 IPS='\b(([0-9]{1,3}\.){3}[0-9]{1,3})\b'
