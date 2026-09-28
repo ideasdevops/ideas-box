@@ -41,7 +41,18 @@ main() {
 
   if [ -d "$dir/.git" ]; then
     say "Actualizando Ideas Box en $dir"
-    git -C "$dir" pull --ff-only --quiet || say "No se pudo actualizar; sigo con la versión que ya está."
+    if ! git -C "$dir" pull --ff-only --quiet 2>/dev/null; then
+      # Historia distinta a la de GitHub: si la copia no tiene cambios propios, se alinea
+      if [ -z "$(git -C "$dir" status --porcelain 2>/dev/null)" ] \
+          && git -C "$dir" fetch --quiet origin main && git -C "$dir" reset --quiet --hard origin/main; then
+        ok "Ideas Box actualizado"
+      else
+        printf '\n\033[33m!\033[0m No se pudo actualizar %s: tiene cambios hechos a mano.\n' "$dir"
+        printf '  Para dejarla igual a la versión publicada (descarta esos cambios):\n'
+        printf '    git -C %s fetch origin main && git -C %s reset --hard origin/main\n\n' "$dir" "$dir"
+        fail "Actualizá la copia y volvé a pegar la línea de instalación."
+      fi
+    fi
   elif [ -f "$dir/install.sh" ] && [ -f "$dir/VERSION" ]; then
     say "Uso la copia de Ideas Box que ya está en $dir"
   elif [ -e "$dir" ] && [ -n "$(ls -A "$dir" 2>/dev/null)" ]; then
@@ -57,6 +68,7 @@ main() {
     curl -fsSL "$repo/archive/refs/heads/main.tar.gz" | tar -xz --strip-components=1 -C "$dir" \
       || fail "No se pudo descargar Ideas Box. ¿Hay conexión a internet?"
   fi
+  [ -f "$dir/lib/gui.sh" ] || fail "La copia de $dir es anterior al asistente gráfico y no se pudo actualizar."
   ok "Ideas Box listo en $dir"
 
   # La terminal sigue siendo la de la persona: el asistente puede necesitarla una vez

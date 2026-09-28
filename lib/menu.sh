@@ -166,7 +166,8 @@ _menu_do() {
   fi
   case "$accion" in
     hablar)     menu_open_claude ""; _menu_pause ;;
-    instalar)   echo; bash "$STACK_SRC/install.sh" || true; _menu_pause ;;
+    # El asistente gráfico; si no se puede mostrar, install.sh sigue solo en la terminal
+    instalar)   echo; bash "$STACK_SRC/install.sh" --gui || true; _menu_pause ;;
     revisar)    _menu_run doctor ;;
     skills-add) if [ -n "$arg" ]; then _menu_run skills add "$arg"; else menu_skills_add; fi ;;
     skills-new) _menu_run skills new ;;

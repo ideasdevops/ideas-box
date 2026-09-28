@@ -79,7 +79,10 @@ gui_launch() {
   is_mac && _gui_mac_clt
   local py
   if ! py="$(_gui_python)"; then
-    warn "No encontré Python 3 para mostrar el asistente gráfico: sigo con la instalación en esta terminal."
+    echo
+    warn "No encontré Python 3 para mostrar el asistente gráfico."
+    warn "La instalación sigue acá, en la terminal, con las mismas preguntas."
+    echo
     return 1
   fi
   if _gui_askpass_ok; then
