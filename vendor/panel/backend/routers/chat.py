@@ -1,6 +1,6 @@
 """
 Chat de interpretación en lenguaje natural -> crea tareas en el tablero
-siguiendo la estructura ya definida (tasks). Usa OpenRouter (OPENROUTER_API_KEY).
+siguiendo la estructura ya definida (tasks). Usa Claude Code (o OpenRouter si hay OPENROUTER_API_KEY).
 El modelo solo puede sugerir agente_sugerido/server_objetivo del catálogo REAL --
 se le pasa el catálogo completo en el system prompt, nunca inventa nombres.
 
@@ -18,7 +18,7 @@ from config import EMPRESA_NOMBRE, EMPRESA_RUBRO
 from db import db_session
 from routers.agents import scan_agents
 from routers.servers import server_roster
-from services.openrouter import call_openrouter
+from services.llm import call_llm
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
@@ -100,7 +100,7 @@ def send_message(msg: ChatMessage):
 
     messages = [{"role": "user" if m["rol"] == "usuario" else "assistant", "content": m["texto"]} for m in historial]
     messages.append({"role": "user", "content": msg.mensaje})
-    raw_response = call_openrouter(_build_system_prompt(), messages)
+    raw_response = call_llm(_build_system_prompt(), messages)
 
     task_match = _TASK_BLOCK_RE.search(raw_response)
     respuesta_texto = _TASK_BLOCK_RE.sub("", raw_response).strip()

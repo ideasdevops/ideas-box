@@ -41,7 +41,68 @@ CREATE TABLE IF NOT EXISTS chat_messages (
     creado_en TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Ejecuciones: cada vez que el panel corre algo (un agente con Claude Code, un
+-- mensaje de conversación o una acción de mantenimiento de ideasbox). La salida
+-- en vivo va a un archivo por ejecución (PANEL_DATA_DIR/runs/<id>.jsonl).
+CREATE TABLE IF NOT EXISTS runs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tipo TEXT NOT NULL CHECK(tipo IN ('tarea','chat','mantenimiento')),
+    titulo TEXT NOT NULL,
+    prompt TEXT DEFAULT '',
+    agente TEXT DEFAULT '',
+    modo TEXT NOT NULL DEFAULT 'carpeta' CHECK(modo IN ('carpeta','analizar')),
+    tarea_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL,
+    hilo_id INTEGER REFERENCES hilos(id) ON DELETE CASCADE,
+    accion TEXT DEFAULT '',
+    estado TEXT NOT NULL DEFAULT 'en_cola' CHECK(estado IN ('en_cola','corriendo','ok','error','cancelado')),
+    origen TEXT NOT NULL DEFAULT 'manual' CHECK(origen IN ('manual','programada')),
+    session_id TEXT,
+    resultado TEXT,
+    bloqueos TEXT,
+    costo_usd REAL,
+    turnos INTEGER,
+    revisado INTEGER NOT NULL DEFAULT 0,
+    creada_en TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+    inicio TEXT,
+    fin TEXT
+);
+
+-- Conversaciones con un agente: cada mensaje es una ejecución que retoma la sesión
+-- de Claude Code anterior (--resume), así el agente recuerda el hilo.
+CREATE TABLE IF NOT EXISTS hilos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    agente TEXT NOT NULL,
+    titulo TEXT NOT NULL,
+    modo TEXT NOT NULL DEFAULT 'carpeta' CHECK(modo IN ('carpeta','analizar')),
+    session_id TEXT,
+    creado_en TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+    actualizado_en TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+
+CREATE TABLE IF NOT EXISTS recordatorios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    texto TEXT NOT NULL,
+    cuando TEXT,
+    hecho INTEGER NOT NULL DEFAULT 0 CHECK(hecho IN (0,1)),
+    creado_en TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+
+CREATE TABLE IF NOT EXISTS ajustes (
+    clave TEXT PRIMARY KEY,
+    valor TEXT
+);
 """
+
+# Columnas agregadas después de la primera versión: los paneles ya instalados tienen
+# la tabla sin ellas, y SQLite no tiene "ADD COLUMN IF NOT EXISTS".
+MIGRACIONES = {
+    "tasks": [
+        ("ejecucion", "TEXT NOT NULL DEFAULT 'manual'"),   # manual (recordar) | auto (ejecutar sola)
+        ("modo", "TEXT NOT NULL DEFAULT 'carpeta'"),        # carpeta | analizar
+        ("ultima_ejecucion_id", "INTEGER"),
+        ("avisada", "INTEGER NOT NULL DEFAULT 0"),
+    ],
+}
 
 SEED_TEMPLATES = [
     (
@@ -127,7 +188,8 @@ SEED_TEMPLATES = [
 
 def get_connection() -> sqlite3.Connection:
     PANEL_DATA_DIR.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(PANEL_DB_PATH)
+    # Varios hilos (planificador, ejecuciones, pedidos web) escriben la misma base
+    conn = sqlite3.connect(PANEL_DB_PATH, timeout=15, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
@@ -137,6 +199,18 @@ def init_db() -> None:
     conn = get_connection()
     try:
         conn.executescript(SCHEMA)
+        for tabla, columnas in MIGRACIONES.items():
+            existentes_cols = {r[1] for r in conn.execute(f"PRAGMA table_info({tabla})")}
+            for nombre, definicion in columnas:
+                if nombre not in existentes_cols:
+                    conn.execute(f"ALTER TABLE {tabla} ADD COLUMN {nombre} {definicion}")
+        # Una ejecución que quedó "corriendo" o "en cola" cuando se cerró el panel ya no
+        # corre: se marca así en vez de quedar colgada para siempre.
+        conn.execute(
+            "UPDATE runs SET estado = 'cancelado', fin = datetime('now','localtime'), "
+            "resultado = COALESCE(resultado, 'Se interrumpió porque el panel se cerró.') "
+            "WHERE estado IN ('corriendo','en_cola')"
+        )
         # Idempotente por nombre -- agrega templates nuevos de SEED_TEMPLATES sin duplicar
         # ni pisar los que ya existen (el usuario puede haber editado uno a mano).
         existentes = {row[0] for row in conn.execute("SELECT nombre FROM task_templates")}
@@ -149,6 +223,17 @@ def init_db() -> None:
         conn.commit()
     finally:
         conn.close()
+
+
+def ajuste(clave: str, defecto: str = "") -> str:
+    with db_session() as conn:
+        row = conn.execute("SELECT valor FROM ajustes WHERE clave = ?", (clave,)).fetchone()
+        return row[0] if row and row[0] is not None else defecto
+
+
+def guardar_ajuste(clave: str, valor: str) -> None:
+    with db_session() as conn:
+        conn.execute("INSERT INTO ajustes (clave, valor) VALUES (?, ?) ON CONFLICT(clave) DO UPDATE SET valor = excluded.valor", (clave, valor))
 
 
 @contextmanager

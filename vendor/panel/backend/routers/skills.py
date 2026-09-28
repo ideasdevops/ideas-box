@@ -1,11 +1,26 @@
 import re
+from pathlib import Path
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 
 from config import SKILLS_DIR, SKILL_DOMAINS
 from routers.agents import _parse_frontmatter
 
 router = APIRouter(prefix="/api/skills", tags=["skills"])
+
+
+def _origen(skill_dir: Path) -> str:
+    """'propia' (de Ideas Box o creada por la empresa) o el nombre del pack de terceros."""
+    try:
+        real = skill_dir.resolve()
+    except OSError:
+        return "propia"
+    partes = real.parts
+    if "skill-packs" in partes:
+        i = partes.index("skill-packs")
+        if i + 1 < len(partes):
+            return partes[i + 1]
+    return "propia"
 
 
 def scan_skills() -> list[dict]:
@@ -29,6 +44,7 @@ def scan_skills() -> list[dict]:
                 "dominio": domain,
                 "descripcion": meta.get("description", ""),
                 "carpeta": skill_dir.name,
+                "origen": _origen(skill_dir),
                 "archivo": str(skill_file),
             })
     return skills
@@ -69,3 +85,17 @@ def list_skills(q: str | None = Query(default=None, description="filtro de texto
             if needle in s["nombre"].lower() or needle in s["descripcion"].lower()
         ]
     return {"total": len(skills), "skills": skills}
+
+
+@router.get("/{dominio}/{carpeta}")
+def skill_detail(dominio: str, carpeta: str):
+    for s in scan_skills():
+        if s["dominio"] == dominio and s["carpeta"] == carpeta:
+            from routers.agents import _FRONTMATTER_RE, scan_agents  # noqa: PLC0415
+            texto = Path(s["archivo"]).read_text(encoding="utf-8", errors="replace")
+            cuerpo = _FRONTMATTER_RE.sub("", texto, count=1).strip()
+            ref = f"{dominio}/{carpeta}"
+            usan = [a["nombre"] for a in scan_agents()
+                    if ref in Path(a["archivo"]).read_text(encoding="utf-8", errors="replace")]
+            return {**s, "contenido": cuerpo[:60000], "agentes": usan}
+    raise HTTPException(404, "habilidad no encontrada")

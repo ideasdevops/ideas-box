@@ -15,6 +15,8 @@ router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 Prioridad = Literal["baja", "media", "alta"]
 Estado = Literal["pendiente", "en_progreso", "listo_para_revision", "hecho", "descartada"]
 Recurrencia = Literal["ninguna", "diaria", "semanal", "mensual"]
+Ejecucion = Literal["manual", "auto"]
+Modo = Literal["carpeta", "analizar"]
 
 
 def _next_occurrence(base: datetime, recurrencia: Recurrencia) -> datetime:
@@ -45,6 +47,8 @@ class TaskCreate(BaseModel):
     programada_para: str | None = None
     recurrencia: Recurrencia = "ninguna"
     auto_publicar: bool = False
+    ejecucion: Ejecucion = "manual"
+    modo: Modo = "carpeta"
 
 
 class TaskUpdate(BaseModel):
@@ -57,6 +61,8 @@ class TaskUpdate(BaseModel):
     programada_para: str | None = None
     recurrencia: Recurrencia | None = None
     auto_publicar: bool | None = None
+    ejecucion: Ejecucion | None = None
+    modo: Modo | None = None
 
 
 @router.get("")
@@ -88,9 +94,11 @@ def list_templates():
 def create_task(task: TaskCreate):
     with db_session() as conn:
         cursor = conn.execute(
-            """INSERT INTO tasks (titulo, descripcion, agente_sugerido, server_objetivo, prioridad, programada_para, recurrencia, auto_publicar)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-            (task.titulo, task.descripcion, task.agente_sugerido, task.server_objetivo, task.prioridad, task.programada_para, task.recurrencia, int(task.auto_publicar)),
+            """INSERT INTO tasks (titulo, descripcion, agente_sugerido, server_objetivo, prioridad, programada_para, recurrencia, auto_publicar, ejecucion, modo, proximo_vencimiento)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (task.titulo, task.descripcion, task.agente_sugerido, task.server_objetivo, task.prioridad, task.programada_para or None,
+             task.recurrencia, int(task.auto_publicar), task.ejecucion, task.modo,
+             (task.programada_para or "")[:10] or None),
         )
         new_id = cursor.lastrowid
         row = conn.execute("SELECT * FROM tasks WHERE id = ?", (new_id,)).fetchone()
@@ -176,14 +184,49 @@ def update_task(task_id: int, patch: TaskUpdate):
                 if existing["proximo_vencimiento"]
                 else datetime.now()
             )
+            if existing.get("programada_para"):
+                from services.scheduler import parse_fecha  # noqa: PLC0415
+                base = parse_fecha(existing["programada_para"]) or base
             siguiente = _next_occurrence(base, existing["recurrencia"])
             fields["estado"] = "pendiente"
             fields["proximo_vencimiento"] = siguiente.date().isoformat()
+            fields["avisada"] = 0
+            if existing.get("programada_para"):
+                fields["programada_para"] = siguiente.strftime("%Y-%m-%dT%H:%M")
 
+        if "programada_para" in fields and "avisada" not in fields:
+            fields["avisada"] = 0   # nueva fecha: vuelve a avisar cuando llegue
         set_clause = ", ".join(f"{k} = ?" for k in fields) + ", actualizada_en = datetime('now')"
         conn.execute(f"UPDATE tasks SET {set_clause} WHERE id = ?", (*fields.values(), task_id))
         row = conn.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
         return dict(row)
+
+
+@router.post("/{task_id}/ejecutar")
+def ejecutar(task_id: int):
+    """Ejecutar ahora con su agente (Claude Code), con el modo de permisos de la tarea."""
+    from services.scheduler import lanzar_tarea  # noqa: PLC0415
+    with db_session() as conn:
+        row = conn.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
+        if not row:
+            raise HTTPException(404, "tarea no encontrada")
+        activa = conn.execute(
+            "SELECT id FROM runs WHERE tarea_id = ? AND estado IN ('en_cola','corriendo')", (task_id,)).fetchone()
+        if activa:
+            raise HTTPException(409, "esa tarea ya se está ejecutando")
+        t = dict(row)
+    run_id = lanzar_tarea(t)
+    if t["recurrencia"] == "ninguna":
+        with db_session() as conn:
+            conn.execute("UPDATE tasks SET estado = 'en_progreso', actualizada_en = datetime('now') WHERE id = ?", (task_id,))
+    return {"run_id": run_id}
+
+
+@router.get("/{task_id}/ejecuciones")
+def ejecuciones(task_id: int):
+    with db_session() as conn:
+        rows = [dict(r) for r in conn.execute("SELECT * FROM runs WHERE tarea_id = ? ORDER BY id DESC LIMIT 30", (task_id,))]
+    return {"ejecuciones": rows}
 
 
 @router.delete("/{task_id}")

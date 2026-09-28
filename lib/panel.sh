@@ -222,6 +222,97 @@ TXT
   panel_install || warn "El panel no se pudo instalar. El resto del stack quedó bien; reintentá con: $STACK_NAME panel install"
 }
 
+# panel_serve — el panel en primer plano (sin nohup). Lo usa el arranque automático de
+# Windows: en WSL, la distro se apaga cuando no queda ninguna sesión de wsl.exe, así que
+# el acceso de Inicio de Windows mantiene abierta (minimizada) la sesión que lo corre.
+panel_serve() {
+  load_profile
+  panel_installed || die "El panel no está instalado. Corré: $STACK_NAME panel install"
+  panel_is_running && { ok "El panel ya está corriendo en http://127.0.0.1:$PANEL_PORT"; return 0; }
+  run mkdir -p "$PANEL_STATE_DIR"
+  echo $$ >"$PANEL_PID_FILE"
+  info "Panel de Ideas Box en http://127.0.0.1:$PANEL_PORT — dejá esta ventana abierta (podés minimizarla)."
+  exec "$PANEL_SRC/backend/venv/bin/uvicorn" --app-dir "$PANEL_SRC/backend" main:app \
+    --host 127.0.0.1 --port "$PANEL_PORT" >>"$PANEL_LOG_FILE" 2>&1 </dev/null
+}
+
+# --- Arranque automático al iniciar sesión --------------------------------------------
+# Las tareas programadas solo corren con el panel abierto. Esto lo levanta solo al entrar
+# al equipo: un LaunchAgent en macOS, una entrada de autostart del escritorio en Linux y
+# un acceso en la carpeta Inicio de Windows (WSL). Apagado por defecto: lo activa quien
+# usa programaciones, desde el panel o con `ideasbox panel autostart on`.
+PANEL_LAUNCH_AGENT="$HOME/Library/LaunchAgents/com.ideasbox.panel.plist"
+PANEL_XDG_AUTOSTART="$HOME/.config/autostart/ideasbox-panel.desktop"
+PANEL_WSL_MARK="$STACK_CONFIG_DIR/autostart-windows"
+
+panel_autostart_status() {
+  if is_mac; then [ -f "$PANEL_LAUNCH_AGENT" ]
+  elif is_wsl; then [ -f "$PANEL_WSL_MARK" ]
+  else [ -f "$PANEL_XDG_AUTOSTART" ]
+  fi
+}
+
+panel_autostart() {
+  local cli="$HOME/.local/bin/$STACK_NAME"
+  case "${1:-status}" in
+    status)
+      if panel_autostart_status; then echo on; else echo off; fi ;;
+    on)
+      panel_installed || die "El panel no está instalado. Corré: $STACK_NAME panel install"
+      if is_mac; then
+        run mkdir -p "$(dirname "$PANEL_LAUNCH_AGENT")"
+        write_file "$PANEL_LAUNCH_AGENT" 644 <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.ideasbox.panel</string>
+  <key>ProgramArguments</key>
+  <array><string>/bin/bash</string><string>$cli</string><string>panel</string><string>start</string></array>
+  <key>RunAtLoad</key><true/>
+</dict>
+</plist>
+EOF
+      elif is_wsl; then
+        local ps; ps="$(_wsl_powershell)" || ps=""
+        [ -n "$ps" ] && have wslpath || die "No pude hablar con Windows desde Ubuntu (¿interoperabilidad de WSL desactivada?)."
+        local distro="${WSL_DISTRO_NAME:+-d $WSL_DISTRO_NAME }"
+        local args="${distro}--cd ~ -e bash -lic \"exec '$cli' panel serve\""
+        _wsl_ps_run "$ps" "\$ErrorActionPreference = 'Stop'
+\$l = (New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path ([Environment]::GetFolderPath('Startup')) 'Panel Ideas Box.lnk'))
+\$l.TargetPath = Join-Path \$env:SystemRoot 'System32\\wsl.exe'
+\$l.Arguments = '${args//\'/\'\'}'
+\$l.WindowStyle = 7
+\$l.Description = 'Panel de Ideas Box (arranque automático)'
+\$l.Save()" || die "Windows no dejó crear el acceso de arranque automático."
+        run touch "$PANEL_WSL_MARK"
+      else
+        write_file "$PANEL_XDG_AUTOSTART" 644 <<EOF
+[Desktop Entry]
+Type=Application
+Name=Panel Ideas Box
+Comment=Arranca el panel de Ideas Box al iniciar sesión (para las tareas programadas)
+Exec="$cli" panel start
+Terminal=false
+X-GNOME-Autostart-enabled=true
+EOF
+      fi
+      ok "El panel va a arrancar solo al iniciar sesión."
+      ;;
+    off)
+      if is_mac; then run rm -f "$PANEL_LAUNCH_AGENT"
+      elif is_wsl; then
+        local ps; ps="$(_wsl_powershell)" || ps=""
+        [ -n "$ps" ] && _wsl_ps_run "$ps" "Remove-Item -Force -ErrorAction SilentlyContinue (Join-Path ([Environment]::GetFolderPath('Startup')) 'Panel Ideas Box.lnk')" || true
+        run rm -f "$PANEL_WSL_MARK"
+      else run rm -f "$PANEL_XDG_AUTOSTART"
+      fi
+      ok "Arranque automático del panel desactivado."
+      ;;
+    *) die "Uso: $STACK_NAME panel autostart [on|off|status]" ;;
+  esac
+}
+
 panel_main() {
   case "${1:-status}" in
     install) panel_install ;;
@@ -231,6 +322,8 @@ panel_main() {
     restart) panel_stop; panel_start ;;
     status)  panel_status ;;
     logs)    tail -n "${2:-40}" "$PANEL_LOG_FILE" 2>/dev/null || info "Sin log todavía." ;;
-    *) die "Uso: $STACK_NAME panel [install|open|start|stop|restart|status|logs]" ;;
+    serve)   panel_serve ;;
+    autostart) panel_autostart "${2:-status}" ;;
+    *) die "Uso: $STACK_NAME panel [install|open|start|stop|restart|status|logs|serve|autostart]" ;;
   esac
 }

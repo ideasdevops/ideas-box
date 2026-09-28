@@ -1,6 +1,7 @@
 import re
+from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from config import AGENTS_DIR, AGENT_DOMAINS
 
@@ -27,6 +28,22 @@ def _parse_frontmatter(text: str) -> dict:
     return fields
 
 
+def _conectores(tools: str) -> list[dict]:
+    """Agrupa las herramientas mcp__<servidor>__<tool> por conector, para mostrarlas legibles."""
+    por_servidor: dict[str, list[str]] = {}
+    basicas = []
+    for t in (x.lstrip("-") for x in re.split(r"[\s,]+", tools)):
+        if t.startswith("mcp__") and t.count("__") >= 2:
+            _, servidor, tool = t.split("__", 2)
+            por_servidor.setdefault(servidor, []).append(tool)
+        elif t and t[0].isupper():
+            basicas.append(t)
+    out = [{"conector": s, "herramientas": sorted(v)} for s, v in sorted(por_servidor.items())]
+    if basicas:
+        out.insert(0, {"conector": "básicas", "herramientas": basicas})
+    return out
+
+
 def scan_agents() -> list[dict]:
     agents = []
     if not AGENTS_DIR.exists():
@@ -43,6 +60,8 @@ def scan_agents() -> list[dict]:
                 "dominio": domain,
                 "descripcion": meta.get("description", ""),
                 "tools": meta.get("tools", ""),
+                "modelo": meta.get("model", ""),
+                "conectores": _conectores(meta.get("tools", "")),
                 "archivo": str(agent_file),
             })
     return agents
@@ -62,3 +81,16 @@ def find_agent(nombre: str) -> dict | None:
 def list_agents():
     agents = scan_agents()
     return {"total": len(agents), "agentes": agents}
+
+
+@router.get("/{nombre}")
+def agent_detail(nombre: str):
+    from routers.skills import scan_skills  # noqa: PLC0415
+    agent = find_agent(nombre)
+    if not agent:
+        raise HTTPException(404, "agente no encontrado")
+    texto = Path(agent["archivo"]).read_text(encoding="utf-8", errors="replace")
+    cuerpo = _FRONTMATTER_RE.sub("", texto, count=1).strip()
+    # Skills que el agente menciona (dominio/carpeta) en sus instrucciones
+    usa = [s for s in scan_skills() if f"{s['dominio']}/{s['carpeta']}" in cuerpo]
+    return {**agent, "instrucciones": cuerpo, "skills": usa}

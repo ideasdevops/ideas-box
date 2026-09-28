@@ -46,7 +46,7 @@ Comandos técnicos (usuarios avanzados):
   $STACK_NAME skills add <pack>      instalar un pack
   $STACK_NAME skills new             crear una habilidad propia
   $STACK_NAME skills update          actualizar todos los packs
-  $STACK_NAME panel <acción>         panel de control local (install/open/start/stop/status/logs)
+  $STACK_NAME panel <acción>         panel de control local (install/open/start/stop/status/logs/autostart)
   $STACK_NAME backup                 respaldo del árbol canónico y la config
   $STACK_NAME icono                  volver a crear los íconos del Escritorio (Ideas Box, archivos y panel)
   $STACK_NAME carpeta                abrir la carpeta con lo que generan tus agentes
