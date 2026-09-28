@@ -24,14 +24,14 @@
 
 <!-- ═══════════════ ÍNDICE ═══════════════ -->
 <h2 class="sinquiebre"><span class="num">—</span>Contenido</h2>
-<p class="sub">Catorce secciones. Si venís a instalar y nada más, leé la 2, la 3 o la 4 según tu sistema, y la 6. La 14 reúne los comandos reales de todo el proceso.</p>
+<p class="sub">Catorce secciones. Si venís a instalar y nada más, leé la 2 y la 3 (y la 4 si usás Mac o Windows), y después la 6. La 14 reúne los comandos reales de todo el proceso.</p>
 
 <div class="indice">
   <div><b>1</b>Qué es Ideas Box<span>Qué instala y qué no hace por vos</span></div>
   <div><b>2</b>Antes de empezar<span>Requisitos y credenciales a tener a mano</span></div>
-  <div><b>3</b>Instalación en Linux<span>Ubuntu, Linux Mint y Debian</span></div>
-  <div><b>4</b>Instalación en macOS<span>Intel y Apple Silicon</span></div>
-  <div><b>5</b>El asistente, paso por paso<span>Qué pregunta y qué conviene responder</span></div>
+  <div><b>3</b>Instalación<span>Una línea en la Terminal y el resto en el navegador</span></div>
+  <div><b>4</b>Mac y Windows: lo particular<span>Herramientas de Apple, Homebrew y Ubuntu en WSL</span></div>
+  <div><b>5</b>El asistente, pantalla por pantalla<span>Qué pregunta y qué conviene responder</span></div>
   <div><b>6</b>Los primeros 30 minutos<span>Iniciar sesión, verificar y cargar tu contexto</span></div>
   <div><b>7</b>Los agentes<span>Quién hace qué, y cómo enseñarles tu forma de trabajo</span></div>
   <div><b>8</b>Conectores<span>Catálogo, credenciales y conectores propios</span></div>
@@ -93,9 +93,10 @@ podés dejarlo corriendo y volver.</p>
 <h3>Requisitos del equipo</h3>
 <table>
   <tr><th style="width:32%">Sistema</th><th>Qué necesita</th></tr>
-  <tr><td><b>Ubuntu · Linux Mint · Debian</b></td><td>Un usuario con permiso de administrador (<code>sudo</code>) y <code>git</code> para bajar Ideas Box</td></tr>
+  <tr><td><b>Ubuntu · Linux Mint · Debian</b></td><td>Un usuario con permiso de administrador (<code>sudo</code>). No hace falta tener nada más instalado</td></tr>
   <tr><td><b>macOS 13 o posterior</b><br><span class="chico">Intel y Apple Silicon</span></td><td>Las herramientas de línea de comandos de Apple (macOS las ofrece solo). <span class="chico">macOS 12 o anterior no sirve: Claude Code no funciona ahí. En esas Mac conviene instalar Linux Mint.</span></td></tr>
-  <tr><td><b>Ambos</b></td><td>Conexión a internet, 5&nbsp;GB libres y una cuenta de Claude con acceso a Claude Code</td></tr>
+  <tr><td><b>Windows 11</b></td><td>Ubuntu instalado con WSL (se explica en la sección 4). No hay versión nativa para Windows</td></tr>
+  <tr><td><b>Todos</b></td><td>Conexión a internet, 5&nbsp;GB libres, un navegador y una cuenta de Claude con acceso a Claude Code</td></tr>
 </table>
 
 <h3>Decidí dónde van a vivir los datos</h3>
@@ -124,172 +125,138 @@ podés dejarlo corriendo y volver.</p>
   <tr><td>Contenido con IA</td><td>API key de ElevenLabs; cuentas de Kling y Renoise (login en el navegador)</td><td>elevenlabs.io · kling.ai · renoise.ai</td></tr>
 </table>
 
-<div class="caja gris">
-  <div class="t">Datos de tu empresa</div>
-  <p>El asistente te va a pedir nombre, rubro en una línea, sitio web y zona horaria. Eso queda escrito
-  en los 16 agentes: cuanto más preciso el rubro, mejor entienden el contexto. «Panadería con venta
-  online y reparto propio» rinde más que «alimentos».</p>
-</div>
 
 <!-- ═══════════════ 3 ═══════════════ -->
-<h2><span class="num">3</span>Instalación en Linux</h2>
-<p class="sub">Ubuntu, Linux Mint y Debian. Solo el primer paso se escribe en la Terminal; el resto es un menú.</p>
+<h2><span class="num">3</span>Instalación</h2>
+<p class="sub">Igual en Linux, Mac y Windows: una línea en la Terminal y todo lo demás en el navegador.</p>
 
 <div class="paso">
   <div class="n">1</div>
   <div class="cuerpo">
-    <h4>Bajar Ideas Box</h4>
-    <p>Abrí la Terminal (en el menú de aplicaciones, buscá «Terminal») y pegá estas dos líneas. La
-    primera instala <code>git</code>, que una instalación limpia no trae; te pide tu contraseña.</p>
-<pre><code>sudo apt update &amp;&amp; sudo apt install -y git
-git clone https://github.com/ideasdevops/ideas-box.git ~/ideas-box</code></pre>
+    <h4>Abrir la Terminal y pegar una línea</h4>
+    <p>En Linux, buscá «Terminal» en el menú de aplicaciones. En Mac: Aplicaciones → Utilidades → Terminal.
+    En Windows, la ventana de Ubuntu (sección 4). Pegá esto y apretá Enter:</p>
+<pre><code>curl -fsSL https://raw.githubusercontent.com/ideasdevops/ideas-box/main/instalar.sh | bash</code></pre>
+    <p>Baja Ideas Box a la carpeta <code>ideas-box</code> de tu usuario y abre el asistente. Si ya estaba,
+    lo actualiza.</p>
   </div>
 </div>
 
 <div class="paso">
   <div class="n">2</div>
   <div class="cuerpo">
-    <h4>Abrir el menú de Ideas Box</h4>
-    <p>En la misma Terminal:</p>
-<pre><code>bash ~/ideas-box/bin/ideasbox</code></pre>
-    <p>Es la última vez que hace falta escribir algo: al terminar la instalación queda un ícono.</p>
+    <h4>Seguir el asistente en el navegador</h4>
+    <p>Se abre solo, con los pasos a la izquierda: tu empresa, dónde guardar, habilidades, conectores y
+    extras (sección 5). Después muestra el avance. <strong>Dejá la Terminal abierta</strong> hasta el final:
+    ahí corre la instalación. Si hace falta tu contraseña, la pide una ventana del sistema, nunca la página.</p>
   </div>
 </div>
 
 <div class="paso">
   <div class="n">3</div>
   <div class="cuerpo">
-    <h4>Elegir «Instalar mi Ideas Box»</h4>
-    <p>Arranca el asistente. Te pide la contraseña en el primer paso, para instalar los programas del
-    sistema. De ahí en adelante son preguntas sobre tu empresa y tus herramientas (sección 5).</p>
+    <h4>Abrir «Ideas Box» y elegir «Hablar con mis agentes»</h4>
+    <p>Al terminar quedan en el Escritorio <strong>Ideas Box</strong> (el menú), <strong>Archivos Ideas
+    Box</strong> y, si lo instalaste, <strong>Panel Ideas Box</strong>. La primera vez que hables con tus
+    agentes, Claude abre el navegador para que inicies sesión con tu cuenta.</p>
   </div>
 </div>
 
-<div class="paso">
-  <div class="n">4</div>
-  <div class="cuerpo">
-    <h4>Abrir el ícono y elegir «Hablar con mis agentes»</h4>
-    <p>El ícono <strong>Ideas Box</strong> queda en el menú de aplicaciones y, si aceptás, en el Escritorio.
-    La primera vez que hables con tus agentes, Claude abre el navegador para que inicies sesión con tu
-    cuenta: eso no lo puede hacer el asistente por vos.</p>
-  </div>
+<div class="caja gris">
+  <div class="t">Si el navegador no se abre</div>
+  <p>La Terminal muestra una dirección que empieza con <code>http://127.0.0.1:</code> (en Windows,
+  <code>http://localhost:</code>). Copiala en el navegador. Incluye una clave de acceso: no la compartas.</p>
 </div>
 
 <div class="caja gris">
   <div class="t">Para usuarios avanzados</div>
-  <p>El menú corre <code>bash install.sh</code>, que también se puede usar directo. Opciones:
-  <code>--dry-run</code> (mostrar sin ejecutar), <code>--data-root RUTA</code>, <code>--empresa "NOMBRE"</code>,
-  <code>--skip-deps</code>, <code>--non-interactive</code> y <code>--help</code>. Es interactivo: no lo
-  corras por tubería (<code>curl … | bash</code>), porque no podría leer tus respuestas.</p>
+  <p>La misma instalación, con preguntas en la Terminal y sin navegador (útil por SSH o en un servidor):
+  <code>bash ~/ideas-box/install.sh</code>. Opciones y comandos en la sección 14.</p>
 </div>
 
 <!-- ═══════════════ 4 ═══════════════ -->
-<h2><span class="num">4</span>Instalación en macOS</h2>
-<p class="sub">Intel y Apple Silicon, de macOS 13 en adelante. Una línea en la Terminal y después, doble clic.</p>
+<h2><span class="num">4</span>Mac y Windows: lo particular</h2>
+<p class="sub">Lo que cambia respecto de Linux. En los dos casos, después sigue todo en el asistente.</p>
 
-<div class="paso">
-  <div class="n">1</div>
-  <div class="cuerpo">
-    <h4>Bajar Ideas Box</h4>
-    <p>Abrí la Terminal (Aplicaciones → Utilidades → Terminal) y pegá:</p>
-<pre><code>git clone https://github.com/ideasdevops/ideas-box.git ~/ideas-box</code></pre>
-    <p>Si es la primera vez, macOS ofrece instalar las <em>herramientas de línea de comandos</em>:
-    aceptá, esperá a que termine y volvé a pegar la línea.</p>
-  </div>
-</div>
-
-<div class="paso">
-  <div class="n">2</div>
-  <div class="cuerpo">
-    <h4>Doble clic en «Ideas Box.command»</h4>
-    <p>En el Finder, abrí la carpeta de tu usuario → <code>ideas-box</code> y hacé doble clic en
-    <strong>Ideas Box.command</strong>. Se abre el menú en una ventana de Terminal. Si macOS dice que no
-    puede verificar el origen: clic derecho sobre el archivo → <strong>Abrir</strong> → Abrir.</p>
-  </div>
-</div>
-
-<div class="paso">
-  <div class="n">3</div>
-  <div class="cuerpo">
-    <h4>Elegir «Instalar mi Ideas Box»</h4>
-    <p>En una Mac con Apple Silicon y macOS 15 o posterior, si no tenés <strong>Homebrew</strong> el
-    asistente te ofrece instalarlo: aceptá, la primera vez tarda varios minutos. En una Mac Intel,
-    Homebrew ya no se puede instalar, y el asistente sigue sin él, solo.</p>
-  </div>
-</div>
-
-<div class="paso">
-  <div class="n">4</div>
-  <div class="cuerpo">
-    <h4>Abrir el ícono y elegir «Hablar con mis agentes»</h4>
-    <p>Al final te ofrece dejar el ícono <strong>Ideas Box</strong> en el Escritorio (macOS puede pedir
-    permiso para escribir ahí). La primera vez que hables con tus agentes, Claude te pide iniciar sesión.</p>
-  </div>
-</div>
-
-<h3>Tres diferencias respecto de Linux</h3>
+<h3>macOS 13 o posterior</h3>
+<p>La primera vez aparece la ventana de Apple para instalar sus <em>herramientas de desarrollo</em>
+(gratis): hacé clic en «Instalar», aceptá la licencia y esperá entre 5 y 15 minutos. La Terminal espera
+sola y, cuando terminan, se abre el asistente.</p>
 <table>
   <tr><th style="width:30%">Tema</th><th>En macOS</th></tr>
-  <tr><td><b>Programas base</b></td><td>Homebrew en Apple Silicon con macOS 15 o posterior. En Intel o en macOS más viejo, Ideas Box baja lo que necesita a tu usuario (jq, Python y Node), sin pedir contraseña</td></tr>
-  <tr><td><b>Disco de datos</b></td><td>Se usa un volumen montado en <code>/Volumes</code>, no una partición. El asistente te guía para crear un volumen APFS desde Utilidad de Discos, que comparte espacio con el sistema y no requiere formatear nada</td></tr>
-  <tr><td><b>Docker</b></td><td>Se instala aparte, como Docker Desktop. No es obligatorio: solo lo necesitás si vas a levantar servicios en esta misma máquina</td></tr>
+  <tr><td><b>Programas base</b></td><td>Homebrew en Apple Silicon con macOS 15 o posterior (si no lo tenés, se instala solo). En Intel o en macOS más viejo, Ideas Box baja lo que necesita a tu usuario (jq, Python y Node), sin pedir contraseña</td></tr>
+  <tr><td><b>Disco de datos</b></td><td>Un volumen montado en <code>/Volumes</code>, no una partición. Un volumen APFS creado desde Utilidad de Discos comparte espacio con el sistema y no requiere formatear nada</td></tr>
+  <tr><td><b>Docker</b></td><td>Se instala aparte, como Docker Desktop. No es obligatorio: solo si vas a levantar servicios en esta misma máquina</td></tr>
 </table>
 
+<h3>Windows 11 (Ubuntu en WSL)</h3>
+<p>Ideas Box corre dentro de Ubuntu, que Windows 11 instala con un comando. Una sola vez:</p>
+<ol>
+  <li>Abrí <strong>Terminal</strong> o PowerShell <strong>como administrador</strong> y escribí
+      <code>wsl --install -d Ubuntu</code>. Reiniciá si lo pide.</li>
+  <li>Abrí <strong>Ubuntu</strong> desde el menú Inicio: la primera vez te pide crear un usuario y una
+      contraseña (anotala).</li>
+  <li>En esa ventana de Ubuntu, pegá la línea de la sección 3. Te pide la contraseña de Ubuntu <em>una
+      vez</em>, ahí mismo, y abre el asistente en tu navegador de Windows.</li>
+</ol>
+<p>Al terminar, los íconos quedan en el Escritorio y en el menú Inicio de Windows. Tus archivos viven
+dentro de Ubuntu: «Archivos Ideas Box» los abre en el Explorador.</p>
+
 <div class="caja tinta">
-  <div class="t">Estado del soporte en macOS</div>
-  <p>Se está probando en hardware real, empezando por una Mac Intel con macOS 13. Si algo falla, el error
-  y el paso donde ocurrió son información valiosa: reportalos (sección 13) y lo corregimos.</p>
+  <div class="t">Dónde se probó</div>
+  <p>La instalación, en Linux Mint y MX Linux, una Mac Intel con macOS 13 y Windows 11 con Ubuntu en WSL. Si algo falla, el
+  error y el paso donde ocurrió son información valiosa: reportalos (sección 13) y lo corregimos.</p>
 </div>
 
 <!-- ═══════════════ 5 ═══════════════ -->
-<h2><span class="num">5</span>El asistente, paso por paso</h2>
-<p class="sub">Ocho etapas. Qué hace cada una, qué te pregunta y qué conviene responder.</p>
+<h2><span class="num">5</span>El asistente, pantalla por pantalla</h2>
+<p class="sub">Siete pantallas de preguntas, una de avance y una final. Todo se puede cambiar después.</p>
 
-<h3>1 · Dependencias del sistema</h3>
-<p>Instala paquetes base, Node, Claude Code y, si querés, ffmpeg e ImageMagick para los agentes de
-contenido. Pregunta si instalar Docker: <strong>respondé que no</strong> salvo que vayas a levantar
-servicios en esta máquina.</p>
+<h3>Bienvenida</h3>
+<p>Resume qué te va a preguntar y cuánto tarda. Si una instalación anterior quedó a mitad, ofrece
+<strong>retomarla</strong> desde donde se cortó, con las respuestas que ya diste.</p>
 
-<h3>2 · Identidad de la empresa</h3>
-<p>Nombre, identificador corto, rubro, sitio, responsable, idioma y zona horaria. Todo esto se escribe
-en los agentes y en la documentación. Queda guardado en un archivo de texto editable: si te equivocás,
-se puede corregir después (usuarios avanzados: <code>ideasbox profile</code>).</p>
+<h3>Tu empresa</h3>
+<p>Nombre (lo único obligatorio), a qué se dedica —«panadería con venta online y reparto propio» rinde
+más que «alimentos»—, sitio y quién lo va a usar. En «Opciones avanzadas»:
+identificador corto, idioma de los agentes y zona horaria. Esto se escribe en los agentes y en la
+documentación; se puede corregir después (usuarios avanzados: <code>ideasbox profile</code>).</p>
 
-<h3>3 · Raíz de datos</h3>
-<p>Antes de preguntar revisa tu equipo y te ofrece opciones con el espacio libre de cada una: una
-instalación anterior de Ideas Box si la encuentra, una carpeta en tu usuario (la recomendada), tus
-Documentos y los discos conectados. Si elegís «quiero un disco dedicado y todavía no lo tengo», te
-explica cómo crearlo y podés seguir con una carpeta mientras tanto.</p>
+<h3>Dónde guardar</h3>
+<p>Revisa tu equipo y te ofrece opciones con el espacio libre de cada una: una instalación anterior si la
+encuentra, una carpeta en tu usuario (la recomendada), tus Documentos y los discos conectados, o una ruta
+que escribas vos.</p>
 
-<h3>4 · Packs de skills</h3>
-<p>Descarga colecciones de procedimientos de repositorios abiertos: disciplina de código y redacción
-(siempre), marketing y criterio de diseño (recomendados) y dos opcionales más pesados.</p>
+<h3>Habilidades</h3>
+<p>Las básicas van siempre; marketing y criterio de diseño vienen marcadas; las colecciones grandes son
+opcionales.</p>
 
-<h3>5 · Conectores</h3>
-<p>Instala primero los tres del núcleo, que no piden credenciales. Después te ofrece los
-<strong>recomendados para crear contenido con IA</strong> —ElevenLabs, Kling y Renoise—, que vienen con
-«sí» por defecto, y a continuación, uno por uno, los de negocio. Para cada uno que aceptes te va a pedir sus credenciales y, si admite varias cuentas —como
-Chatwoot, Easypanel o las redes sociales—, te deja agregar tantas como tengas, cada una con su etiqueta.</p>
+<h3>Conectores</h3>
+<p>Los tres del núcleo van siempre (la clave de Brave Search es opcional). Los <strong>recomendados para
+contenido con IA</strong> —ElevenLabs, Kling y Renoise— vienen marcados; las herramientas de tu negocio,
+no. Al marcar uno aparecen sus datos: las claves se guardan solo en tu equipo, y si las dejás vacías las
+cargás después. Los que se conectan con tu cuenta (Kling, Renoise) te llevan al navegador.</p>
+<p class="chico"><strong>La etiqueta importa:</strong> en los que admiten varias cuentas —Chatwoot, Easypanel,
+redes sociales— es lo que las distingue (<code>easypanel-produccion</code>, <code>easypanel-clientes</code>).
+Más cuentas: desde el menú, «Conectar una herramienta».</p>
 
-<p class="chico"><strong>La etiqueta importa:</strong> con dos servidores quedan <code>easypanel-produccion</code>
-y <code>easypanel-clientes</code>, y es lo único que los distingue cuando un agente va a reiniciar algo.</p>
+<h3>Extras y revisión</h3>
+<p>Panel de tareas (recomendado), accesos en el Escritorio, herramientas de video e imagen y, en Linux,
+Docker (solo si vas a levantar servicios en esta máquina). La revisión muestra todo junto antes de
+arrancar.</p>
 
-<h3>6 y 7 · Agentes y runtime</h3>
-<p>Se generan los 16 agentes con los datos de tu empresa, los procedimientos, la documentación y el índice
-de memoria, y se enlazan al runtime de Claude Code. <strong>Cada agente recibe solamente las herramientas
-de los conectores que instalaste</strong>: si mañana agregás uno, los agentes que lo usan se actualizan solos.</p>
-
-<h3>8 · Permisos y hook de arranque</h3>
-<p>Permisos de Claude Code (lectura libre; escritura y acciones sensibles bajo aprobación), bloqueo de
-lectura sobre tus credenciales y claves SSH, y un aviso de arranque que detecta si el disco de datos no
-está montado. Al final, te ofrece dejar en el Escritorio el ícono <strong>Ideas Box</strong> y el acceso
-<strong>Archivos Ideas Box</strong> (la carpeta donde los agentes guardan lo que generan); si instalás el panel
-de tareas (paso 9, opcional), también <strong>Panel Ideas Box</strong>, que lo abre en el navegador.</p>
+<h3>Instalando</h3>
+<p>Una barra de avance y la lista de etapas: programas del sistema, datos de tu empresa, carpeta de datos,
+habilidades, conectores, agentes y memoria, configuración de Claude Code, accesos directos y panel.
+«Ver el detalle técnico» muestra todo lo que va pasando. Si surge algo que no estaba en los formularios,
+aparece una ventanita con la pregunta.</p>
 
 <div class="caja">
-  <div class="t">Si se corta, retoma donde quedó</div>
-  <p>Tus respuestas quedan guardadas. Abrí el menú, elegí «Terminar de instalar mi Ideas Box» y
-  respondé que sí a retomar. Reinstalar también es seguro: no duplica ni pisa lo que editaste.</p>
+  <div class="t">Si se detiene</div>
+  <p>Lo que ya quedó hecho está guardado. La pantalla muestra qué dijo el instalador y tres botones:
+  <strong>Reintentar desde este paso</strong>, <strong>Cambiar mis respuestas</strong> (por ejemplo, otra
+  carpeta de datos) y <strong>Ver el detalle completo</strong>, con «Copiar» para mandarlo a soporte.
+  Reinstalar es seguro: no duplica ni pisa lo que editaste.</p>
 </div>
 
 <!-- ═══════════════ 6 ═══════════════ -->
@@ -579,11 +546,11 @@ Es una regla escrita en los agentes de operaciones y desarrollo.</p>
 <h3>Durante la instalación</h3>
 <table>
   <tr><th style="width:33%">Síntoma</th><th>Causa y solución</th></tr>
-  <tr><td>«command not found: git»</td><td>Máquina limpia sin git. Linux: <code>sudo apt install -y git</code>. macOS: aceptá la ventana que ofrece instalar las herramientas de Apple</td></tr>
-  <tr><td>«Homebrew on macOS is only supported on Apple Silicon processors»</td><td>Homebrew ya no soporta Mac Intel. Actualizá Ideas Box (<code>cd ~/ideas-box &amp;&amp; git pull</code>) e instalá de nuevo: en Intel sigue sin Homebrew</td></tr>
+  <tr><td>No se abre el navegador</td><td>Copiá en el navegador la dirección que muestra la Terminal (<code>http://127.0.0.1:…</code>, o <code>http://localhost:…</code> en Windows)</td></tr>
+  <tr><td>El asistente dice que perdió la conexión</td><td>Se cerró la Terminal, y con ella la instalación. Volvé a pegar la línea: ofrece retomar donde quedó</td></tr>
+  <tr><td>«No se pudo actualizar … tiene cambios hechos a mano»</td><td>Alguien modificó la carpeta <code>ideas-box</code>. La Terminal muestra el comando que la deja igual a la versión publicada</td></tr>
   <tr><td>Se detiene diciendo que macOS es anterior a 13</td><td>Claude Code no funciona en Monterey o anteriores. Ver la sección 2</td></tr>
-  <tr><td>Se cortó a mitad (error, se cerró la ventana)</td><td>Abrí el menú, elegí «Terminar de instalar mi Ideas Box» y respondé que sí a retomar</td></tr>
-  <tr><td>Falla al crear el entorno de Python</td><td>En Linux falta un paquete: <code>sudo apt install -y python3-venv</code>. Después reintentá: el entorno roto se rehace solo</td></tr>
+  <tr><td>Se cortó a mitad</td><td>En el asistente, «Reintentar desde este paso». Si ya lo cerraste, volvé a pegar la línea y elegí «Retomar la instalación»</td></tr>
   <tr><td>No aparece mi disco externo en la lista</td><td>Tiene que estar conectado y con permiso de escritura. En macOS, visible en <code>/Volumes</code></td></tr>
 </table>
 
@@ -627,8 +594,8 @@ distribuís una versión modificada o la ofrecés por red, compartí su código 
 conseguirlas, pedíselo a Claude: <em>«preparame un reporte de este problema para soporte»</em>.</p>
 <ol>
   <li>Sistema y versión: la salida de <code>uname -a</code> y de <code>lsb_release -a</code> o <code>sw_vers</code></li>
-  <li>En qué paso del asistente falló (de los ocho de la sección 5)</li>
-  <li>El error completo, copiado tal cual, no una captura recortada</li>
+  <li>En qué etapa se detuvo (la pantalla «Instalando» la marca)</li>
+  <li>El error completo: «Ver el detalle completo» → Copiar, no una captura recortada</li>
   <li>Lo que muestra «Revisar que todo esté bien»</li>
 </ol>
 <p class="chico"><strong>Antes de mandar nada, revisá que no haya credenciales en el texto.</strong>
@@ -659,18 +626,18 @@ Si querés acompañamiento en esa etapa, <strong>IdeasDevOps</strong> lo hace co
 <h2><span class="num">14</span>Referencia técnica: todos los comandos</h2>
 <p class="sub">El proceso completo con los comandos reales que corre el menú, para quien prefiere la terminal o necesita diagnosticar.</p>
 
-<h3>1 · Bajar Ideas Box</h3>
-<pre><code><span class="c"># Linux (Ubuntu, Mint, Debian)</span>
-sudo apt update &amp;&amp; sudo apt install -y git
-git clone https://github.com/ideasdevops/ideas-box.git ~/ideas-box
+<h3>1 · Bajar Ideas Box y abrir el asistente</h3>
+<pre><code><span class="c"># Todo en uno (Linux, macOS 13+, Ubuntu en WSL)</span>
+curl -fsSL https://raw.githubusercontent.com/ideasdevops/ideas-box/main/\
+instalar.sh | bash
 
-<span class="c"># macOS 13 o posterior: primero las herramientas de línea de comandos de Apple</span>
-xcode-select --install
-git clone https://github.com/ideasdevops/ideas-box.git ~/ideas-box
+<span class="c"># Con opciones para install.sh, o en otra carpeta</span>
+curl -fsSL …/instalar.sh | bash -s -- --skip-deps
+curl -fsSL …/instalar.sh | IDEASBOX_DIR=~/otra-carpeta bash
 
-<span class="c"># Si macOS bloquea «Ideas Box.command» por el origen (por ejemplo, si vino en un .zip)</span>
-xattr -d com.apple.quarantine ~/ideas-box/"Ideas Box.command"
-chmod +x ~/ideas-box/"Ideas Box.command"</code></pre>
+<span class="c"># A mano, sin la línea</span>
+git clone https://github.com/ideasdevops/ideas-box.git ~/ideas-box
+bash ~/ideas-box/install.sh --gui</code></pre>
 
 <h3>2 · Abrir el menú</h3>
 <pre><code>bash ~/ideas-box/bin/ideasbox        <span class="c"># antes de instalar</span>
@@ -679,7 +646,8 @@ ideasbox conectar chatwoot           <span class="c"># una frase directa, sin pa
 
 <h3>3 · Instalar</h3>
 <pre><code>cd ~/ideas-box
-bash install.sh                      <span class="c"># = «Instalar mi Ideas Box»</span>
+bash install.sh --gui                <span class="c"># asistente en el navegador (= la línea)</span>
+bash install.sh                      <span class="c"># la misma instalación, en la Terminal</span>
 bash install.sh --dry-run            <span class="c"># mostrar qué haría, sin tocar nada</span>
 bash install.sh --data-root ~/mi-empresa-data --empresa "Mi Empresa"
 bash install.sh --skip-deps          <span class="c"># sin instalar paquetes del sistema</span>
@@ -687,7 +655,7 @@ bash install.sh --non-interactive    <span class="c"># sin preguntas: toma cada 
 bash install.sh --yes --debug        <span class="c"># aceptar todo y mostrar el detalle</span>
 
 <span class="c"># Si se cortó: volver a correrlo y responder que sí a retomar</span>
-bash install.sh
+bash install.sh --gui
 
 <span class="c"># Guardar todo lo que pasa en un archivo, para mandarlo a soporte</span>
 script -q ~/ideasbox-install.log bash install.sh --debug</code></pre>
@@ -703,7 +671,7 @@ script -q ~/ideasbox-install.log bash install.sh --debug</code></pre>
   <tr><td>Crear un conector nuevo</td><td><code>ideasbox mcp new</code> (pide la línea <code>npx …</code> o <code>uvx …</code>)</td></tr>
   <tr><td>Actualizar todo</td><td><code>ideasbox update</code></td></tr>
   <tr><td>Hacer un respaldo</td><td><code>ideasbox backup</code></td></tr>
-  <tr><td>Completar o rehacer la instalación</td><td><code>bash ~/ideas-box/install.sh</code></td></tr>
+  <tr><td>Completar o rehacer la instalación</td><td><code>bash ~/ideas-box/install.sh --gui</code> (o sin <code>--gui</code>, en la Terminal)</td></tr>
   <tr><td>Abrir el panel de tareas</td><td><code>ideasbox panel open</code> · <code>ideasbox panel stop</code> para apagarlo</td></tr>
   <tr><td>Abrir la carpeta de archivos</td><td><code>ideasbox carpeta</code> · <code>ideasbox icono</code> rehace los accesos del Escritorio</td></tr>
 </table>
