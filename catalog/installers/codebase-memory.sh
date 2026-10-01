@@ -31,10 +31,12 @@ pick() {  # primer asset que matchea el patrón, descartando firmas y variantes 
 }
 
 # Preferencia: tar.gz nativo → tar.gz portable. Nunca .mcpb (es un bundle, no un binario).
-url="$(pick "codebase-memory-mcp-${plat}\.tar\.gz$")"
-[ -n "$url" ] || url="$(pick "codebase-memory-mcp-${plat}-portable\.tar\.gz$")"
+# El nativo se enlaza contra una glibc reciente (2.38 en v0.11.0): en Ubuntu 22.04,
+# Pop!_OS 22.04, Debian 12 y afines no arranca. El portable es estático y corre en
+# cualquier Linux, así que si el nativo falla se prueba ese antes de rendirse.
+candidatos="$(pick "codebase-memory-mcp-${plat}\.tar\.gz$"; pick "codebase-memory-mcp-${plat}-portable\.tar\.gz$")"
 
-if [ -z "$url" ]; then
+if [ -z "$candidatos" ]; then
   echo "No encontré un tar.gz para $plat en la última release de $REPO." >&2
   echo "Instalalo a mano desde https://github.com/$REPO/releases y volvé a correr el instalador." >&2
   exit 1
@@ -42,35 +44,49 @@ fi
 
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
-echo "→ Bajando $(basename "$url")"
-curl -fsSL "$url" -o "$tmp/asset.tar.gz"
 
 # Verificación de integridad si la release publica checksums. macOS no trae sha256sum, sí shasum.
 sums="$(printf '%s\n' "$assets" | grep -E '/checksums\.txt$' | head -1 || true)"
 if command -v sha256sum >/dev/null; then sha256() { sha256sum "$1"; }
 else sha256() { shasum -a 256 "$1"; }
 fi
-if [ -n "$sums" ]; then
-  curl -fsSL "$sums" -o "$tmp/checksums.txt" || true
-  esperado="$(grep -F "$(basename "$url")" "$tmp/checksums.txt" 2>/dev/null | awk '{print $1}' | head -1 || true)"
+[ -z "$sums" ] || curl -fsSL "$sums" -o "$tmp/checksums.txt" || true
+
+corre() { "$1" --version >/dev/null 2>&1 || "$1" version >/dev/null 2>&1; }
+
+# Baja, verifica y extrae un candidato; deja el ejecutable en $tmp/<n>/codebase-memory-mcp.
+prueba() {  # $1 = url, $2 = subcarpeta de trabajo
+  dir="$tmp/$2"; mkdir -p "$dir"
+  echo "→ Bajando $(basename "$1")"
+  curl -fsSL "$1" -o "$dir/asset.tar.gz" || { echo "No pude bajar $(basename "$1")" >&2; return 1; }
+  esperado="$(grep -F "$(basename "$1")" "$tmp/checksums.txt" 2>/dev/null | awk '{print $1}' | head -1 || true)"
   if [ -n "$esperado" ]; then
-    real="$(sha256 "$tmp/asset.tar.gz" | awk '{print $1}')"
-    [ "$esperado" = "$real" ] || { echo "Checksum no coincide para $(basename "$url")" >&2; exit 1; }
+    real="$(sha256 "$dir/asset.tar.gz" | awk '{print $1}')"
+    # Un checksum que no coincide es motivo para cortar todo, no para probar otro asset.
+    [ "$esperado" = "$real" ] || { echo "Checksum no coincide para $(basename "$1")" >&2; exit 1; }
     echo "→ Checksum verificado"
   fi
-fi
+  tar -xzf "$dir/asset.tar.gz" -C "$dir"
+  bin="$(find "$dir" -type f -name 'codebase-memory-mcp' -perm -u+x | head -1)"
+  [ -n "$bin" ] || bin="$(find "$dir" -type f -name 'codebase-memory-mcp' | head -1)"
+  [ -n "$bin" ] || { echo "El paquete no contiene el ejecutable codebase-memory-mcp" >&2; return 1; }
+  chmod +x "$bin"
+  corre "$bin"
+}
 
-tar -xzf "$tmp/asset.tar.gz" -C "$tmp"
-bin="$(find "$tmp" -type f -name 'codebase-memory-mcp' -perm -u+x | head -1)"
-[ -n "$bin" ] || bin="$(find "$tmp" -type f -name 'codebase-memory-mcp' | head -1)"
-[ -n "$bin" ] || { echo "El paquete no contiene el ejecutable codebase-memory-mcp" >&2; exit 1; }
+n=0; elegido=''
+for url in $candidatos; do
+  n=$((n + 1))
+  if prueba "$url" "$n"; then elegido="$bin"; break; fi
+  echo "→ $(basename "$url") no corre en este sistema; pruebo la siguiente variante" >&2
+done
 
-cp "$bin" "$DEST"
-chmod +x "$DEST"
-
-# Si no corre, es mejor fallar acá que dejar un archivo roto registrado como conector.
-"$DEST" --version >/dev/null 2>&1 || "$DEST" version >/dev/null 2>&1 || {
+# Si ninguno corre, es mejor fallar acá que dejar un archivo roto registrado como conector.
+if [ -z "$elegido" ]; then
   echo "El binario descargado no se ejecuta correctamente en este sistema." >&2
   exit 1
-}
+fi
+
+cp "$elegido" "$DEST"
+chmod +x "$DEST"
 echo "✓ codebase-memory-mcp en $DEST"
