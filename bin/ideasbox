@@ -23,6 +23,7 @@ export STACK_SRC
 . "$STACK_SRC/lib/create.sh"
 . "$STACK_SRC/lib/menu.sh"
 . "$STACK_SRC/lib/panel.sh"
+. "$STACK_SRC/lib/paquete.sh"
 . "$STACK_SRC/lib/doctor.sh"
 
 usage() {
@@ -50,6 +51,7 @@ Comandos técnicos (usuarios avanzados):
   $STACK_NAME backup                 respaldo del árbol canónico y la config
   $STACK_NAME icono                  volver a crear los íconos del Escritorio (Ideas Box, archivos y panel)
   $STACK_NAME carpeta                abrir la carpeta con lo que generan tus agentes
+  $STACK_NAME paquete <acción>       IdeasPackage: tu empresa en un pendrive (crear/abrir/guardar/cerrar/estado)
   $STACK_NAME update                 actualizar stack, packs y conectores
   $STACK_NAME profile                editar la identidad de la empresa
 
@@ -205,6 +207,10 @@ PY
     "${EDITOR:-nano}" "$STACK_PROFILE"
     load_profile
     canonical_main --force
+    ;;
+
+  paquete)
+    paquete_main "$@"
     ;;
 
   ""|menu) menu_main ;;

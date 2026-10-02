@@ -84,6 +84,7 @@ menu_intent() {
     return
   fi
   case "$t" in
+    *pendrive*|*paquete*|*portable*|*llevar*|*usb*|*disco*externo*) echo paquete ;;
     *icono*|*acceso*directo*|*escritorio*) echo icono ;;
     *panel*|*tablero*|*tarea*|*programa*|*agenda*) echo panel ;;
     *revis*|*diagnost*|*doctor*|*chequ*|*control*|*estado*|*funciona*|*anda\ *|*problema*|*error*) echo revisar ;;
@@ -160,7 +161,7 @@ menu_mcp_new() {
 _menu_do() {
   local accion="$1" arg=""
   case "$accion" in *:*) arg="${accion#*:}"; accion="${accion%%:*}" ;; esac
-  if [ "$accion" != instalar ] && [ "$accion" != salir ] && [ "$accion" != nada ] && ! stack_installed; then
+  if [ "$accion" != instalar ] && [ "$accion" != salir ] && [ "$accion" != nada ] && [ "$accion" != paquete-abrir ] && ! stack_installed; then
     warn "Primero hay que terminar de instalar Ideas Box: elegí la opción 1 del menú."
     return 0
   fi
@@ -178,6 +179,10 @@ _menu_do() {
     icono)      _menu_run icono ;;
     panel)      _menu_run panel open ;;
     carpeta)    _menu_run carpeta ;;
+    paquete)    if [ -n "${IDEASPACKAGE_SESION:-}" ]; then _menu_run paquete estado; else _menu_run paquete crear; fi ;;
+    paquete-abrir)   _menu_run paquete abrir ;;
+    paquete-guardar) _menu_run paquete guardar ;;
+    paquete-cerrar)  _menu_run paquete cerrar; [ -n "${IDEASPACKAGE_SESION:-}" ] && return 1 ;;
     salir)      return 1 ;;
     *)          warn "No te entendí. Elegí un número de la lista o probá con otras palabras (ej: «conectar chatwoot»)." ;;
   esac
@@ -193,13 +198,27 @@ menu_main() {
   fi
   [ -n "$STACK_TTY" ] || { usage; return 0; }
 
-  local choice accion
+  local choice accion hay_paquetes=""
   MENU_LOOP=1
+  # IdeasPackage: si hay un pendrive con una empresa (que no sea esta), se ofrece abrirla
+  if [ -z "${IDEASPACKAGE_SESION:-}" ] && have python3; then
+    stack_installed && load_profile
+    local ruta slug
+    while IFS=$'\t' read -r ruta _ _ _ _; do
+      [ -n "$ruta" ] || continue
+      hay_paquetes=1
+      slug="$(_pkg_json "$ruta/ideaspackage.json" empresa.slug)"
+      [ "$slug" = "${EMPRESA_SLUG:-}" ] && continue        # es el pendrive de esta misma empresa
+      _pkg_dirs "$(slugify "$slug")"; [ -f "$PKG_RUN/abierta" ] && continue
+      bash "$IDEASBOX_BIN" paquete abrir "$ruta" || true
+    done < <(paquete_buscar 2>/dev/null)
+  fi
   while :; do
     stack_installed && load_profile
     echo
     printf '%s  IDEAS BOX%s' "$C_B" "$C_RESET"
     stack_installed && printf ' · %s' "$EMPRESA_NOMBRE"
+    [ -n "${IDEASPACKAGE_SESION:-}" ] && printf ' %s(desde el pendrive)%s' "$C_DIM" "$C_RESET"
     printf '\n  ¿Qué hacemos?\n\n'
     if stack_installed; then
       echo "  1) Hablar con mis agentes"
@@ -213,10 +232,17 @@ menu_main() {
       echo "  9) Completar o rehacer la instalación"
       echo " 10) Abrir el panel de tareas y programación"
       echo " 11) Abrir la carpeta con lo que generan mis agentes"
+      if [ -n "${IDEASPACKAGE_SESION:-}" ]; then
+        echo " 12) Guardar ahora en el pendrive"
+        echo " 13) Cerrar mi empresa en este equipo (guarda y borra todo rastro)"
+      else
+        echo " 12) Llevar mi empresa en un pendrive (IdeasPackage)"
+      fi
     else
       if install_pending; then echo "  1) Terminar de instalar mi Ideas Box (quedó a mitad)"
       else echo "  1) Instalar mi Ideas Box"
       fi
+      [ -n "$hay_paquetes" ] && echo "  2) Abrir mi empresa desde un pendrive (IdeasPackage)"
       echo
       echo "  (el resto de las opciones aparece cuando termine la instalación)"
     fi
@@ -227,11 +253,14 @@ menu_main() {
       case "$choice" in
         1) accion=hablar ;; 2) accion=revisar ;; 3) accion=skills-add ;; 4) accion=mcp-add ;;
         5) accion=skills-new ;; 6) accion=mcp-new ;; 7) accion=actualizar ;; 8) accion=respaldo ;;
-        9) accion=instalar ;; 10) accion=panel ;; 11) accion=carpeta ;; 0) accion=salir ;; '') continue ;; *) accion="$(menu_intent "$choice")" ;;
+        9) accion=instalar ;; 10) accion=panel ;; 11) accion=carpeta ;; 0) accion=salir ;; '') continue ;;
+        12) if [ -n "${IDEASPACKAGE_SESION:-}" ]; then accion=paquete-guardar; else accion=paquete; fi ;;
+        13) if [ -n "${IDEASPACKAGE_SESION:-}" ]; then accion=paquete-cerrar; else accion=nada; fi ;;
+        *) accion="$(menu_intent "$choice")" ;;
       esac
     else
       case "$choice" in
-        1) accion=instalar ;; 0) accion=salir ;; '') continue ;; *) accion="$(menu_intent "$choice")" ;;
+        1) accion=instalar ;; 2) accion=paquete-abrir ;; 0) accion=salir ;; '') continue ;; *) accion="$(menu_intent "$choice")" ;;
       esac
     fi
     _menu_do "$accion" || break

@@ -73,10 +73,24 @@ con tus palabras lo que querés hacer:
 | Conectar algo que no está en la lista | «Crear un conector nuevo» |
 | Tener la última versión | «Actualizar todo» |
 | Guardar una copia de todo | «Hacer un respaldo» |
+| Llevar tu empresa en un pendrive | «Llevar mi empresa en un pendrive» |
 
 La frase también se puede escribir directo: `ideasbox conectar chatwoot`, `ideasbox crear una
 habilidad`. Y dentro de Claude se pide como a una persona: *"conectá mi Instagram"*, *"creá una
 habilidad para responder presupuestos"*.
+
+### Tu empresa en un pendrive (IdeasPackage)
+
+Con «Llevar mi empresa en un pendrive» se guarda **toda la empresa** —agentes, habilidades,
+conectores, memoria y lo que generaron tus agentes— en un pendrive o disco externo, con las
+credenciales de los conectores **cifradas con una contraseña**.
+
+En cualquier otro equipo con Ideas Box (aunque sea de otra persona y tenga su propia empresa),
+conectá el pendrive y abrí Ideas Box: te saluda por tu nombre y te pregunta si querés iniciar tu
+empresa ahí. Trabajás en una sesión aparte —con tu cuenta de Claude— que **no toca nada** de la
+configuración del dueño del equipo. Lo que hagas se guarda en el pendrive solo cada 10 minutos y
+al cerrar; al cerrar, el equipo no conserva tus datos ni tus credenciales. Detalle técnico en
+[docs/IDEASPACKAGE.md](docs/IDEASPACKAGE.md). Por ahora funciona en Linux (incluido JFlowOS).
 
 ### Para usuarios avanzados
 
@@ -99,6 +113,10 @@ ideasbox update          # actualizar todo
 ideasbox panel install   # tablero web local de tareas
 ideasbox panel open      # levantarlo y abrirlo en el navegador (http://127.0.0.1:8420)
 ideasbox carpeta         # abrir la carpeta con lo que generan los agentes
+ideasbox paquete crear   # IdeasPackage: empaquetar la empresa en un pendrive
+ideasbox paquete abrir   # abrir la empresa de un pendrive conectado
+ideasbox paquete guardar # guardar en el pendrive lo trabajado
+ideasbox paquete cerrar  # guardar, cerrar y borrar todo rastro del equipo
 ```
 
 ## Cómo está organizado
