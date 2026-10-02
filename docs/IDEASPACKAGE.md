@@ -71,5 +71,5 @@ propio pendrive.
 ## Pendiente
 
 - macOS y Windows/WSL.
-- JFlowOS: aviso del sistema al conectar un pendrive con IdeasPackage.
+- (Hecho en JFlowOS 1.2: aviso del sistema al conectar el pendrive, con `paquete abrir --si`.)
 - Panel invitado: se instala la primera vez si se elige «Abrir el panel» (usa `cache/panel`).

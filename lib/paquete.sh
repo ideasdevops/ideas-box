@@ -275,6 +275,8 @@ PY
 paquete_abrir() {
   _pkg_need
   [ -n "${IDEASPACKAGE_SESION:-}" ] && die "Ya estás dentro de la sesión de $IDEASPACKAGE_SESION."
+  # --si: la persona ya dijo que sí (p. ej. en la notificación de JFlowOS): no se vuelve a preguntar
+  local ya_confirmado=0; [ "${1:-}" = "--si" ] && { ya_confirmado=1; shift; }
   local ruta="${1:-}"
   if [ -z "$ruta" ]; then
     local -a lista=(); local l
@@ -298,7 +300,11 @@ paquete_abrir() {
   fi
 
   printf '\n  %sHola %s.%s\n' "$C_B" "$(_pkg_nombre_corto "$dueno")" "$C_RESET"
-  confirm "  ¿Querés iniciar tu empresa «${empresa}» en este equipo?" y pkg_iniciar || { info "Listo, no se abrió nada."; return 0; }
+  if [ "$ya_confirmado" = 1 ]; then
+    printf '  Vamos a iniciar tu empresa «%s» en este equipo.\n' "$empresa"
+  else
+    confirm "  ¿Querés iniciar tu empresa «${empresa}» en este equipo?" y pkg_iniciar || { info "Listo, no se abrió nada."; return 0; }
+  fi
 
   if [ -f "$PKG_RUTA/en-uso.json" ]; then
     local eq desde; eq="$(_pkg_json "$PKG_RUTA/en-uso.json" equipo)"; desde="$(_pkg_json "$PKG_RUTA/en-uso.json" desde)"
