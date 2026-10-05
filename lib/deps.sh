@@ -12,10 +12,17 @@ BREW_MEDIA=(ffmpeg imagemagick)
 
 # Mínimos de macOS que imponen otros, no nosotros:
 # - Claude Code publica binarios compilados para macOS 13.0 en adelante; en 12 no arranca.
+# - codebase-memory (conector del núcleo, v0.11.0) pide macOS 14.0 en Apple Silicon y 15.0
+#   en Intel (LC_BUILD_VERSION de los binarios darwin-arm64 y darwin-amd64). Es el mínimo
+#   más alto, así que es el que manda: por debajo, la instalación caía recién en el paso 5.
 # - El install.sh oficial de Homebrew aborta en Intel y por debajo de su
 #   MACOS_OLDEST_SUPPORTED (15.0 a septiembre de 2026). Un Homebrew ya instalado sigue sirviendo.
 # - Node 24 pide macOS 13.5; Node 22 corre desde macOS 11.
 CLAUDE_MACOS_MIN=13
+case "$(uname -m)" in
+  arm64|aarch64) IDEASBOX_MACOS_MIN=14 ;;
+  *)             IDEASBOX_MACOS_MIN=15 ;;
+esac
 BREW_MACOS_MIN=15
 MAC_NOBREW=0
 USER_BIN="$HOME/.local/bin"
@@ -32,10 +39,18 @@ mac_version_ge() {
 }
 
 # Se corta antes de instalar nada: sin Claude Code el resto del stack no tiene quién lo use.
+_mac_chip() { case "$(uname -m)" in arm64|aarch64) echo 'con Apple Silicon' ;; *) echo 'Intel' ;; esac; }
+
 macos_preflight() {
-  mac_version_ge "$CLAUDE_MACOS_MIN" && return 0
-  err "macOS $OS_VERSION es anterior a macOS $CLAUDE_MACOS_MIN, el mínimo que pide Claude Code."
-  err "En este equipo Claude Code no arranca, así que no tiene sentido seguir con la instalación."
+  mac_version_ge "$IDEASBOX_MACOS_MIN" && return 0
+  if mac_version_ge "$CLAUDE_MACOS_MIN"; then
+    err "macOS $OS_VERSION es anterior a macOS $IDEASBOX_MACOS_MIN, el mínimo de Ideas Box en una Mac $(_mac_chip)."
+    err "El conector de código del núcleo (codebase-memory) no corre en esta versión, y la"
+    err "instalación se cortaría a mitad de camino. Mejor no empezar."
+  else
+    err "macOS $OS_VERSION es anterior a macOS $CLAUDE_MACOS_MIN, el mínimo que pide Claude Code."
+    err "En este equipo Claude Code no arranca, así que no tiene sentido seguir con la instalación."
+  fi
   info "Salidas posibles:"
   info "  1. Instalar Ubuntu, Linux Mint o Debian en este equipo: Ideas Box corre completo ahí."
   info "  2. Subir de versión de macOS. Si Apple ya no la ofrece para este modelo, existe"

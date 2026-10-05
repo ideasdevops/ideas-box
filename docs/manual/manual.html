@@ -94,7 +94,7 @@ podés dejarlo corriendo y volver.</p>
 <table>
   <tr><th style="width:32%">Sistema</th><th>Qué necesita</th></tr>
   <tr><td><b>Ubuntu · Linux Mint · Debian</b></td><td>Un usuario con permiso de administrador (<code>sudo</code>). No hace falta tener nada más instalado</td></tr>
-  <tr><td><b>macOS 13 o posterior</b><br><span class="chico">Intel y Apple Silicon</span></td><td>Las herramientas de línea de comandos de Apple (macOS las ofrece solo). <span class="chico">macOS 12 o anterior no sirve: Claude Code no funciona ahí. En esas Mac conviene instalar Linux Mint.</span></td></tr>
+  <tr><td><b>macOS 14 o posterior</b><br><span class="chico">Apple Silicon (M1 en adelante)</span><br><b>macOS 15 o posterior</b><br><span class="chico">Intel</span></td><td>Las herramientas de línea de comandos de Apple (macOS las ofrece solo). <span class="chico">Con versiones anteriores, uno de los conectores del núcleo no funciona y el instalador corta al empezar. En esas Mac conviene instalar Linux Mint.</span></td></tr>
   <tr><td><b>Windows 11</b></td><td>Ubuntu instalado con WSL (se explica en la sección 4). No hay versión nativa para Windows</td></tr>
   <tr><td><b>Todos</b></td><td>Conexión a internet, 5&nbsp;GB libres, un navegador y una cuenta de Claude con acceso a Claude Code</td></tr>
 </table>
@@ -178,7 +178,7 @@ podés dejarlo corriendo y volver.</p>
 <h2><span class="num">4</span>Mac y Windows: lo particular</h2>
 <p class="sub">Lo que cambia respecto de Linux. En los dos casos, después sigue todo en el asistente.</p>
 
-<h3>macOS 13 o posterior</h3>
+<h3>macOS (14+ en Apple Silicon, 15+ en Intel)</h3>
 <p>La primera vez aparece la ventana de Apple para instalar sus <em>herramientas de desarrollo</em>
 (gratis): hacé clic en «Instalar», aceptá la licencia y esperá entre 5 y 15 minutos. La Terminal espera
 sola y, cuando terminan, se abre el asistente.</p>
@@ -204,7 +204,7 @@ dentro de Ubuntu: «Archivos Ideas Box» los abre en el Explorador.</p>
 
 <div class="caja tinta">
   <div class="t">Dónde se probó</div>
-  <p>La instalación, en Linux Mint y MX Linux, una Mac Intel con macOS 13 y Windows 11 con Ubuntu en WSL. Si algo falla, el
+  <p>La instalación, en Linux Mint y MX Linux, una Mac y Windows 11 con Ubuntu en WSL. Si algo falla, el
   error y el paso donde ocurrió son información valiosa: reportalos (sección 13) y lo corregimos.</p>
 </div>
 
@@ -627,7 +627,7 @@ Si querés acompañamiento en esa etapa, <strong>IdeasDevOps</strong> lo hace co
 <p class="sub">El proceso completo con los comandos reales que corre el menú, para quien prefiere la terminal o necesita diagnosticar.</p>
 
 <h3>1 · Bajar Ideas Box y abrir el asistente</h3>
-<pre><code><span class="c"># Todo en uno (Linux, macOS 13+, Ubuntu en WSL)</span>
+<pre><code><span class="c"># Todo en uno (Linux, macOS 14+, Ubuntu en WSL)</span>
 curl -fsSL https://raw.githubusercontent.com/ideasdevops/ideas-box/main/\
 instalar.sh | bash
 
