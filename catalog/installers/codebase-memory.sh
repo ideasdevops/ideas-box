@@ -6,6 +6,8 @@
 # un zip renombrado como si fuera un ejecutable, así que acá el orden de preferencia es
 # explícito y al final se verifica que el binario realmente corra.
 set -euo pipefail
+# Con set -e, cualquier corte inesperado tiene que dejar rastro en el log del asistente.
+trap 'rc=$?; echo "codebase-memory: el instalador se cortó en la línea $LINENO (código $rc)" >&2' ERR
 
 REPO="DeusData/codebase-memory-mcp"
 DEST="${HOME}/.local/bin/codebase-memory-mcp"
@@ -27,7 +29,9 @@ assets="$(curl -fsSL -H 'Accept: application/vnd.github+json' "$api" \
   | grep -oE '"browser_download_url": *"[^"]+"' | cut -d'"' -f4)"
 
 pick() {  # primer asset que matchea el patrón, descartando firmas y variantes de UI
-  printf '%s\n' "$assets" | grep -viE '\.(bundle|sha256|asc|sig)$' | grep -v -- '-ui-' | grep -E "$1" | head -1
+  # Que no haya match no es un error: macOS no tiene variante -portable, y con pipefail
+  # el grep vacío tumbaba el script entero sin decir nada (Mac Apple Silicon, 2026-10-05).
+  printf '%s\n' "$assets" | grep -viE '\.(bundle|sha256|asc|sig)$' | grep -v -- '-ui-' | grep -E "$1" | head -1 || true
 }
 
 # Preferencia: tar.gz nativo → tar.gz portable. Nunca .mcpb (es un bundle, no un binario).
@@ -71,6 +75,12 @@ prueba() {  # $1 = url, $2 = subcarpeta de trabajo
   [ -n "$bin" ] || bin="$(find "$dir" -type f -name 'codebase-memory-mcp' | head -1)"
   [ -n "$bin" ] || { echo "El paquete no contiene el ejecutable codebase-memory-mcp" >&2; return 1; }
   chmod +x "$bin"
+  # macOS: lo mismo que hace el instalador oficial (sacar la cuarentena y re-firmar ad hoc),
+  # para que Gatekeeper no mate el binario al primer arranque.
+  if [ "$os" = darwin ]; then
+    xattr -d com.apple.quarantine "$bin" >/dev/null 2>&1 || true
+    codesign --sign - --force "$bin" >/dev/null 2>&1 || true
+  fi
   corre "$bin"
 }
 
