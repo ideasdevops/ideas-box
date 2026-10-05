@@ -23,10 +23,16 @@ main() {
   case "$(uname -s)" in
     Darwin)
       local v; v="$(sw_vers -productVersion 2>/dev/null || echo 0)"
-      # El mínimo lo pone el binario de codebase-memory: 14 en Apple Silicon, 15 en Intel
+      # Corte duro solo debajo de 13: ahí Claude Code no arranca. El binario de codebase-memory
+      # pide 14 en Apple Silicon y 15 en Intel, pero una Mac Intel con macOS 13 (OCLP) completó
+      # la instalación igual: debajo de ese mínimo se avisa y se sigue.
+      [ "${v%%.*}" -ge 13 ] 2>/dev/null || fail "Ideas Box necesita macOS 13 o posterior (Claude Code no arranca en versiones anteriores). Este equipo tiene macOS $v. Alternativa: instalar Linux Mint o Ubuntu en este equipo."
       local min=15 chip=Intel
       case "$(uname -m)" in arm64|aarch64) min=14; chip='con Apple Silicon' ;; esac
-      [ "${v%%.*}" -ge "$min" ] 2>/dev/null || fail "En una Mac $chip, Ideas Box necesita macOS $min o posterior. Este equipo tiene macOS $v. Alternativa: instalar Linux Mint o Ubuntu en este equipo."
+      if ! [ "${v%%.*}" -ge "$min" ] 2>/dev/null; then
+        printf '\033[33m!\033[0m %s\n' "En una Mac $chip lo recomendado es macOS $min o posterior (este equipo tiene $v)." \
+          "  El conector de código (codebase-memory) puede no funcionar; la instalación sigue igual." >&2
+      fi
       # Herramientas de Apple: traen git y Python, sin los que no hay asistente
       if ! xcode-select -p >/dev/null 2>&1 || ! /usr/bin/git --version >/dev/null 2>&1; then
         say "Hacen falta las herramientas de desarrollo de Apple (gratis). Se abre la ventana de Apple:"

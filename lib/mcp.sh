@@ -352,6 +352,13 @@ mcp_wizard() {
     ( mcp_catalog_load "$id"; [ "$TIER" = core ] ) || continue
     # Retomando una instalación cortada no hace falta volver a compilar lo que ya quedó
     if [ "${RESUME:-0}" = 1 ] && mcp_id_installed "$id"; then ok "Ya instalado: $id"; continue; fi
+    # En una Mac por debajo de lo recomendado (macos_preflight ya avisó), que codebase-memory
+    # no corra no debe cortar la instalación entera: se instala en un subshell para que su
+    # die() no salga del instalador, y se sigue sin ese conector.
+    if [ "$id" = codebase-memory ] && is_mac && ! mac_version_ge "${IDEASBOX_MACOS_MIN:-14}"; then
+      ( mcp_install "$id" ) || warn "Sigo sin codebase-memory: no corre en macOS $(sw_vers -productVersion 2>/dev/null). Si actualizás macOS, sumalo con: $STACK_NAME mcp add codebase-memory"
+      continue
+    fi
     mcp_install "$id" || true
   done
 

@@ -13,8 +13,8 @@ BREW_MEDIA=(ffmpeg imagemagick)
 # Mínimos de macOS que imponen otros, no nosotros:
 # - Claude Code publica binarios compilados para macOS 13.0 en adelante; en 12 no arranca.
 # - codebase-memory (conector del núcleo, v0.11.0) pide macOS 14.0 en Apple Silicon y 15.0
-#   en Intel (LC_BUILD_VERSION de los binarios darwin-arm64 y darwin-amd64). Es el mínimo
-#   más alto, así que es el que manda: por debajo, la instalación caía recién en el paso 5.
+#   en Intel (LC_BUILD_VERSION de los binarios darwin-arm64 y darwin-amd64). Por debajo
+#   se avisa pero no se corta (una Mac Intel con macOS 13 vía OCLP completó la instalación).
 # - El install.sh oficial de Homebrew aborta en Intel y por debajo de su
 #   MACOS_OLDEST_SUPPORTED (15.0 a septiembre de 2026). Un Homebrew ya instalado sigue sirviendo.
 # - Node 24 pide macOS 13.5; Node 22 corre desde macOS 11.
@@ -43,14 +43,16 @@ _mac_chip() { case "$(uname -m)" in arm64|aarch64) echo 'con Apple Silicon' ;; *
 
 macos_preflight() {
   mac_version_ge "$IDEASBOX_MACOS_MIN" && return 0
+  # Entre el mínimo de Claude Code y el de codebase-memory se avisa y se sigue: una Mac
+  # Intel con macOS 13 (OCLP) completó la instalación igual. Si el binario no corre, el
+  # instalador del conector lo dice con todas las letras.
   if mac_version_ge "$CLAUDE_MACOS_MIN"; then
-    err "macOS $OS_VERSION es anterior a macOS $IDEASBOX_MACOS_MIN, el mínimo de Ideas Box en una Mac $(_mac_chip)."
-    err "El conector de código del núcleo (codebase-memory) no corre en esta versión, y la"
-    err "instalación se cortaría a mitad de camino. Mejor no empezar."
-  else
-    err "macOS $OS_VERSION es anterior a macOS $CLAUDE_MACOS_MIN, el mínimo que pide Claude Code."
-    err "En este equipo Claude Code no arranca, así que no tiene sentido seguir con la instalación."
+    warn "macOS $OS_VERSION es anterior a macOS $IDEASBOX_MACOS_MIN, lo recomendado en una Mac $(_mac_chip)."
+    warn "El conector de código (codebase-memory) puede no funcionar en esta versión; la instalación sigue."
+    return 0
   fi
+  err "macOS $OS_VERSION es anterior a macOS $CLAUDE_MACOS_MIN, el mínimo que pide Claude Code."
+  err "En este equipo Claude Code no arranca, así que no tiene sentido seguir con la instalación."
   info "Salidas posibles:"
   info "  1. Instalar Ubuntu, Linux Mint o Debian en este equipo: Ideas Box corre completo ahí."
   info "  2. Subir de versión de macOS. Si Apple ya no la ofrece para este modelo, existe"

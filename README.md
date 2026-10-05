@@ -144,11 +144,12 @@ vendor/                 código propio que se distribuye con el stack
 |---|---|
 | Ubuntu · Linux Mint · Debian | `apt`, usuario con sudo, `git` para clonar |
 | Windows 11 (dentro de Ubuntu en WSL) | Ubuntu instalado con `wsl --install`; Ideas Box se instala en esa terminal de Ubuntu como en cualquier Linux. El ícono queda en el Escritorio y el menú Inicio de Windows. No hay versión nativa para Windows |
-| macOS 14 (Sonoma) o posterior en Apple Silicon · macOS 15 (Sequoia) o posterior en Intel | Herramientas de línea de comandos de Xcode. En Apple Silicon con macOS 15+ el script instala Homebrew si falta; en Intel o en macOS más viejo usa el Homebrew que ya tengas o, si no hay, baja jq, Python y Node sueltos a `~/.local/bin` |
+| macOS 13 o posterior; recomendado 14 (Sonoma) en Apple Silicon y 15 (Sequoia) en Intel | Herramientas de línea de comandos de Xcode. En Apple Silicon con macOS 15+ el script instala Homebrew si falta; en Intel o en macOS más viejo usa el Homebrew que ya tengas o, si no hay, baja jq, Python y Node sueltos a `~/.local/bin` |
 
-Por debajo de eso no sirve: el binario de codebase-memory (el conector de código del núcleo) pide
-macOS 14 en Apple Silicon y macOS 15 en Intel, y Claude Code no arranca en macOS 12 o anterior.
-En Macs que no llegan a esas versiones, lo recomendable es instalarles Linux Mint o Ubuntu.
+macOS 12 (Monterey) y anteriores no sirven: Claude Code no arranca ahí y el instalador corta al
+empezar; en esas Macs lo recomendable es instalarles Linux Mint o Ubuntu. Con macOS 13, o con 14
+en Intel, el instalador avisa y sigue: el binario de codebase-memory (el conector de código)
+pide macOS 14 en Apple Silicon y 15 en Intel, y puede no funcionar por debajo de eso.
 
 También:
 

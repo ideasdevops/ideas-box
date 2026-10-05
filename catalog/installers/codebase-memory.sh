@@ -94,6 +94,11 @@ done
 # Si ninguno corre, es mejor fallar acá que dejar un archivo roto registrado como conector.
 if [ -z "$elegido" ]; then
   echo "El binario descargado no se ejecuta correctamente en este sistema." >&2
+  if [ "$os" = darwin ]; then
+    min=15; [ "$plat" = darwin-arm64 ] && min=14
+    echo "En esta Mac codebase-memory pide macOS $min o posterior (este equipo tiene $(sw_vers -productVersion 2>/dev/null))." >&2
+    echo "Si no podés actualizar macOS, Ideas Box funciona igual sin este conector." >&2
+  fi
   exit 1
 fi
 
