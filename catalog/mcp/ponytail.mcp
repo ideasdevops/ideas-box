@@ -4,7 +4,9 @@ DESC="Hace que el agente escriba el código más chico que resuelve el problema,
 TIER="core"
 KIND="node"
 REPO="https://github.com/DietrichGebert/ponytail.git"
-REF="main"
+# El servidor MCP (ponytail-mcp/) se borró de main el 2026-10-05 (upstream b9a1051):
+# v4.13.0 es el último tag que lo trae.
+REF="v4.13.0"
 DIR="ponytail"
 BUILD="cd ponytail-mcp && npm install --omit=dev --no-audit --no-fund"
 CMD="__NODE__"
