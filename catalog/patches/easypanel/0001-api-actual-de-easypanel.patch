@@ -1,0 +1,277 @@
+diff --git a/src/client.py b/src/client.py
+index 9e0180e..7423107 100644
+--- a/src/client.py
++++ b/src/client.py
+@@ -129,7 +129,7 @@ class EasyPanelClient:
+             if is_query or method == "GET":
+                 # tRPC GET requests encode input as JSON string in query param
+                 if input_data:
+-                    input_json = json.dumps(input_data)
++                    input_json = json.dumps({"json": input_data})
+                     response = await self._client.get(endpoint, params={"input": input_json})
+                 else:
+                     response = await self._client.get(endpoint)
+@@ -141,8 +141,11 @@ class EasyPanelClient:
+             response.raise_for_status()
+             result = response.json()
+             
+-            # Extract data from tRPC response structure:
++            # Extract data from tRPC response structure. Current EasyPanel answers
++            # { "json": ..., "meta": ... }; older builds wrapped it as
+             # { "result": { "data": { "json": {...}, "meta": {...} } } }
++            if isinstance(result, dict) and "json" in result:
++                return result["json"]
+             data = result.get("result", {}).get("data", {})
+             if "json" in data:
+                 return data["json"]
+@@ -166,6 +169,39 @@ class EasyPanelClient:
+     # Valid EasyPanel service types with their own tRPC namespace.
+     _VALID_SERVICE_TYPES = ["app", "postgres", "redis", "mysql", "mongodb", "mariadb"]
+ 
++    async def _list_projects_and_services(self) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
++        """
++        Fetch projects and services in one round-trip.
++
++        EasyPanel identifies resources by name, so every project gets "id" = its name
++        and every service gets "id" = "<projectName>/<serviceName>".
++        """
++        result = await self._trpc_request("projects.listProjectsAndServices")
++        projects = result.get("projects", []) if isinstance(result, dict) else []
++        services = result.get("services", []) if isinstance(result, dict) else []
++        for proj in projects:
++            proj.setdefault("id", proj.get("name"))
++        for service in services:
++            service["id"] = f"{service.get('projectName')}/{service.get('name')}"
++        return projects, services
++
++    async def _service_ref(self, service_id: str) -> dict[str, str]:
++        """
++        Turn a service id into the {projectName, serviceName} pair EasyPanel expects.
++
++        Accepts "<project>/<service>" or a bare service name when it is unique.
++        """
++        if "/" in service_id:
++            project_name, service_name = service_id.split("/", 1)
++            return {"projectName": project_name, "serviceName": service_name}
++        _, services = await self._list_projects_and_services()
++        matches = [s for s in services if s.get("name") == service_id]
++        if len(matches) != 1:
++            raise RuntimeError(
++                f"Service '{service_id}' is ambiguous or unknown; use '<project>/<service>'"
++            )
++        return {"projectName": matches[0]["projectName"], "serviceName": service_id}
++
+     async def _resolve_service_namespace(self, service_id: str) -> str:
+         """
+         Resolve the correct tRPC namespace for a service based on its type.
+@@ -178,22 +214,21 @@ class EasyPanelClient:
+             return self._namespace_cache[service_id]
+ 
+         try:
+-            result = await self._trpc_request("projects.listProjectsAndServices")
+-            projects = result.get("data", []) if isinstance(result, dict) else result
+-
+-            # Populate the cache for ALL services in this single round-trip.
+-            for proj in (projects if isinstance(projects, list) else []):
+-                for service in proj.get("services", []):
+-                    sid = service.get("id")
+-                    if not sid:
+-                        continue
+-                    stype = service.get("type", "app")
+-                    namespace = (
+-                        f"services.{stype}"
+-                        if stype in self._VALID_SERVICE_TYPES
+-                        else "services.app"  # templates/integrations -> standard app
+-                    )
+-                    self._namespace_cache[sid] = namespace
++            _, services = await self._list_projects_and_services()
++
++            # Populate the cache for ALL services in this single round-trip,
++            # under both "<project>/<service>" and the bare name when unique.
++            names = [s.get("name") for s in services]
++            for service in services:
++                stype = service.get("type", "app")
++                namespace = (
++                    f"services.{stype}"
++                    if stype in self._VALID_SERVICE_TYPES
++                    else "services.app"  # templates/integrations -> standard app
++                )
++                self._namespace_cache[service["id"]] = namespace
++                if names.count(service.get("name")) == 1:
++                    self._namespace_cache[service.get("name")] = namespace
+ 
+             if service_id in self._namespace_cache:
+                 return self._namespace_cache[service_id]
+@@ -207,10 +242,10 @@ class EasyPanelClient:
+     async def list_projects(self) -> list[dict[str, Any]]:
+         """List all projects."""
+         try:
+-            result = await self._trpc_request("projects.listProjects")
+-            if isinstance(result, dict) and "data" in result:
+-                return result.get("data", [])
+-            return result if isinstance(result, list) else []
++            projects, services = await self._list_projects_and_services()
++            for proj in projects:
++                proj["services"] = sum(1 for s in services if s.get("projectName") == proj["name"])
++            return projects
+         except Exception as e:
+             logger.error(f"Error listing projects: {e}")
+             raise
+@@ -218,7 +253,7 @@ class EasyPanelClient:
+     async def get_project(self, project_id: str) -> dict[str, Any]:
+         """Get project details (inspect)."""
+         try:
+-            result = await self._trpc_request("projects.inspectProject", {"id": project_id})
++            result = await self._trpc_request("projects.inspectProject", {"projectName": project_id})
+             return result if isinstance(result, dict) else {}
+         except Exception as e:
+             logger.error(f"Error getting project: {e}")
+@@ -243,7 +278,7 @@ class EasyPanelClient:
+     async def delete_project(self, project_id: str) -> dict[str, Any]:
+         """Delete a project."""
+         try:
+-            result = await self._trpc_request("projects.destroyProject", {"id": project_id})
++            result = await self._trpc_request("projects.destroyProject", {"projectName": project_id})
+             return result if isinstance(result, dict) else {}
+         except Exception as e:
+             logger.error(f"Error deleting project: {e}")
+@@ -254,19 +289,10 @@ class EasyPanelClient:
+     async def list_services(self, project_id: Optional[str] = None) -> list[dict[str, Any]]:
+         """List all services, optionally filtered by project."""
+         try:
+-            result = await self._trpc_request("projects.listProjectsAndServices")
+-            projects = result.get("data", []) if isinstance(result, dict) else result
+-            
++            _, services = await self._list_projects_and_services()
+             if project_id:
+-                for proj in projects:
+-                    if proj.get("id") == project_id:
+-                        return proj.get("services", [])
+-                return []
+-            else:
+-                services = []
+-                for proj in projects:
+-                    services.extend(proj.get("services", []))
+-                return services
++                return [s for s in services if s.get("projectName") == project_id]
++            return services
+         except Exception as e:
+             logger.error(f"Error listing services: {e}")
+             raise
+@@ -275,7 +301,7 @@ class EasyPanelClient:
+         """Get service details (inspect)."""
+         try:
+             namespace = await self._resolve_service_namespace(service_id)
+-            result = await self._trpc_request(f"{namespace}.inspectService", {"id": service_id})
++            result = await self._trpc_request(f"{namespace}.inspectService", await self._service_ref(service_id))
+             return result if isinstance(result, dict) else {}
+         except Exception as e:
+             logger.error(f"Error getting service: {e}")
+@@ -312,7 +338,7 @@ class EasyPanelClient:
+         """Update service configuration."""
+         try:
+             namespace = await self._resolve_service_namespace(service_id)
+-            data = {"id": service_id, **config}
++            data = {**(await self._service_ref(service_id)), **config}
+             
+             # Try different update methods based on config keys
+             if "env" in config or "environment" in config:
+@@ -338,7 +364,7 @@ class EasyPanelClient:
+         """Delete a service."""
+         try:
+             namespace = await self._resolve_service_namespace(service_id)
+-            result = await self._trpc_request(f"{namespace}.destroyService", {"id": service_id})
++            result = await self._trpc_request(f"{namespace}.destroyService", await self._service_ref(service_id))
+             # Service removed -> forget its cached namespace.
+             self._namespace_cache.pop(service_id, None)
+             return result if isinstance(result, dict) else {}
+@@ -350,7 +376,7 @@ class EasyPanelClient:
+         """Restart a service."""
+         try:
+             namespace = await self._resolve_service_namespace(service_id)
+-            result = await self._trpc_request(f"{namespace}.restartService", {"id": service_id})
++            result = await self._trpc_request(f"{namespace}.restartService", await self._service_ref(service_id))
+             return result if isinstance(result, dict) else {}
+         except Exception as e:
+             logger.error(f"Error restarting service: {e}")
+@@ -360,7 +386,7 @@ class EasyPanelClient:
+         """Start a service."""
+         try:
+             namespace = await self._resolve_service_namespace(service_id)
+-            result = await self._trpc_request(f"{namespace}.startService", {"id": service_id})
++            result = await self._trpc_request(f"{namespace}.startService", await self._service_ref(service_id))
+             return result if isinstance(result, dict) else {}
+         except Exception as e:
+             logger.error(f"Error starting service: {e}")
+@@ -370,7 +396,7 @@ class EasyPanelClient:
+         """Stop a service."""
+         try:
+             namespace = await self._resolve_service_namespace(service_id)
+-            result = await self._trpc_request(f"{namespace}.stopService", {"id": service_id})
++            result = await self._trpc_request(f"{namespace}.stopService", await self._service_ref(service_id))
+             return result if isinstance(result, dict) else {}
+         except Exception as e:
+             logger.error(f"Error stopping service: {e}")
+@@ -380,7 +406,7 @@ class EasyPanelClient:
+         """Deploy/redeploy a service."""
+         try:
+             namespace = await self._resolve_service_namespace(service_id)
+-            result = await self._trpc_request(f"{namespace}.deployService", {"id": service_id})
++            result = await self._trpc_request(f"{namespace}.deployService", await self._service_ref(service_id))
+             return result if isinstance(result, dict) else {}
+         except Exception as e:
+             logger.error(f"Error deploying service: {e}")
+@@ -457,7 +483,7 @@ class EasyPanelClient:
+             for service in services:
+                 service_name = service.get("name", "unknown")
+                 service_id = service.get("id", "unknown")
+-                project_id = service.get("projectId", "unknown")
++                project_id = service.get("projectName", "unknown")
+                 
+                 ports = service.get("ports", [])
+                 has_public = any(p.get("public") for p in ports) if ports else False
+@@ -542,10 +568,10 @@ class EasyPanelClient:
+         try:
+             namespace = await self._resolve_service_namespace(service_id)
+             await self._trpc_request(f"{namespace}.updateSourceImage", {
+-                "id": service_id,
++                **(await self._service_ref(service_id)),
+                 "sourceImage": image
+             })
+-            result = await self._trpc_request(f"{namespace}.deployService", {"id": service_id})
++            result = await self._trpc_request(f"{namespace}.deployService", await self._service_ref(service_id))
+             return result if isinstance(result, dict) else {}
+         except Exception as e:
+             logger.error(f"Error creating deployment: {e}")
+@@ -627,7 +653,7 @@ class EasyPanelClient:
+                 return {"error": "No scaling parameters provided"}
+             
+             result = await self._trpc_request(f"{namespace}.updateResources", {
+-                "id": service_id,
++                **(await self._service_ref(service_id)),
+                 **config
+             })
+             return result if isinstance(result, dict) else {}
+@@ -697,10 +723,18 @@ class EasyPanelClient:
+     async def list_domains(self, service_id: Optional[str] = None) -> list[dict[str, Any]]:
+         """List domains."""
+         try:
+-            result = await self._trpc_request("domains.listDomains")
+-            if isinstance(result, dict) and "data" in result:
+-                return result.get("data", [])
+-            return result if isinstance(result, list) else []
++            if service_id:
++                refs = [await self._service_ref(service_id)]
++            else:
++                _, services = await self._list_projects_and_services()
++                refs = [{"projectName": s["projectName"], "serviceName": s["name"]} for s in services]
++            domains = []
++            for ref in refs:
++                result = await self._trpc_request("domains.listDomains", ref)
++                for domain in (result if isinstance(result, list) else []):
++                    domain.setdefault("service", f"{ref['projectName']}/{ref['serviceName']}")
++                    domains.append(domain)
++            return domains
+         except Exception as e:
+             logger.error(f"Error listing domains: {e}")
+             raise

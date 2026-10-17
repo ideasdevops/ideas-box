@@ -102,6 +102,18 @@ if [ -z "$elegido" ]; then
   exit 1
 fi
 
-cp "$elegido" "$DEST"
-chmod +x "$DEST"
+# Una sesión de Claude Code abierta deja corriendo la versión anterior (y su daemon), que
+# retiene el lock: la nueva arranca, ve "conflicting CBM process" y se queda esperando sin
+# responder el handshake. Se cierran antes de reemplazar; /mcp los vuelve a levantar.
+if pgrep -f "$DEST" >/dev/null 2>&1; then
+  echo "→ Cerrando codebase-memory en ejecución (reconectalo con /mcp en las sesiones abiertas)"
+  pkill -TERM -f "$DEST" 2>/dev/null || true
+  for _ in 1 2 3 4 5; do pgrep -f "$DEST" >/dev/null 2>&1 || break; sleep 1; done
+fi
+
+# Reemplazo atómico: copiar encima del archivo en uso deja a macOS con la firma vieja en
+# caché y el kernel mata al binario nuevo con SIGKILL (exit 137) al arrancar.
+cp "$elegido" "$DEST.new"
+chmod +x "$DEST.new"
+mv -f "$DEST.new" "$DEST"
 echo "✓ codebase-memory-mcp en $DEST"

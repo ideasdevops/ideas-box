@@ -83,11 +83,30 @@ mcp_id_installed() {   # <id del catálogo> -> ¿hay al menos una instancia inst
   [ -f "$MCP_REGISTRY" ] && awk -F'\t' -v id="$1" '$2==id {found=1} END{exit !found}' "$MCP_REGISTRY"
 }
 
+# _mcp_apply_patches — aplica catalog/patches/<id>/*.patch sobre el código recién bajado.
+# Sirve para arreglos que todavía no están en el repo original. Si upstream ya incorporó
+# el cambio el parche no aplica: se avisa y se sigue, para no frenar la actualización.
+_mcp_apply_patches() {
+  local dir="$STACK_SRC/catalog/patches/$ID" p
+  [ -d "$dir" ] || return 0
+  for p in "$dir"/*.patch; do
+    [ -f "$p" ] || continue
+    if run git -C "$SRC_DIR" apply --whitespace=nowarn "$p"; then
+      info "  parche local aplicado: $(basename "$p")"
+    else
+      warn "El parche $(basename "$p") no aplica sobre $ID; revisá si upstream ya lo resolvió."
+    fi
+  done
+}
+
 _mcp_fetch() {   # clona o actualiza el código fuente; deja SRC_DIR
   SRC_DIR="$STACK_MCP_SRC/${DIR:-$ID}"
   if [ -n "${REPO:-}" ]; then
     if [ -d "$SRC_DIR/.git" ]; then
       info "Actualizando $ID"
+      # Los parches locales se vuelven a aplicar abajo: descartarlos acá evita que el
+      # checkout choque con ellos y deje el conector a medio actualizar.
+      [ -d "$STACK_SRC/catalog/patches/$ID" ] && run git -C "$SRC_DIR" checkout --quiet -- .
       run git -C "$SRC_DIR" fetch --quiet --depth 1 origin "$REF" || true
       run git -C "$SRC_DIR" checkout --quiet FETCH_HEAD || true
     else
@@ -98,6 +117,7 @@ _mcp_fetch() {   # clona o actualiza el código fuente; deja SRC_DIR
         || die "No se pudo clonar $REPO"
     fi
     [ "$DRY_RUN" = 1 ] || lock_record "mcp:$ID" "$(git -C "$SRC_DIR" rev-parse --short HEAD 2>/dev/null || echo '?')"
+    _mcp_apply_patches
   elif [ -n "${VENDOR:-}" ]; then
     info "Instalando $ID desde el repo del stack"
     run mkdir -p "$SRC_DIR"
