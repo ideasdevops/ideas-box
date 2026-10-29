@@ -39,6 +39,8 @@ export type Info = {
   profile: Record<string, string>
   resume: { id: string; label: string }[]
   panelInstalled: boolean
+  ramGb: number
+  motorInstalled: boolean
   steps: { id: string; label: string }[]
   skipDeps: boolean
   dryRun: boolean

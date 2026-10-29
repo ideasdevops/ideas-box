@@ -11,7 +11,7 @@ type Answers = {
   dataRoot: string
   packs: { id: string; on: boolean }[]
   mcps: McpAnswer[]
-  extras: { media: boolean; docker: boolean; panel: boolean; shortcuts: boolean }
+  extras: { media: boolean; docker: boolean; panel: boolean; shortcuts: boolean; motor: boolean }
 }
 
 const STEPS = [
@@ -101,7 +101,7 @@ function initialAnswers(i: Info): Answers {
     dataRoot: p.DATA_ROOT || '',
     packs: i.packs.filter((x) => x.tier !== 'core').map((x) => ({ id: x.id, on: x.tier === 'negocio' })),
     mcps: i.mcps.map((m) => ({ id: m.id, on: m.tier === 'core' || (m.recommended && !m.installed), creds: {}, label: '', login: true })),
-    extras: { media: true, docker: false, panel: !i.panelInstalled, shortcuts: true },
+    extras: { media: true, docker: false, panel: !i.panelInstalled, shortcuts: true, motor: !i.motorInstalled && i.ramGb >= 16 },
   }
 }
 
@@ -510,6 +510,11 @@ function Extras({ info, a, setA, onBack, onNext }: StepProps & { info: Info }) {
         <ChoiceCard checked={a.extras.panel || info.panelInstalled} disabled={info.panelInstalled} onChange={(v) => set('panel', v)} title="Panel de tareas y programación" badges={info.panelInstalled ? <Badge tone="ok">ya instalado</Badge> : <Badge tone="accent">recomendado</Badge>}>
           <div className="text-[12px] text-muted">Un tablero en tu navegador para programar tareas a los agentes. Suma unos minutos a la instalación.</div>
         </ChoiceCard>
+        <ChoiceCard checked={a.extras.motor || info.motorInstalled} disabled={info.motorInstalled} onChange={(v) => set('motor', v)} title="Motor local de respaldo" badges={info.motorInstalled ? <Badge tone="ok">ya instalado</Badge> : info.ramGb >= 16 ? <Badge tone="accent">recomendado</Badge> : undefined}>
+          <div className="text-[12px] text-muted">
+            Si se agota el plan de Claude, el trabajo sigue solo en un modelo que corre en este equipo, con aviso. Es más lento y no publica ni toca servidores: lo que hace se revisa cuando Claude vuelve. Baja unos 7 GB y pide 16 GB de RAM (este equipo: {info.ramGb} GB).
+          </div>
+        </ChoiceCard>
         <ChoiceCard checked={a.extras.shortcuts} onChange={(v) => set('shortcuts', v)} title="Accesos en el Escritorio">
           <div className="text-[12px] text-muted">«Ideas Box» (el menú), «Archivos Ideas Box» (lo que generan tus agentes) y, si lo instalás, «Panel Ideas Box».</div>
         </ChoiceCard>
@@ -538,7 +543,7 @@ function Revisar({ info, a, onBack, onInstall }: { info: Info; a: Answers; onBac
     ['Carpeta de datos', a.dataRoot],
     ['Habilidades', ['las básicas', ...packs].join(', ')],
     ['Conectores', mcps.length ? mcps.join(', ') : 'solo los básicos'],
-    ['Extras', [a.extras.panel && 'panel de tareas', a.extras.shortcuts && 'accesos en el Escritorio', a.extras.media && 'video e imagen', a.extras.docker && 'Docker'].filter(Boolean).join(', ') || 'ninguno'],
+    ['Extras', [a.extras.panel && 'panel de tareas', a.extras.motor && 'motor local de respaldo', a.extras.shortcuts && 'accesos en el Escritorio', a.extras.media && 'video e imagen', a.extras.docker && 'Docker'].filter(Boolean).join(', ') || 'ninguno'],
   ]
   return (
     <>

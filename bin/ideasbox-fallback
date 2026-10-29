@@ -1,0 +1,450 @@
+#!/usr/bin/env python3
+"""ideasbox-fallback: uso del plan de Claude, modo ahorro y continuidad con el motor local.
+
+Lo invoca Claude Code (settings.json, que arma `ideasbox sync`); cada subcomando lee JSON por stdin:
+  statusline   barra de estado: uso de los limites de 5 h y 7 dias (+ la barra que ya tenias)
+  guard        hook UserPromptSubmit: con uso alto le pide a Claude que ahorre
+  handoff      hook StopFailure (rate_limit|billing_error): traspaso escrito, aviso y motor local
+  resume       hook SessionStart(resume): si el motor local trabajo en esta sesion, avisa a Claude
+Uso manual:
+  status                 uso conocido y traspasos pendientes
+  checkpoint <traspaso>  marca el estado de los repos git antes de que trabaje el motor local
+"""
+import json, os, shlex, shutil, subprocess, sys, time
+from datetime import datetime
+from pathlib import Path
+
+HOME = Path.home()
+STACK = os.environ.get("STACK_NAME", "ideasbox")
+CFG = Path(os.environ.get("STACK_CONFIG_DIR") or HOME / ".config" / STACK)
+CONF = CFG / "fallback.conf"
+CACHE = CFG / "uso"
+LAST = CACHE / "last.json"
+LOG = CACHE / "eventos.log"
+HANDOFFS = CFG / "traspasos"
+
+DEFAULTS = {"WARN_5H": "75", "CRIT_5H": "90", "WARN_7D": "85", "AUTO_OPEN": "1", "MOTOR": "0", "PREV_STATUSLINE": ""}
+
+
+def conf():
+    c = dict(DEFAULTS)
+    try:
+        for line in CONF.read_text().splitlines():
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                v = v.strip()
+                try:
+                    v = shlex.split(v)[0] if v else ""
+                except ValueError:
+                    pass
+                c[k.strip()] = v
+    except OSError:
+        pass
+    return c
+
+
+def log(msg):
+    CACHE.mkdir(parents=True, exist_ok=True)
+    with open(LOG, "a") as f:
+        f.write(f"{datetime.now():%Y-%m-%d %H:%M:%S} {msg}\n")
+
+
+def read_stdin():
+    try:
+        return json.load(sys.stdin)
+    except ValueError:
+        return {}
+
+
+def fmt_reset(v):
+    if v in (None, ""):
+        return "?"
+    try:
+        ts = float(v)
+        dt = datetime.fromtimestamp(ts / 1000 if ts > 1e12 else ts)
+    except (TypeError, ValueError):
+        try:
+            dt = datetime.fromisoformat(str(v).replace("Z", "+00:00")).astimezone()
+        except ValueError:
+            return "?"
+    return dt.strftime("%H:%M") if dt.date() == datetime.now().date() else dt.strftime("%d/%m %H:%M")
+
+
+def load_last(max_age=1800):
+    try:
+        d = json.loads(LAST.read_text())
+    except (OSError, ValueError):
+        return None
+    if time.time() - d.get("ts", 0) > max_age:
+        return None
+    return d.get("rate_limits") or None
+
+
+def pct(rl, key):
+    try:
+        return float((rl.get(key) or {}).get("used_percentage"))
+    except (TypeError, ValueError, AttributeError):
+        return None
+
+
+# ---------------------------------------------------------------- statusline
+def cmd_statusline():
+    raw = sys.stdin.read()
+    try:
+        data = json.loads(raw)
+    except ValueError:
+        data = {}
+    rl = data.get("rate_limits")
+    if rl:
+        CACHE.mkdir(parents=True, exist_ok=True)
+        tmp = LAST.with_suffix(".tmp")
+        tmp.write_text(json.dumps({"ts": int(time.time()), "session": data.get("session_id"), "rate_limits": rl}))
+        tmp.replace(LAST)
+    c = conf()
+    out = []
+    # La barra que el usuario ya tenia antes de Ideas Box sigue apareciendo, arriba
+    if c["PREV_STATUSLINE"]:
+        try:
+            r = subprocess.run(c["PREV_STATUSLINE"], shell=True, input=raw, capture_output=True, text=True, timeout=4)
+            if r.stdout.strip():
+                out.append(r.stdout.rstrip("\n"))
+        except (OSError, subprocess.SubprocessError):
+            pass
+    if rl:
+        parts = []
+        for key, label, warn, crit in (("five_hour", "5h", c["WARN_5H"], c["CRIT_5H"]),
+                                       ("seven_day", "7d", c["WARN_7D"], "97")):
+            p = pct(rl, key)
+            if p is None:
+                continue
+            color = "32" if p < float(warn) else ("33" if p < float(crit) else "31")
+            parts.append(f"\033[{color}m{label} {p:.0f}%\033[0m (se renueva {fmt_reset((rl.get(key) or {}).get('resets_at'))})")
+        if parts:
+            p5 = pct(rl, "five_hour") or 0
+            tag = " · \033[31mMODO AHORRO\033[0m" if p5 >= float(c["WARN_5H"]) else ""
+            out.append("Claude " + " · ".join(parts) + tag)
+    pend = pending_handoffs()
+    if pend:
+        out.append(f"\033[33m{len(pend)} trabajo(s) para retomar en el motor local — {STACK} continuar\033[0m")
+    print("\n".join(out))
+
+
+# ---------------------------------------------------------------- guard
+def hook_context(event, text):
+    print(json.dumps({"hookSpecificOutput": {"hookEventName": event, "additionalContext": text}}, ensure_ascii=False))
+
+
+def local_notes_for(session_id):
+    res = []
+    if not session_id or not HANDOFFS.exists():
+        return res
+    for f in sorted(HANDOFFS.glob(f"*-{session_id[:8]}.md")):
+        if f.with_suffix(".visto").exists():
+            continue
+        if f.with_suffix(".retomado").exists() or "## Lo que hizo el motor local" in f.read_text(errors="ignore"):
+            res.append(f)
+    return res
+
+
+def ack_notes(session_id, event):
+    notes = local_notes_for(session_id)
+    if not notes:
+        return False
+    for f in notes:
+        f.with_suffix(".visto").touch()
+    hook_context(event,
+                 "Mientras esta sesion estaba frenada por el limite de uso, el trabajo siguio en el motor local. "
+                 f"Traspaso: {', '.join(str(f) for f in notes)}. Antes de seguir: lee ese archivo (seccion 'Lo que hizo el "
+                 "motor local' y 'Punto de restauracion') y revisa los cambios con el `git diff` que indica. El modelo local "
+                 "es mas chico: no des nada por bueno sin revisarlo, revierte lo que empeore el trabajo previo y recien "
+                 "despues segui o commitea.")
+    return True
+
+
+def cmd_guard():
+    data = read_stdin()
+    if ack_notes(data.get("session_id", ""), "UserPromptSubmit"):
+        return
+    rl = load_last()
+    if not rl:
+        return
+    c = conf()
+    p5, p7 = pct(rl, "five_hour"), pct(rl, "seven_day")
+    reset = fmt_reset((rl.get("five_hour") or {}).get("resets_at"))
+    local = "al motor local (si esta instalado) " if c["MOTOR"] == "1" else ""
+    if p5 is not None and p5 >= float(c["CRIT_5H"]):
+        hook_context("UserPromptSubmit",
+                     f"USO CRITICO: limite de 5 h de Claude al {p5:.0f}% (se renueva {reset}). Modo ahorro estricto: "
+                     f"delega {local}o a agentes con model haiku lo mecanico, no leas imagenes ni archivos grandes enteros, "
+                     "no escales a opus, respuestas cortas. Si la tarea es larga, deja ya por escrito el estado y el proximo "
+                     "paso, por si se corta.")
+    elif (p5 is not None and p5 >= float(c["WARN_5H"])) or (p7 is not None and p7 >= float(c["WARN_7D"])):
+        hook_context("UserPromptSubmit",
+                     f"Uso de Claude alto (5h {p5 or 0:.0f}%, 7d {p7 or 0:.0f}%; 5h se renueva {reset}). Modo ahorro: "
+                     "evita leer imagenes y archivos grandes enteros, subagentes solo si son imprescindibles y con "
+                     "model haiku/sonnet, no escales a opus salvo que no haya alternativa.")
+
+
+# ---------------------------------------------------------------- handoff
+def text_of(content):
+    if isinstance(content, str):
+        return content
+    return "\n".join(b.get("text", "") for b in content or [] if isinstance(b, dict) and b.get("type") == "text")
+
+
+def clip(s, n):
+    s = s.strip()
+    return s if len(s) <= n else s[:n] + " […]"
+
+
+def parse_transcript(path):
+    info = {"title": None, "away": None, "compact": None, "users": [], "assistants": [],
+            "files": [], "cmds": [], "cwd": None, "branch": None}
+    try:
+        lines = open(path, errors="ignore").readlines() if path else []
+    except OSError:
+        lines = []
+    for line in lines:
+        try:
+            d = json.loads(line)
+        except ValueError:
+            continue
+        if d.get("isSidechain"):
+            continue
+        t = d.get("type")
+        if d.get("cwd"):
+            info["cwd"], info["branch"] = d["cwd"], d.get("gitBranch")
+        if t == "ai-title":
+            info["title"] = d.get("aiTitle") or info["title"]
+        elif t == "system" and d.get("subtype") == "away_summary":
+            info["away"] = d.get("content")
+        elif t == "user":
+            txt = text_of((d.get("message") or {}).get("content"))
+            if d.get("isCompactSummary"):
+                info["compact"] = txt
+            elif txt and not d.get("isMeta") and not txt.lstrip().startswith("<"):
+                info["users"].append(txt)
+        elif t == "assistant":
+            content = (d.get("message") or {}).get("content") or []
+            txt = text_of(content)
+            if txt.strip():
+                info["assistants"].append(txt)
+            for b in content if isinstance(content, list) else []:
+                if isinstance(b, dict) and b.get("type") == "tool_use":
+                    inp = b.get("input") or {}
+                    if b.get("name") in ("Edit", "Write", "NotebookEdit") and inp.get("file_path"):
+                        if inp["file_path"] not in info["files"]:
+                            info["files"].append(inp["file_path"])
+                    elif b.get("name") == "Bash" and inp.get("command"):
+                        info["cmds"].append(inp["command"])
+    return info
+
+
+def pending_handoffs():
+    res = []
+    if not HANDOFFS.exists():
+        return res
+    for f in sorted(HANDOFFS.glob("*.md")):
+        try:
+            if not f.with_suffix(".retomado").exists() and time.time() - f.stat().st_mtime < 2 * 86400:
+                res.append(f)
+        except OSError:  # borrado entre el glob y el stat
+            pass
+    return res
+
+
+def cmd_handoff():
+    data = read_stdin()
+    sid = data.get("session_id") or "sinid"
+    err = data.get("error", "?")
+    info = parse_transcript(data.get("transcript_path") or "")
+    cwd = data.get("cwd") or info["cwd"] or str(HOME)
+    rl = load_last(max_age=6 * 3600) or {}
+    reset = fmt_reset((rl.get("five_hour") or {}).get("resets_at"))
+    c = conf()
+
+    HANDOFFS.mkdir(parents=True, exist_ok=True)
+    prev = sorted(HANDOFFS.glob(f"*-{sid[:8]}.md"))
+    out = prev[-1] if prev and time.time() - prev[-1].stat().st_mtime < 3600 else \
+        HANDOFFS / f"{datetime.now():%Y%m%d-%H%M}-{sid[:8]}.md"
+
+    last = data.get("last_assistant_message") or (info["assistants"][-1] if info["assistants"] else "")
+    L = [f"# Traspaso — {info['title'] or 'sesion ' + sid[:8]}", "",
+         f"- Sesion de Claude: `{sid}` (cortada por `{err}` el {datetime.now():%Y-%m-%d %H:%M}; el limite de 5 h se renueva {reset})",
+         f"- Directorio: `{cwd}`" + (f" · rama git `{info['branch']}`" if info["branch"] and info["branch"] != "HEAD" else ""),
+         f"- Volver a Claude cuando se renueve: `cd {shlex.quote(cwd)} && claude --resume {sid}`", ""]
+    if info["away"]:
+        L += ["## Resumen de estado (lo escribio Claude)", info["away"], ""]
+    if info["compact"]:
+        L += ["## Resumen de la conversacion", clip(info["compact"], 3500), ""]
+    if info["users"]:
+        L += ["## Pedido original", clip(info["users"][0], 1200), ""]
+        if info["users"][1:]:
+            L += ["## Ultimos pedidos"] + [f"- {clip(u, 500)}" for u in info["users"][1:][-4:]] + [""]
+    if last:
+        L += ["## Ultimo mensaje de Claude", clip(last, 2500), ""]
+    if info["files"]:
+        L += ["## Archivos editados en la sesion"] + [f"- `{p}`" for p in info["files"][-15:]] + [""]
+    if info["cmds"]:
+        L += ["## Ultimos comandos"] + [f"- `{clip(x.splitlines()[0], 160)}`" for x in info["cmds"][-6:]] + [""]
+    L += ["## Reglas para el motor local",
+          "- Seguir solo con lo que esta claro arriba; ante la duda, preguntar.",
+          "- Nada de publicar, push, commits, mensajes a clientes ni acciones sobre servidores: eso espera a Claude.",
+          "- No reescribir ni refactorizar lo ya hecho: solo avanzar lo pendiente, con cambios chicos.",
+          "- Al terminar, agregar al final de este archivo `## Lo que hizo el motor local` con lo hecho, "
+          "archivos tocados y lo que queda pendiente.", ""]
+    out.write_text("\n".join(L))
+    log(f"traspaso error={err} sesion={sid} archivo={out}")
+
+    motor = c["MOTOR"] == "1"
+    notify("Claude: se agoto el limite de uso",
+           f"«{info['title'] or sid[:8]}» se corto. Se renueva {reset}." +
+           (" Sigue en el motor local." if motor and c["AUTO_OPEN"] == "1" else
+            f" Retomalo con: {STACK} continuar" if motor else " El estado quedo guardado para retomarlo."))
+    if motor and c["AUTO_OPEN"] == "1" and err in ("rate_limit", "billing_error"):
+        open_local_terminal(out, cwd)
+
+
+def notify(title, body):
+    try:
+        if sys.platform == "darwin":
+            script = f'display notification {json.dumps(body)} with title {json.dumps(title)}'
+            subprocess.Popen(["osascript", "-e", script], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        elif shutil.which("notify-send"):
+            subprocess.Popen(["notify-send", "-u", "critical", "-a", "Ideas Box", title, body],
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except OSError:
+        pass
+
+
+def clean_env():
+    # Sin las variables de la sesion que se corto: si no, la nueva hereda la marca de
+    # sesion hija y Claude Code deja de guardar su historial.
+    return {k: v for k, v in os.environ.items() if not k.startswith(("CLAUDE", "ANTHROPIC"))}
+
+
+def open_local_terminal(handoff, cwd):
+    # Un solo motor local a la vez: dos modelos juntos no entran en la memoria de un equipo comun.
+    lock = CACHE / "motor-local.lock"
+    try:
+        pid = int(lock.read_text().strip() or 0)
+        os.kill(pid, 0)
+        log(f"ya hay un motor local abierto (pid {pid}); {handoff.name} queda en cola")
+        return
+    except (OSError, ValueError):
+        pass
+    CACHE.mkdir(parents=True, exist_ok=True)
+    stack = str(HOME / ".local/bin" / STACK)
+    inner = (f"cd {shlex.quote(cwd)} 2>/dev/null; echo $$ > {shlex.quote(str(lock))}; "
+             f"{shlex.quote(stack)} continuar {shlex.quote(str(handoff))}; rm -f {shlex.quote(str(lock))}; exec bash")
+    env = clean_env()
+    try:
+        if sys.platform == "darwin":
+            script = f'tell application "Terminal" to do script {json.dumps("bash -lc " + shlex.quote(inner))}'
+            subprocess.Popen(["osascript", "-e", script, "-e", 'tell application "Terminal" to activate'], env=env)
+        elif os.environ.get("WSL_DISTRO_NAME") and shutil.which("cmd.exe"):
+            subprocess.Popen(["cmd.exe", "/c", "start", "wsl.exe", "-d", os.environ["WSL_DISTRO_NAME"],
+                              "bash", "-lc", inner], env=env, cwd="/mnt/c", start_new_session=True)
+        else:
+            term = shutil.which("gnome-terminal") or shutil.which("x-terminal-emulator") or shutil.which("konsole") \
+                or shutil.which("xfce4-terminal")
+            if not term:
+                log("no encontre una terminal grafica para abrir el motor local")
+                return
+            args = [term, "--", "bash", "-lc", inner] if "gnome-terminal" in term or "xfce4" in term \
+                else [term, "-e", "bash", "-lc", inner]
+            subprocess.Popen(args, env=env, start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        log(f"abierto el motor local para {handoff.name}")
+    except OSError as e:
+        log(f"no pude abrir la terminal del motor local: {e!r}")
+
+
+# ---------------------------------------------------------------- checkpoint
+def git(repo, *args):
+    try:
+        r = subprocess.run(["git", "-C", repo, *args], capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    return r.stdout.strip() if r.returncode == 0 else ""
+
+
+def cmd_checkpoint():
+    """`git stash create` arma un commit con el arbol actual (cambios sin commitear incluidos) sin tocar
+    el working tree ni la lista de stash; se guarda en refs/ideasbox-checkpoints/<sesion>."""
+    h = Path(sys.argv[2])
+    text = h.read_text(errors="ignore")
+    if "## Punto de restauracion" in text:
+        return
+    sid = h.stem.rsplit("-", 1)[-1]
+    lines = text.splitlines()
+    paths = [l.split("`")[1] for l in lines if l.startswith("- `") and l.count("`") >= 2]
+    cwd = next((l.split("`")[1] for l in lines if l.startswith("- Directorio: `")), None)
+    repos = {}
+    for p in ([cwd] if cwd else []) + paths:
+        d = p if os.path.isdir(p) else os.path.dirname(p)
+        if not os.path.isdir(d):
+            continue
+        top = git(d, "rev-parse", "--show-toplevel")
+        if top and top not in repos:
+            sha = git(top, "stash", "create", "checkpoint motor local") or git(top, "rev-parse", "HEAD")
+            if sha:
+                git(top, "update-ref", f"refs/ideasbox-checkpoints/{sid}", sha)
+                repos[top] = (sha, git(top, "rev-parse", "--abbrev-ref", "HEAD"))
+    sueltos = [p for p in paths if os.path.isfile(p) and not git(os.path.dirname(p), "rev-parse", "--show-toplevel")]
+    copia = h.with_suffix("")
+    for p in sueltos:
+        dst = copia / p.lstrip("/")
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(p, dst)
+    ref = f"refs/ideasbox-checkpoints/{sid}"
+    L = ["## Punto de restauracion (antes del motor local)",
+         "Estado guardado sin modificar nada. Para ver que cambio el motor local y revertir lo que no sirva:"]
+    for top, (sha, br) in repos.items():
+        q = shlex.quote(top)
+        L += [f"- `{top}` (rama `{br}`): `{ref}` = `{sha[:12]}`",
+              f"  - ver cambios: `git -C {q} diff {ref}`",
+              f"  - restaurar un archivo: `git -C {q} checkout {ref} -- <archivo>`"]
+    if sueltos:
+        L += [f"- Copia de los archivos fuera de git en `{copia}/` ({len(sueltos)})"]
+    if not repos and not sueltos:
+        L += ["- (no se detectaron repos git ni archivos editados)"]
+    L += ["- Los archivos nuevos que git todavia no sigue no entran en el punto de restauracion.", "", ""]
+    marker = "## Reglas para el motor local"
+    text = text.replace(marker, "\n".join(L) + marker, 1) if marker in text else text + "\n" + "\n".join(L)
+    h.write_text(text)
+    log(f"checkpoint {h.name}: {len(repos)} repos, {len(sueltos)} archivos sueltos")
+
+
+# ---------------------------------------------------------------- resume / status
+def cmd_resume():
+    ack_notes(read_stdin().get("session_id", ""), "SessionStart")
+
+
+def cmd_status():
+    rl = load_last(max_age=10 ** 9)
+    if rl:
+        age = int(time.time() - json.loads(LAST.read_text())["ts"])
+        for key, label in (("five_hour", "limite de 5 h"), ("seven_day", "limite semanal")):
+            p = pct(rl, key)
+            if p is not None:
+                print(f"  {label:15} {p:5.1f}%   se renueva {fmt_reset((rl.get(key) or {}).get('resets_at'))}")
+        print(f"  (dato de hace {age // 60} min)")
+    else:
+        print("  Sin datos de uso todavia: aparecen al usar Claude Code (los da la barra de estado).")
+    pend = pending_handoffs()
+    print(f"\n  Trabajos para retomar en el motor local: {len(pend)}")
+    for f in pend:
+        print(f"    {f}")
+
+
+if __name__ == "__main__":
+    cmds = {"statusline": cmd_statusline, "guard": cmd_guard, "handoff": cmd_handoff,
+            "resume": cmd_resume, "status": cmd_status, "checkpoint": cmd_checkpoint}
+    if len(sys.argv) < 2 or sys.argv[1] not in cmds:
+        print(__doc__)
+        sys.exit(2)
+    try:
+        cmds[sys.argv[1]]()
+    except Exception as e:  # un hook roto nunca debe trabar la sesion
+        log(f"error en {sys.argv[1]}: {e!r}")

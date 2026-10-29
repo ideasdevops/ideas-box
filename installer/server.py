@@ -47,6 +47,7 @@ STEP_LABELS = {
     "settings": "Configuración de Claude Code",
     "cli": "Accesos directos",
     "panel": "Panel de tareas",
+    "motor": "Motor local de respaldo",
 }
 STEP_ORDER = list(STEP_LABELS)
 IDLE_BEFORE_START = 3 * 3600   # sin nadie mirando y sin arrancar: se cierra solo
@@ -59,6 +60,28 @@ def home():
 
 def config_dir():
     return os.environ.get("STACK_CONFIG_DIR") or os.path.join(home(), ".config", "ideasbox")
+
+
+def ram_gb():
+    try:
+        if platform.system() == "Darwin":
+            out = subprocess.run(["sysctl", "-n", "hw.memsize"], capture_output=True, text=True, timeout=5).stdout
+            return round(int(out.strip()) / 1073741824)
+        with open("/proc/meminfo") as f:
+            for line in f:
+                if line.startswith("MemTotal:"):
+                    return round(int(line.split()[1]) / 1048576)
+    except (OSError, ValueError, subprocess.SubprocessError):
+        pass
+    return 0
+
+
+def motor_on():
+    try:
+        with open(os.path.join(config_dir(), "fallback.conf")) as f:
+            return any(l.strip() in ("MOTOR='1'", "MOTOR=1") for l in f)
+    except OSError:
+        return False
 
 
 def is_wsl():
@@ -247,6 +270,8 @@ class Installer:
                 "EMPRESA_RESPONSABLE", "EMPRESA_IDIOMA", "EMPRESA_TZ", "DATA_ROOT")},
             "resume": [{"id": s, "label": STEP_LABELS.get(s, s)} for s in resume],
             "panelInstalled": os.path.exists(panel),
+            "ramGb": ram_gb(),
+            "motorInstalled": motor_on(),
             "steps": [{"id": s, "label": STEP_LABELS[s]} for s in STEP_ORDER],
             "skipDeps": "--skip-deps" in self.extra_args,
             "dryRun": "--dry-run" in self.extra_args,
@@ -319,6 +344,7 @@ class Installer:
             vals["media"] = yes(ex.get("media", True))
             vals["docker"] = yes(ex.get("docker", False))
             vals["panel"] = yes(ex.get("panel", True))
+            vals["motor"] = yes(ex.get("motor", False))
             vals["brew"] = "s"
             for s in ("shortcut_menu", "shortcut_data", "shortcut_panel"):
                 vals[s] = yes(ex.get("shortcuts", True))

@@ -27,6 +27,37 @@ editar recursos nuevos ahí: creálos en `{{DATA_ROOT}}/.claude/` y corré `{{ST
 - Zona horaria: {{TZ}}
 - Responsable del stack: {{RESPONSABLE}}
 
+## Modelos: quién decide y a quién se deriva
+
+La sesión principal corre en **Sonnet** y es el orquestador: decide, coordina y deriva al
+escalón más barato que alcance para cada parte del trabajo.
+
+1. **Haiku** (`Agent` con `model: "haiku"`, o los agentes `git-ops`, `docs-memory`, `admin-daily`):
+   búsquedas amplias y tareas mecánicas.
+2. **Sonnet**: el orquestador y los agentes de área; la mayoría del trabajo.
+3. **Opus** (`Agent` con `model: "opus"`, sobre el agente de área que corresponda): solo cuando hace
+   falta más capacidad — arquitectura o cambios grandes, errores que no salen en uno o dos intentos,
+   diagnósticos de producción, código crítico (pagos, accesos, datos de clientes), decisiones
+   difíciles de revertir. Pasale un encargo autocontenido (contexto, archivos, qué es "terminado")
+   y revisá lo que devuelve.
+
+El usuario puede elegir otro modelo para una sesión con `/model`.
+
+## Uso del plan de Claude
+
+- La barra de estado muestra cuánto se usó de los límites de **5 horas y semanal**. Cuando el uso
+  es alto llega un aviso de **modo ahorro** con cada mensaje: cumplirlo — no leer imágenes ni
+  archivos grandes enteros (por partes, o reducidos), subagentes solo si son imprescindibles,
+  nada de escalar a Opus salvo que no haya alternativa, respuestas cortas.
+- Si una sesión se corta por límite, queda un traspaso escrito en `~/.config/{{STACK}}/traspasos/`.
+  Con el motor local instalado, el trabajo sigue ahí solo (`{{STACK}} continuar`); los créditos
+  extra de Claude nunca se activan solos: son decisión del usuario.
+- Al volver a una sesión que siguió en el motor local llega un aviso: revisar lo que hizo con el
+  `git diff` del punto de restauración y revertir lo que empeore el trabajo previo **antes** de
+  seguir o hacer commits.
+- Ahorran mucho: una tarea por sesión y `/clear` al cambiar de tema; frames de video reducidos o en
+  una hoja de contactos, nunca a resolución completa.
+
 ## Reglas que no se negocian
 
 - **Aprobación explícita** antes de: escribirle a un cliente, publicar en redes, gastar dinero,

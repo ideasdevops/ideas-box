@@ -19,6 +19,7 @@ export STACK_SRC
 . "$STACK_SRC/lib/mcp.sh"
 . "$STACK_SRC/lib/thirdparty.sh"
 . "$STACK_SRC/lib/canonical.sh"
+. "$STACK_SRC/lib/motor.sh"
 . "$STACK_SRC/lib/settings.sh"
 . "$STACK_SRC/lib/create.sh"
 . "$STACK_SRC/lib/menu.sh"
@@ -52,6 +53,9 @@ Comandos técnicos (usuarios avanzados):
   $STACK_NAME icono                  volver a crear los íconos del Escritorio (Ideas Box, archivos y panel)
   $STACK_NAME carpeta                abrir la carpeta con lo que generan tus agentes
   $STACK_NAME paquete <acción>       IdeasPackage: tu empresa en un pendrive (crear/abrir/guardar/cerrar/estado)
+  $STACK_NAME motor [acción]         uso del plan de Claude y motor local de respaldo (install/status/auto on|off/remove)
+  $STACK_NAME continuar              retomar en el motor local un trabajo que Claude dejó cortado por límite
+  $STACK_NAME local                  sesión de Claude Code con el motor local (sin plan, más lenta)
   $STACK_NAME update                 actualizar stack, packs y conectores
   $STACK_NAME profile                editar la identidad de la empresa
 
@@ -211,6 +215,21 @@ PY
 
   paquete)
     paquete_main "$@"
+    ;;
+
+  motor)
+    load_profile
+    motor_main "$@"
+    ;;
+
+  continuar)
+    load_profile
+    motor_continuar "${1:-}"
+    ;;
+
+  local)
+    load_profile
+    motor_session "$@"
     ;;
 
   ""|menu) menu_main ;;

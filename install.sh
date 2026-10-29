@@ -32,6 +32,7 @@ INSTALL_ARGS=("$@")
 . "$STACK_SRC/lib/mcp.sh"
 . "$STACK_SRC/lib/thirdparty.sh"
 . "$STACK_SRC/lib/canonical.sh"
+. "$STACK_SRC/lib/motor.sh"
 . "$STACK_SRC/lib/settings.sh"
 . "$STACK_SRC/lib/menu.sh"
 . "$STACK_SRC/lib/panel.sh"
@@ -138,6 +139,9 @@ Cómo seguir:
   · La primera vez que hables con tus agentes, Claude te va a pedir iniciar sesión.
   · Si instalaste el tablero de tareas: doble clic en el ícono «Panel Ideas Box»
     (o $STACK_NAME panel open)
+  · Si se agota el plan de Claude, ves el aviso y el trabajo queda guardado. Con el
+    motor local instalado, sigue ahí solo; si no: $STACK_NAME motor install
+    Uso del plan y trabajos pendientes: $STACK_NAME motor
 
 Todo lo que genera el stack es texto plano: si algo no te sirve, editalo.
 TXT
@@ -177,6 +181,7 @@ main() {
   run_step settings settings_apply
   run_step cli      install_cli
   run_step panel    panel_wizard
+  run_step motor    motor_wizard
   state_clear
   ib_event done "$EMPRESA_NOMBRE" "$DATA_ROOT"
   resumen

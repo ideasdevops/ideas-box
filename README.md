@@ -45,6 +45,8 @@ Una sola pasada guiada. Al terminar, «Hablar con mis agentes» abre una sesión
 | **~20 skills propios** | Procedimientos de trabajo: bugfix, release, propuestas, campañas, bitácoras, memoria |
 | **Packs de skills** | Marketing, diseño y disciplina de código, clonados de sus repos originales |
 | **Conectores MCP** | Búsqueda web, grafo de código, bandeja de atención, panel de servidores, SSH, redes sociales, video, y generación con IA recomendada (ElevenLabs, Kling, Renoise) |
+| **Uso del plan de Claude** | La barra de estado muestra cuánto usaste de los límites de 5 horas y semanal; con uso alto, Claude pasa a modo ahorro solo. Sonnet orquesta y deriva a Opus solo lo difícil |
+| **Motor local de respaldo** | Opcional: un modelo de IA en tu equipo (Ollama) que sigue el trabajo solo, con aviso, si se agota el plan de Claude |
 | **Panel de control** | Tablero web local para programar tareas a los agentes (opcional), con su propio ícono «Panel Ideas Box» en el Escritorio |
 | **Reglas** | Autonomía, zonas protegidas y qué requiere aprobación explícita |
 
@@ -92,6 +94,22 @@ configuración del dueño del equipo. Lo que hagas se guarda en el pendrive solo
 al cerrar; al cerrar, el equipo no conserva tus datos ni tus credenciales. Detalle técnico en
 [docs/IDEASPACKAGE.md](docs/IDEASPACKAGE.md). Por ahora funciona en Linux (incluido JFlowOS).
 
+### Si se agota el plan de Claude
+
+Claude Code tiene límites de uso (cada 5 horas y por semana). Ideas Box los muestra en la barra de
+estado y, cuando el uso viene alto, le pide a Claude que ahorre. Si igual se corta una sesión:
+
+- Te avisa y deja **escrito dónde quedó el trabajo** (pedido, último paso, archivos tocados).
+- Con el **motor local de respaldo** instalado (`ideasbox motor install`, o tildándolo en el
+  instalador), el trabajo **sigue solo** en un modelo que corre en tu equipo. Es más lento y menos
+  capaz que Claude, por eso trabaja con límites: no publica, no hace commits ni push, no toca
+  servidores, y antes de arrancar guarda un punto de restauración de tus repos. Cuando Claude
+  vuelve, revisa lo que hizo el motor local antes de seguir.
+- Los créditos extra de Claude nunca se activan solos: si los querés, es decisión tuya.
+
+Necesita 16 GB de RAM (mínimo 12) y unos 7 GB de disco. Probado en Linux; en macOS y Windows
+(WSL) está escrito pero todavía sin probar en hardware real.
+
 ### Para usuarios avanzados
 
 Todo lo del menú tiene su comando:
@@ -113,6 +131,11 @@ ideasbox update          # actualizar todo
 ideasbox panel install   # tablero web local de tareas
 ideasbox panel open      # levantarlo y abrirlo en el navegador (http://127.0.0.1:8420)
 ideasbox carpeta         # abrir la carpeta con lo que generan los agentes
+ideasbox motor           # uso del plan de Claude y estado del motor local
+ideasbox motor install   # instalar el motor local de respaldo (Ollama + modelo, ~7 GB)
+ideasbox motor auto off  # al agotarse Claude, solo avisar (sin abrir el motor local solo)
+ideasbox continuar       # retomar en el motor local un trabajo que Claude dejó cortado
+ideasbox local           # sesión de Claude Code con el motor local
 ideasbox paquete crear   # IdeasPackage: empaquetar la empresa en un pendrive
 ideasbox paquete abrir   # abrir la empresa de un pendrive conectado
 ideasbox paquete guardar # guardar en el pendrive lo trabajado
