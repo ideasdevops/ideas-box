@@ -24,7 +24,7 @@
 
 <!-- ═══════════════ ÍNDICE ═══════════════ -->
 <h2 class="sinquiebre"><span class="num">—</span>Contenido</h2>
-<p class="sub">Catorce secciones. Si venís a instalar y nada más, leé la 2 y la 3 (y la 4 si usás Mac o Windows), y después la 6. La 14 reúne los comandos reales de todo el proceso.</p>
+<p class="sub">Quince secciones. Si venís a instalar y nada más, leé la 2 y la 3 (y la 4 si usás Mac o Windows), y después la 6. La 10 explica qué pasa si se acaba el plan de Claude y la 15 reúne los comandos reales de todo el proceso.</p>
 
 <div class="indice">
   <div><b>1</b>Qué es Ideas Box<span>Qué instala y qué no hace por vos</span></div>
@@ -36,11 +36,12 @@
   <div><b>7</b>Los agentes<span>Quién hace qué, y cómo enseñarles tu forma de trabajo</span></div>
   <div><b>8</b>Conectores<span>Catálogo, credenciales y conectores propios</span></div>
   <div><b>9</b>El menú del día a día<span>Todo en palabras comunes, y los comandos aparte</span></div>
-  <div><b>10</b>Dónde vive tu información<span>Estructura de datos y respaldo</span></div>
-  <div><b>11</b>Reglas de seguridad<span>Aprobaciones, secretos y borrado</span></div>
-  <div><b>12</b>Problemas frecuentes<span>Síntoma, causa y solución</span></div>
-  <div><b>13</b>Soporte<span>Cómo reportar y dónde seguir</span></div>
-  <div><b>14</b>Referencia técnica<span>Los comandos reales de todo el proceso</span></div>
+  <div><b>10</b>Varios modelos, nunca a pie<span>Claude, motor local, OpenAI y Gemini</span></div>
+  <div><b>11</b>Dónde vive tu información<span>Estructura de datos y respaldo</span></div>
+  <div><b>12</b>Reglas de seguridad<span>Aprobaciones, secretos y borrado</span></div>
+  <div><b>13</b>Problemas frecuentes<span>Síntoma, causa y solución</span></div>
+  <div><b>14</b>Soporte<span>Cómo reportar y dónde seguir</span></div>
+  <div><b>15</b>Referencia técnica<span>Los comandos reales de todo el proceso</span></div>
 </div>
 
 <!-- ═══════════════ 1 ═══════════════ -->
@@ -52,6 +53,19 @@ comunes</strong> y conversando con tus agentes. Lo que aporta es la <strong>orga
 agentes de IA rinda: una estructura de datos, un equipo de agentes con roles definidos, procedimientos
 escritos, memoria que sobrevive a la sesión y conexiones a las herramientas que ya usás.</p>
 
+<h3>Qué lo hace distinto de usar Claude, ChatGPT o Grok solos</h3>
+<p>Un chat de IA responde lo que le preguntás y olvida todo al cerrar. Ideas Box es un <strong>equipo
+de trabajo</strong> armado alrededor de esos modelos:</p>
+<table>
+  <tr><th style="width:32%">Ideas Box</th><th>Qué significa en la práctica</th></tr>
+  <tr><td><b>No depende de un solo modelo</b></td><td>Claude orquesta y elige el modelo justo para cada parte (Haiku, Sonnet, Opus). Podés sumar OpenAI y Gemini, y un modelo que corre en tu equipo. Si se agota uno, el trabajo sigue en otro</td></tr>
+  <tr><td><b>Trabaja en local</b></td><td>El motor local corre en tu máquina, sin internet ni costo por uso, y tus datos viven en tu disco</td></tr>
+  <tr><td><b>Memoria de la empresa</b></td><td>Clientes, decisiones y bitácoras quedan escritos en tu raíz de datos: la charla de mañana arranca sabiendo lo de hoy</td></tr>
+  <tr><td><b>Habilidades y conectores integrados</b></td><td>Procedimientos de trabajo listos y conexión directa con Instagram, Chatwoot, tus servidores, anuncios, video…</td></tr>
+  <tr><td><b>Hecho a tu medida</b></td><td>Le enseñás tus formas de trabajo (habilidades propias) y conectás herramientas que no están en la lista (conectores propios)</td></tr>
+  <tr><td><b>Entiende pedidos de todos los días</b></td><td>«haceme un post de la promo», «respondele al cliente», «revisá esto porfa» con una captura: no hace falta saber nombres técnicos. Interpreta, pregunta solo lo imprescindible y entrega el resultado terminado</td></tr>
+</table>
+
 <h3>Qué instala</h3>
 <table>
   <tr><th style="width:32%">Capa</th><th>Qué es</th></tr>
@@ -61,6 +75,7 @@ escritos, memoria que sobrevive a la sesión y conexiones a las herramientas que
   <tr><td><b>~20 procedimientos</b></td><td>Cómo se resuelve un bug, cómo se arma una propuesta, cómo se registra una operación</td></tr>
   <tr><td><b>Packs de skills</b></td><td>Marketing, diseño y disciplina de código, de repositorios abiertos</td></tr>
   <tr><td><b>21 conectores</b></td><td>Búsqueda web, bandeja de atención, servidores, redes sociales, video, código</td></tr>
+  <tr><td><b>Motores</b></td><td>Claude como principal; opcionales: motor local (Ollama), OpenAI y Gemini</td></tr>
   <tr><td><b>Reglas</b></td><td>Qué puede hacer un agente solo y qué necesita tu aprobación</td></tr>
 </table>
 
@@ -171,7 +186,7 @@ podés dejarlo corriendo y volver.</p>
 <div class="caja gris">
   <div class="t">Para usuarios avanzados</div>
   <p>La misma instalación, con preguntas en la Terminal y sin navegador (útil por SSH o en un servidor):
-  <code>bash ~/ideas-box/install.sh</code>. Opciones y comandos en la sección 14.</p>
+  <code>bash ~/ideas-box/install.sh</code>. Opciones y comandos en la sección 15.</p>
 </div>
 
 <!-- ═══════════════ 4 ═══════════════ -->
@@ -205,7 +220,7 @@ dentro de Ubuntu: «Archivos Ideas Box» los abre en el Explorador.</p>
 <div class="caja tinta">
   <div class="t">Dónde se probó</div>
   <p>La instalación, en Linux Mint y MX Linux, una Mac y Windows 11 con Ubuntu en WSL. Si algo falla, el
-  error y el paso donde ocurrió son información valiosa: reportalos (sección 13) y lo corregimos.</p>
+  error y el paso donde ocurrió son información valiosa: reportalos (sección 14) y lo corregimos.</p>
 </div>
 
 <!-- ═══════════════ 5 ═══════════════ -->
@@ -241,7 +256,8 @@ redes sociales— es lo que las distingue (<code>easypanel-produccion</code>, <c
 Más cuentas: desde el menú, «Conectar una herramienta».</p>
 
 <h3>Extras y revisión</h3>
-<p>Panel de tareas (recomendado), accesos en el Escritorio, herramientas de video e imagen y, en Linux,
+<p>Panel de tareas (recomendado), motor local de respaldo (recomendado con 16 GB de RAM o más: baja unos
+7 GB), accesos en el Escritorio, herramientas de video e imagen y, en Linux,
 Docker (solo si vas a levantar servicios en esta máquina). La revisión muestra todo junto antes de
 arrancar.</p>
 
@@ -435,8 +451,21 @@ confiables: corren en tu equipo, con tus credenciales.</p>
   <tr><td><b>Abrir la carpeta de archivos</b></td><td>Lo mismo que «Archivos Ideas Box»: todo lo que generan tus agentes, por área</td></tr>
 </table>
 
-<p><strong>Con tus palabras:</strong> en vez del número, escribí <em>«conectar chatwoot»</em> o <em>«hacé
-una copia de seguridad»</em>. Dentro de Claude también: <em>«conectá mi Instagram»</em>.</p>
+<h3>Con tus palabras</h3>
+<p>En vez del número, escribí lo que necesitás como se lo dirías a una persona. No importan los errores
+de tipeo, las abreviaturas («insta», «face», «wsp», «porfa») ni escribir en pedacitos.</p>
+<table>
+  <tr><th style="width:44%">Si escribís…</th><th>Ideas Box…</th></tr>
+  <tr><td>«haceme un post para insta de la promo»<br>«respondele al cliente que preguntó por el paquete»<br>«cuánto vendimos este mes»</td><td>Se lo pasa a tus agentes tal cual. Interpretan qué querés, preguntan solo lo imprescindible y te entregan el resultado terminado. Antes de publicar o enviar, te piden el OK</td></tr>
+  <tr><td>«revisá esto porfa» (con una captura)</td><td>Mira lo que mandaste antes de preguntar; si falta algo, hace una sola pregunta simple</td></tr>
+  <tr><td>«conectá mi Instagram» · «sumá habilidades de marketing»</td><td>Va a la opción del menú que corresponde</td></tr>
+  <tr><td>«no me anda el chatwoot» · «se colgó claude»</td><td>Revisa Ideas Box y prueba esa conexión</td></tr>
+  <tr><td>«se me acabó Claude» · «cuánto me queda»</td><td>Te muestra el uso del plan y los trabajos para retomar (sección 10)</td></tr>
+  <tr><td>«usemos chatgpt» · «conectar gemini»</td><td>Abre una sesión con ese modelo, o te guía para conectarlo</td></tr>
+  <tr><td>«no sé qué hacer» · «ayuda»</td><td>Te muestra ejemplos de pedidos</td></tr>
+</table>
+<p>Dentro de Claude pasa lo mismo: pedí como a una persona. Los agentes están instruidos para entender
+pedidos vagos («lo de ayer», «el archivo que te mandé»), tranquilizarte si algo te preocupa y no usar jerga.</p>
 
 <h3>Rutina sugerida</h3>
 <table>
@@ -452,11 +481,58 @@ una copia de seguridad»</em>. Dentro de Claude también: <em>«conectá mi Inst
   <div class="t">Para usuarios avanzados</div>
   <p>Cada opción es un comando: <code>ideasbox doctor [--deep]</code>, <code>ideasbox skills list|add|new</code>,
   <code>ideasbox mcp list|add|new|remove</code>, <code>ideasbox update</code>, <code>backup</code>,
-  <code>sync</code>, <code>status</code> y <code>profile</code>. Ayuda completa: <code>ideasbox help</code>.</p>
+  <code>sync</code>, <code>status</code>, <code>profile</code>, <code>motor</code>, <code>continuar</code>,
+  <code>local</code> y <code>con openai|gemini</code>. Ayuda completa: <code>ideasbox help</code>.</p>
 </div>
 
 <!-- ═══════════════ 10 ═══════════════ -->
-<h2><span class="num">10</span>Dónde vive tu información</h2>
+<h2><span class="num">10</span>Varios modelos, nunca a pie</h2>
+<p class="sub">Claude es el motor principal. Si se agota tu plan, el trabajo no se frena.</p>
+
+<h3>Quién hace qué</h3>
+<table>
+  <tr><th style="width:30%">Modelo</th><th>Cuándo trabaja</th></tr>
+  <tr><td><b>Claude Sonnet</b></td><td>El orquestador: entiende tu pedido, decide y reparte. Hace la mayoría del trabajo</td></tr>
+  <tr><td><b>Claude Haiku</b></td><td>Tareas mecánicas y búsquedas: rápido y barato</td></tr>
+  <tr><td><b>Claude Opus</b></td><td>Solo lo difícil o delicado: decisiones importantes, problemas que no salen, datos de clientes</td></tr>
+  <tr><td><b>Motor local</b> <span class="chico">· opcional</span></td><td>Un modelo en tu equipo (Ollama): gratis, sin internet. El respaldo por defecto cuando se agota Claude</td></tr>
+  <tr><td><b>OpenAI y Gemini</b> <span class="chico">· opcionales</span></td><td>Con tu propia clave. Para usarlos cuando quieras, o como respaldo si lo elegís. Cobran por uso, aparte del plan de Claude</td></tr>
+</table>
+
+<h3>El uso de tu plan, a la vista</h3>
+<p>Claude tiene límites de uso cada 5 horas y por semana. Ideas Box los muestra en la barra de abajo de
+Claude (<code>5h 40% · 7d 62%</code>, con la hora en que se renuevan). Desde el 75&nbsp;% aparece
+<strong>MODO AHORRO</strong>: los agentes evitan lo que más consume, sin que tengas que hacer nada.</p>
+
+<h3>Si igual se corta</h3>
+<ol>
+  <li>Te avisa en el escritorio y deja <strong>escrito dónde quedó el trabajo</strong>: qué pediste, el último paso y los archivos tocados.</li>
+  <li>Con un respaldo instalado, el trabajo <strong>sigue solo</strong> ahí, en una ventana nueva. Si no: «seguí con lo que quedó cortado» en el menú.</li>
+  <li>Cuando Claude vuelve, <strong>revisa lo que hizo el respaldo</strong> antes de seguir.</li>
+</ol>
+
+<div class="caja">
+  <div class="t">Lo hecho no se pone en riesgo</div>
+  <p>Un modelo de respaldo nunca publica, no hace commits ni toca servidores, y antes de arrancar Ideas Box
+  guarda un punto de restauración de tus proyectos. Si algo no quedó bien, se vuelve atrás. Los créditos
+  extra de Claude nunca se activan solos: son decisión tuya.</p>
+</div>
+
+<h3>Cómo se activa</h3>
+<table>
+  <tr><th style="width:44%">Querés…</th><th>Escribí en el menú (o el comando)</th></tr>
+  <tr><td>Ver cuánto te queda</td><td>«cuánto me queda de Claude» · <code>ideasbox motor</code></td></tr>
+  <tr><td>Instalar el motor local</td><td>«instalá el motor local» · <code>ideasbox motor install</code> (16 GB de RAM, ~7 GB de disco)</td></tr>
+  <tr><td>Conectar OpenAI o Gemini</td><td>«conectar chatgpt» · <code>ideasbox motor conectar openai</code> (o <code>gemini</code>)</td></tr>
+  <tr><td>Trabajar con OpenAI o Gemini</td><td>«usemos chatgpt» · <code>ideasbox con openai</code></td></tr>
+  <tr><td>Elegir el respaldo automático</td><td><code>ideasbox motor respaldo local</code> (o <code>openai</code> / <code>gemini</code>)</td></tr>
+  <tr><td>Retomar un trabajo cortado</td><td>«seguí con lo que quedó cortado» · <code>ideasbox continuar</code></td></tr>
+</table>
+<p class="chico">El motor local es más lento y menos capaz que Claude: sirve para no quedar a pie, no para
+reemplazarlo. Probado en Linux; en Mac y Windows está preparado pero todavía sin probar en equipos reales.</p>
+
+<!-- ═══════════════ 11 ═══════════════ -->
+<h2><span class="num">11</span>Dónde vive tu información</h2>
 <p class="sub">Una sola carpeta concentra todo. Respaldala y tenés la empresa entera.</p>
 
 <pre><code>&lt;tu raíz de datos&gt;/
@@ -497,8 +573,8 @@ sin protegerlo.</p>
   concluya que tu información «no existe». Si ves ese aviso: conectá el disco y volvé a abrir.</p>
 </div>
 
-<!-- ═══════════════ 11 ═══════════════ -->
-<h2><span class="num">11</span>Reglas de seguridad</h2>
+<!-- ═══════════════ 12 ═══════════════ -->
+<h2><span class="num">12</span>Reglas de seguridad</h2>
 <p class="sub">Lo que Ideas Box no deja que pase, y lo que depende de vos.</p>
 
 <h3>Siempre te van a pedir aprobación</h3>
@@ -539,8 +615,8 @@ Es una regla escrita en los agentes de operaciones y desarrollo.</p>
   destinatario antes de ejecutar.</p>
 </div>
 
-<!-- ═══════════════ 12 ═══════════════ -->
-<h2><span class="num">12</span>Problemas frecuentes</h2>
+<!-- ═══════════════ 13 ═══════════════ -->
+<h2><span class="num">13</span>Problemas frecuentes</h2>
 <p class="sub">Síntoma, causa y qué hacer. Empezá siempre por «Revisar que todo esté bien».</p>
 
 <h3>Durante la instalación</h3>
@@ -562,6 +638,9 @@ Es una regla escrita en los agentes de operaciones y desarrollo.</p>
   <tr><td>Un agente no usa la herramienta que esperabas</td><td>Ese conector no está instalado: los agentes solo reciben las herramientas que existen. «Conectar una herramienta»</td></tr>
   <tr><td>Editaste un agente y «volvió atrás»</td><td>Tu edición está intacta: la versión nueva quedó al lado, como <code>.nuevo</code></td></tr>
   <tr><td>Después de actualizar falta una habilidad</td><td>«Actualizar todo» de nuevo; si sigue faltando, «Revisar que todo esté bien»</td></tr>
+  <tr><td>«Se agotó el uso de tu plan de Claude»</td><td>Esperá la hora que indica, o seguí en el motor local / OpenAI / Gemini (sección 10). Para no quedar a pie: «instalá el motor local»</td></tr>
+  <tr><td>El motor local va muy lento</td><td>Es normal la primera respuesta (carga el modelo). Cerrá programas pesados: necesita memoria libre</td></tr>
+  <tr><td>No te entendí / hizo otra cosa</td><td>Contalo con otras palabras o elegí el número del menú. Con «ayuda» ves ejemplos de pedidos</td></tr>
   <tr><td>No encuentro el ícono</td><td>Abrí una Terminal y escribí <code>ideasbox</code>. Si tampoco aparece: <code>bash ~/ideas-box/bin/ideasbox</code></td></tr>
 </table>
 
@@ -573,8 +652,8 @@ Es una regla escrita en los agentes de operaciones y desarrollo.</p>
 <span class="p">✗</span> MCP easypanel-prod: falta el lanzador            <span class="c">← problema: ese conector no funciona</span></code></pre>
 <p><strong>✓</strong> bien · <strong>!</strong> funciona, pero algo falta · <strong>✗</strong> ese conector no anda.</p>
 
-<!-- ═══════════════ 13 ═══════════════ -->
-<h2><span class="num">13</span>Soporte</h2>
+<!-- ═══════════════ 14 ═══════════════ -->
+<h2><span class="num">14</span>Soporte</h2>
 <p class="sub">Dónde seguir, cómo reportar y qué esperar.</p>
 
 <h3>El repositorio</h3>
@@ -622,8 +701,8 @@ Si querés acompañamiento en esa etapa, <strong>IdeasDevOps</strong> lo hace co
   Es tuyo.</p>
 </div>
 
-<!-- ═══════════════ 14 ═══════════════ -->
-<h2><span class="num">14</span>Referencia técnica: todos los comandos</h2>
+<!-- ═══════════════ 15 ═══════════════ -->
+<h2><span class="num">15</span>Referencia técnica: todos los comandos</h2>
 <p class="sub">El proceso completo con los comandos reales que corre el menú, para quien prefiere la terminal o necesita diagnosticar.</p>
 
 <h3>1 · Bajar Ideas Box y abrir el asistente</h3>
@@ -692,13 +771,23 @@ ideasbox --yes mcp add ponytail
 <span class="c"># Actualizar solo el código de Ideas Box</span>
 cd ~/ideas-box &amp;&amp; git pull</code></pre>
 
-<h3>6 · Diagnóstico para soporte</h3>
+<h3>6 · Modelos y uso del plan</h3>
+<pre><code>ideasbox motor                       <span class="c"># uso de Claude (5 h / semana) y estado de cada motor</span>
+ideasbox motor install               <span class="c"># motor local: Ollama + modelo (~7 GB)</span>
+ideasbox motor conectar openai       <span class="c"># o gemini: pide tu clave y prepara LiteLLM</span>
+ideasbox motor respaldo local        <span class="c"># qué sigue si se agota Claude: local | openai | gemini</span>
+ideasbox motor auto off              <span class="c"># al agotarse Claude, solo avisar (sin abrir el respaldo)</span>
+ideasbox continuar                   <span class="c"># retomar un trabajo cortado por límite</span>
+ideasbox local                       <span class="c"># sesión con el motor local</span>
+ideasbox con openai                  <span class="c"># sesión con OpenAI (o gemini); --mcp suma los conectores</span></code></pre>
+
+<h3>7 · Diagnóstico para soporte</h3>
 <pre><code>sw_vers &amp;&amp; uname -m                  <span class="c"># macOS (x86_64 = Intel, arm64 = Apple Silicon)</span>
 lsb_release -a &amp;&amp; uname -m           <span class="c"># Linux</span>
 ideasbox doctor --deep               <span class="c"># estado de todo, probando cada conector</span>
 bash ~/ideas-box/tools/mcp-probe.sh chatwoot-ventas   <span class="c"># probar un conector solo</span></code></pre>
 
-<h3>7 · Dónde queda cada cosa</h3>
+<h3>8 · Dónde queda cada cosa</h3>
 <table>
   <tr><th style="width:44%">Ruta</th><th>Qué es</th></tr>
   <tr><td><code>&lt;raíz de datos&gt;/.claude/</code></td><td>Agentes, habilidades, memoria y documentación: la fuente de verdad</td></tr>
@@ -710,6 +799,9 @@ bash ~/ideas-box/tools/mcp-probe.sh chatwoot-ventas   <span class="c"># probar u
   <tr><td><code>~/.config/ideasbox/launchers/</code></td><td>Lanzador de cada conector: carga sus credenciales y lo arranca</td></tr>
   <tr><td><code>~/.config/ideasbox/mcp-installed.tsv</code></td><td>Conectores instalados</td></tr>
   <tr><td><code>~/.config/ideasbox/locks.tsv</code></td><td>Versiones instaladas de cada componente</td></tr>
+  <tr><td><code>~/.config/ideasbox/fallback.conf</code></td><td>Umbrales del modo ahorro, respaldo elegido y modelos de OpenAI/Gemini</td></tr>
+  <tr><td><code>~/.config/ideasbox/traspasos/</code></td><td>Dónde quedó cada trabajo cortado por límite, y su punto de restauración</td></tr>
+  <tr><td><code>~/.local/share/ideasbox/litellm/</code></td><td>Traductor para usar OpenAI y Gemini (solo si los conectaste)</td></tr>
   <tr><td><code>~/.config/ideasbox/install.state</code></td><td>Avance de una instalación cortada; se borra al terminar bien</td></tr>
   <tr><td><code>~/.local/share/mcp-servers/</code></td><td>Código de los conectores</td></tr>
   <tr><td><code>~/.local/bin/</code></td><td><code>ideasbox</code>, <code>claude</code> y, en Mac sin Homebrew, <code>python3</code>, <code>jq</code> y <code>uv</code></td></tr>

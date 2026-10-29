@@ -56,6 +56,7 @@ Comandos técnicos (usuarios avanzados):
   $STACK_NAME motor [acción]         uso del plan de Claude y motor local de respaldo (install/status/auto on|off/remove)
   $STACK_NAME continuar              retomar en el motor local un trabajo que Claude dejó cortado por límite
   $STACK_NAME local                  sesión de Claude Code con el motor local (sin plan, más lenta)
+  $STACK_NAME con openai|gemini      sesión de Claude Code con OpenAI o Gemini (conectar antes: motor conectar)
   $STACK_NAME update                 actualizar stack, packs y conectores
   $STACK_NAME profile                editar la identidad de la empresa
 
@@ -230,6 +231,12 @@ PY
   local)
     load_profile
     motor_session "$@"
+    ;;
+
+  con)
+    load_profile
+    prov="${1:-}"; shift || true
+    MOTOR_PROVEEDOR="$prov" motor_session "$@"
     ;;
 
   ""|menu) menu_main ;;

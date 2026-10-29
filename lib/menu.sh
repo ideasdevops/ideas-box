@@ -37,9 +37,20 @@ _menu_run() {
   _menu_pause
 }
 
-# Abre Claude con un pedido ya escrito, para que la persona siga la charla desde ahí
+# Abre Claude con un pedido ya escrito, para que la persona siga la charla desde ahí.
+# Si el plan de Claude está agotado, ofrece el motor local en vez de dejar a la persona a pie.
 menu_open_claude() {
-  local prompt="${1:-}"
+  local prompt="${1:-}" hasta
+  if hasta="$("$STACK_SRC/bin/ideasbox-fallback" agotado)"; then
+    warn "Se agotó el uso de tu plan de Claude (se renueva $hasta)."
+    if motor_installed 2>/dev/null; then
+      info "Sigo con el motor local: es más lento y no publica ni toca servidores."
+      (cd "$HOME" && motor_session ${prompt:+"$prompt"}) || true
+      return 0
+    fi
+    info "Para no quedar a pie la próxima vez: «instalar el motor local» (o $STACK_NAME motor install)."
+    return 0
+  fi
   if ! have claude; then
     warn "No encuentro Claude Code en este equipo (busqué en el PATH y en ~/.local/bin)."
     info "Instalalo con: curl -fsSL https://claude.ai/install.sh | bash   y volvé a abrir Ideas Box."
@@ -52,49 +63,30 @@ menu_open_claude() {
 }
 
 # --- Interpretación de frases -------------------------------------------------
-# Devuelve una acción: hablar, instalar, revisar, skills-add[:pack], skills-new,
-# mcp-add[:id], mcp-new, actualizar, respaldo, salir o nada (no se entendió).
+# La interpreta tools/intent.py (errores de tipeo, voseo, abreviaturas, mensajes en pedacitos).
+# Devuelve una acción: tarea (pedido de trabajo → Claude), hablar, ayuda, charla, salir, nada,
+# revisar[:deep], skills-add[:pack], skills-new, mcp-add[:id], mcp-new, motor, motor-install,
+# continuar, paquete, icono, panel, respaldo, actualizar, carpeta o instalar.
 _menu_ids_mcp()   { mcp_catalog_ids; }
 _menu_ids_packs() { _pack_rows | awk -F'\t' '{print $1}'; }
 
-# ¿La frase nombra este id? Vale el id entero o su primera parte ("brave" → brave-search)
-_menu_names() {
-  local t="$1" id="$2" corto="${2%%-*}"
-  case "$t" in *" $id "*) return 0 ;; esac
-  [ ${#corto} -ge 4 ] && case "$t" in *" $corto "*) return 0 ;; esac
-  return 1
+menu_intent() {
+  python3 "$STACK_SRC/tools/intent.py" --mcp "$(_menu_ids_mcp | tr '\n' ' ')" \
+    --packs "$(_menu_ids_packs | tr '\n' ' ')" -- "$*" 2>/dev/null || echo tarea
 }
 
-menu_intent() {
-  local t id crear=0 skill=0 mcp=0
-  t=" $(normaliza "$*" | tr -c 'a-z0-9-' ' ') "
-  case "$t" in *" salir "*|*" chau "*|*" nada "*|*" exit "*|*" terminar "*) echo salir; return ;; esac
-  case "$t" in *crear*|*crea\ *|*nuev*|*armar*|*arma\ *|*propi*|*escribir*|*" no esta "*|*" no aparece "*|*" otra "*|*falta*) crear=1 ;; esac
-  case "$t" in *habilidad*|*skill*|*pack*|*destreza*) skill=1 ;; esac
-  case "$t" in *conect*|*herramienta*|*integr*|*mcp*|*servidor*|*aplicacion*|*app\ *) mcp=1 ;; esac
+# Un pedido en palabras de todos los días, tal como lo escribió la persona, para Claude
+menu_tarea_prompt() {
+  cat <<TXT
+${EMPRESA_RESPONSABLE:-La persona} escribió esto en el menú de Ideas Box, con sus palabras: «$*»
 
-  if [ "$skill" = 1 ]; then
-    [ "$crear" = 1 ] && { echo skills-new; return; }
-    for id in $(_menu_ids_packs); do _menu_names "$t" "$id" && { echo "skills-add:$id"; return; }; done
-    echo skills-add; return
-  fi
-  for id in $(_menu_ids_mcp); do _menu_names "$t" "$id" && { echo "mcp-add:$id"; return; }; done
-  if [ "$mcp" = 1 ]; then
-    [ "$crear" = 1 ] && echo mcp-new || echo mcp-add
-    return
-  fi
-  case "$t" in
-    *pendrive*|*paquete*|*portable*|*llevar*|*usb*|*disco*externo*) echo paquete ;;
-    *icono*|*acceso*directo*|*escritorio*) echo icono ;;
-    *panel*|*tablero*|*tarea*|*programa*|*agenda*) echo panel ;;
-    *revis*|*diagnost*|*doctor*|*chequ*|*control*|*estado*|*funciona*|*anda\ *|*problema*|*error*) echo revisar ;;
-    *actualiz*|*update*) echo actualizar ;;
-    *respald*|*backup*|*copia*|*resguard*) echo respaldo ;;
-    *archivo*|*carpeta*|*generad*|*entregable*|*documento*) echo carpeta ;;
-    *instal*|*configur*|*empezar\ de*|*rehacer*) echo instalar ;;
-    *hablar*|*agente*|*claude*|*abrir*|*chat*|*trabaj*|*empez*|*preguntar*) echo hablar ;;
-    *) echo nada ;;
-  esac
+Es alguien sin conocimientos técnicos. Interpretá qué resultado quiere y llevalo a un resultado
+terminado y de calidad profesional, usando los agentes, habilidades y conectores de
+${EMPRESA_NOMBRE:-la empresa}. Si el pedido es vago ("revisá esto", "lo de ayer") o se refiere a una
+captura o un archivo que no tenés, preguntá una sola cosa, en palabras simples. Si está preocupado
+o apurado, primero tranquilizalo en una frase. Antes de publicar, enviar, gastar o tocar
+servidores, mostrale qué vas a hacer y pedí su aprobación.
+TXT
 }
 
 # --- Acciones con elección guiada ---------------------------------------------
@@ -156,10 +148,26 @@ menu_mcp_new() {
   esac
 }
 
+menu_ayuda() {
+  cat <<TXT
+
+Podés elegir un número o escribir lo que necesitás, como se lo dirías a una persona:
+
+  «haceme un post para Instagram de la promo»     «respondele al cliente que preguntó por precios»
+  «armame un presupuesto para 4 personas»         «cuánto vendimos este mes»
+  «conectá mi Instagram»                          «no me anda el chatwoot»
+  «enseñales cómo hago yo los presupuestos»       «hacé una copia de seguridad»
+  «cuánto me queda de Claude»                     «seguí con lo que quedó cortado»
+
+No hace falta saber los nombres técnicos: si algo no queda claro, te pregunto.
+TXT
+  _menu_pause
+}
+
 # --- Menú principal -----------------------------------------------------------
 
 _menu_do() {
-  local accion="$1" arg=""
+  local accion="$1" frase="${2:-}" arg=""
   case "$accion" in *:*) arg="${accion#*:}"; accion="${accion%%:*}" ;; esac
   if [ "$accion" != instalar ] && [ "$accion" != salir ] && [ "$accion" != nada ] && [ "$accion" != paquete-abrir ] && ! stack_installed; then
     warn "Primero hay que terminar de instalar Ideas Box: elegí la opción 1 del menú."
@@ -167,9 +175,17 @@ _menu_do() {
   fi
   case "$accion" in
     hablar)     menu_open_claude ""; _menu_pause ;;
+    tarea)      menu_open_claude "$(menu_tarea_prompt "$frase")"; _menu_pause ;;
+    charla)     echo; echo "¡De nada! Cuando quieras, escribí lo que necesitás con tus palabras." ;;
+    ayuda)      menu_ayuda ;;
+    motor)      _menu_run motor status ;;
+    motor-install) _menu_run motor install ;;
+    continuar)  _menu_run continuar ;;
+    motor-conectar) _menu_run motor conectar "$arg" ;;
+    con)        echo; MOTOR_PROVEEDOR="$arg" bash "$IDEASBOX_BIN" con "$arg" || warn "No se pudo abrir la sesión con $arg."; _menu_pause ;;
     # El asistente gráfico; si no se puede mostrar, install.sh sigue solo en la terminal
     instalar)   echo; bash "$STACK_SRC/install.sh" --gui || true; _menu_pause ;;
-    revisar)    _menu_run doctor ;;
+    revisar)    if [ "$arg" = deep ]; then _menu_run --deep doctor; else _menu_run doctor; fi ;;
     skills-add) if [ -n "$arg" ]; then _menu_run skills add "$arg"; else menu_skills_add; fi ;;
     skills-new) _menu_run skills new ;;
     mcp-add)    if [ -n "$arg" ]; then _menu_run mcp add "$arg"; else menu_mcp_add; fi ;;
@@ -184,7 +200,7 @@ _menu_do() {
     paquete-guardar) _menu_run paquete guardar ;;
     paquete-cerrar)  _menu_run paquete cerrar; [ -n "${IDEASPACKAGE_SESION:-}" ] && return 1 ;;
     salir)      return 1 ;;
-    *)          warn "No te entendí. Elegí un número de la lista o probá con otras palabras (ej: «conectar chatwoot»)." ;;
+    *)          warn "No llegué a entenderte. Contame con tus palabras qué necesitás (ej: «haceme un post para Instagram» o «conectar chatwoot»)." ;;
   esac
   return 0
 }
@@ -193,7 +209,7 @@ menu_main() {
   # Una frase directa (`ideasbox conectar chatwoot`) se resuelve sin mostrar el menú
   if [ $# -gt 0 ]; then
     stack_installed && load_profile
-    _menu_do "$(menu_intent "$@")" || true
+    _menu_do "$(menu_intent "$@")" "$*" || true
     return 0
   fi
   [ -n "$STACK_TTY" ] || { usage; return 0; }
@@ -248,7 +264,7 @@ menu_main() {
     fi
     echo "  0) Salir"
     echo
-    ask "Elegí un número o escribí lo que querés hacer" choice ""
+    ask "Elegí un número o escribí con tus palabras lo que necesitás" choice ""
     if stack_installed; then
       case "$choice" in
         1) accion=hablar ;; 2) accion=revisar ;; 3) accion=skills-add ;; 4) accion=mcp-add ;;
@@ -263,7 +279,7 @@ menu_main() {
         1) accion=instalar ;; 2) accion=paquete-abrir ;; 0) accion=salir ;; '') continue ;; *) accion="$(menu_intent "$choice")" ;;
       esac
     fi
-    _menu_do "$accion" || break
+    _menu_do "$accion" "$choice" || break
   done
   echo "Hasta luego."
 }

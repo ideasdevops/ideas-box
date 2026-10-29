@@ -6,6 +6,20 @@ Convierte una máquina recién instalada —Ubuntu, Linux Mint, Debian o macOS�
 trabajo completo para operar una empresa con agentes de IA: agentes por área, skills, memoria
 canónica persistente y conectores MCP a las herramientas del negocio.
 
+### Qué lo hace distinto de usar Claude, ChatGPT o Grok solos
+
+- **No depende de un solo modelo.** Claude orquesta (Sonnet decide, Haiku lo mecánico, Opus lo
+  difícil) y se pueden sumar OpenAI, Gemini y un modelo local. Si se agota uno, el trabajo sigue.
+- **Trabaja en local.** Un motor que corre en tu equipo, sin internet ni costo por uso; tus datos
+  viven en tu disco.
+- **Memoria canónica.** Clientes, decisiones y bitácoras quedan escritos: la sesión de mañana
+  arranca sabiendo lo de hoy.
+- **Skills y conectores integrados**, y la capacidad de **crear los tuyos** (formas de trabajo
+  propias y conexiones a herramientas que no están en la lista).
+- **Entiende pedidos de todos los días.** «haceme un post de la promo», «respondele al cliente»,
+  «revisá esto porfa» con una captura: interpreta, pregunta solo lo imprescindible y entrega el
+  resultado terminado, aunque quien escribe no sepa nada de tecnología.
+
 ## Empezar
 
 1. **Abrí la Terminal** (en Mac: Aplicaciones → Utilidades → Terminal; en Windows 11: Ubuntu, ver
@@ -47,6 +61,7 @@ Una sola pasada guiada. Al terminar, «Hablar con mis agentes» abre una sesión
 | **Conectores MCP** | Búsqueda web, grafo de código, bandeja de atención, panel de servidores, SSH, redes sociales, video, y generación con IA recomendada (ElevenLabs, Kling, Renoise) |
 | **Uso del plan de Claude** | La barra de estado muestra cuánto usaste de los límites de 5 horas y semanal; con uso alto, Claude pasa a modo ahorro solo. Sonnet orquesta y deriva a Opus solo lo difícil |
 | **Motor local de respaldo** | Opcional: un modelo de IA en tu equipo (Ollama) que sigue el trabajo solo, con aviso, si se agota el plan de Claude |
+| **OpenAI y Gemini** | Opcionales, con tu propia clave (vía LiteLLM local): para trabajar con ellos o como respaldo, si lo elegís |
 | **Panel de control** | Tablero web local para programar tareas a los agentes (opcional), con su propio ícono «Panel Ideas Box» en el Escritorio |
 | **Reglas** | Autonomía, zonas protegidas y qué requiere aprobación explícita |
 
@@ -76,6 +91,12 @@ con tus palabras lo que querés hacer:
 | Tener la última versión | «Actualizar todo» |
 | Guardar una copia de todo | «Hacer un respaldo» |
 | Llevar tu empresa en un pendrive | «Llevar mi empresa en un pendrive» |
+
+No hace falta saber los nombres técnicos ni escribir bien: «haceme un post para insta de la promo»,
+«respondele al cliente que preguntó por el paquete» o «revisá esto porfa» van directo a tus agentes,
+que interpretan el pedido y entregan el resultado (pidiendo tu OK antes de publicar o enviar). Las
+frases que hablan de Ideas Box en sí —«conectá mi Instagram», «no me anda el chatwoot», «se me
+acabó Claude», «usemos chatgpt»— van a la opción del menú que corresponde.
 
 La frase también se puede escribir directo: `ideasbox conectar chatwoot`, `ideasbox crear una
 habilidad`. Y dentro de Claude se pide como a una persona: *"conectá mi Instagram"*, *"creá una
@@ -136,6 +157,9 @@ ideasbox motor install   # instalar el motor local de respaldo (Ollama + modelo,
 ideasbox motor auto off  # al agotarse Claude, solo avisar (sin abrir el motor local solo)
 ideasbox continuar       # retomar en el motor local un trabajo que Claude dejó cortado
 ideasbox local           # sesión de Claude Code con el motor local
+ideasbox motor conectar openai   # o gemini: con tu clave, cobra por uso (LiteLLM local)
+ideasbox con openai      # sesión con OpenAI (o gemini)
+ideasbox motor respaldo local    # qué sigue si se agota Claude: local | openai | gemini
 ideasbox paquete crear   # IdeasPackage: empaquetar la empresa en un pendrive
 ideasbox paquete abrir   # abrir la empresa de un pendrive conectado
 ideasbox paquete guardar # guardar en el pendrive lo trabajado

@@ -12,6 +12,16 @@ MOTOR_RAM_MIN=12       # GB: por debajo, el modelo deja al equipo sin memoria
 MOTOR_RAM_OK=16
 OLLAMA_URL="${OLLAMA_URL:-http://127.0.0.1:11434}"
 
+# Modelos en la nube de otros proveedores (OpenAI, Gemini). Claude Code solo habla el formato de
+# Anthropic: LiteLLM, corriendo en este equipo, traduce. Cobran por uso con la clave del usuario,
+# por eso nunca son el respaldo automático salvo que la persona lo elija.
+NUBE_PROVEEDORES="openai gemini"
+LITELLM_DIR="${LITELLM_DIR:-$HOME/.local/share/$STACK_NAME/litellm}"
+LITELLM_PORT="${LITELLM_PORT:-4141}"
+LITELLM_URL="http://127.0.0.1:$LITELLM_PORT"
+# 1.82.7 y 1.82.8 se publicaron adulteradas en PyPI (marzo de 2026): nunca esas.
+LITELLM_PIP="${LITELLM_PIP:-litellm[proxy]!=1.82.7,!=1.82.8}"
+
 # fallback_conf_set <clave> <valor> — reemplaza o agrega en fallback.conf (valor entre comillas simples)
 fallback_conf_set() {
   local k="$1" v="$2" tmp
@@ -126,6 +136,119 @@ motor_install() {
   ok "Motor local listo ($MOTOR_MODEL). Si se agota el plan de Claude, el trabajo sigue ahí."
 }
 
+# --- Proveedores en la nube: OpenAI y Gemini ------------------------------------------
+
+_nube_label() { case "$1" in openai) echo "OpenAI (ChatGPT)" ;; gemini) echo "Google Gemini" ;; *) echo "$1" ;; esac; }
+_nube_secret() { echo "$STACK_SECRETS_DIR/$1.env"; }
+nube_conectada() { [ -s "$(_nube_secret "$1")" ] && [ -n "$(fallback_conf_get "MODELO_$(printf '%s' "$1" | tr 'a-z' 'A-Z')")" ]; }
+
+# El modelo más nuevo de cada proveedor que habilita la clave (la lista cambia seguido)
+_nube_elegir_modelo() {
+  local prov="$1" key="$2"
+  case "$prov" in
+    openai)
+      curl -fsS -m 20 https://api.openai.com/v1/models -H "Authorization: Bearer $key" | python3 -c '
+import json, re, sys
+ids = [m["id"] for m in json.load(sys.stdin).get("data", [])]
+best = sorted((tuple(int(x) for x in re.findall(r"\d+", i)), i) for i in ids if re.fullmatch(r"gpt-5(\.\d+)?", i))
+print(best[-1][1] if best else "")' ;;
+    gemini)
+      curl -fsS -m 20 "https://generativelanguage.googleapis.com/v1beta/models?key=$key&pageSize=200" | python3 -c '
+import json, re, sys
+ids = [m["name"].split("/", 1)[-1] for m in json.load(sys.stdin).get("models", [])]
+best = sorted((tuple(int(x) for x in re.findall(r"\d+", i)), i) for i in ids if re.fullmatch(r"gemini-\d+(\.\d+)?-pro", i))
+print(best[-1][1] if best else "")' ;;
+  esac
+}
+
+_litellm_config() {
+  local prov modelo master
+  master="$(cat "$STACK_SECRETS_DIR/litellm-master.key")"
+  {
+    echo "# Generado por $STACK_NAME motor conectar — se rehace en cada conexión"
+    echo "model_list:"
+    for prov in $NUBE_PROVEEDORES; do
+      nube_conectada "$prov" || continue
+      modelo="$(fallback_conf_get "MODELO_$(printf '%s' "$prov" | tr 'a-z' 'A-Z')")"
+      echo "  - model_name: $STACK_NAME-$prov"
+      echo "    litellm_params:"
+      echo "      model: $prov/$modelo"
+      echo "      api_key: os.environ/$(printf '%s' "$prov" | tr 'a-z' 'A-Z')_API_KEY"
+    done
+    echo "litellm_settings:"
+    echo "  drop_params: true"
+    echo "general_settings:"
+    echo "  master_key: $master"
+  } >"$LITELLM_DIR/config.yaml"
+  chmod 600 "$LITELLM_DIR/config.yaml"
+}
+
+litellm_up() { curl -fsS -m 3 "$LITELLM_URL/health/liveliness" >/dev/null 2>&1; }
+
+litellm_ensure_running() {
+  litellm_up && return 0
+  [ -x "$LITELLM_DIR/venv/bin/litellm" ] || return 1
+  mkdir -p "$STACK_CONFIG_DIR/uso"
+  # Las claves entran por el entorno del proceso, nunca en la línea de comandos
+  (
+    set -a
+    for f in "$STACK_SECRETS_DIR"/openai.env "$STACK_SECRETS_DIR"/gemini.env; do [ -f "$f" ] && . "$f"; done
+    set +a
+    nohup "$LITELLM_DIR/venv/bin/litellm" --config "$LITELLM_DIR/config.yaml" --host 127.0.0.1 \
+      --port "$LITELLM_PORT" >>"$STACK_CONFIG_DIR/uso/litellm.log" 2>&1 </dev/null &
+  )
+  local i=0
+  while [ $i -lt 60 ]; do litellm_up && return 0; sleep 1; i=$((i + 1)); done
+  return 1
+}
+
+litellm_install() {
+  [ -x "$LITELLM_DIR/venv/bin/litellm" ] && return 0
+  local py
+  py="$(python_venv_bin)" || { warn "Hace falta Python 3.10 o posterior con venv."; return 1; }
+  info "Instalando el traductor de modelos (LiteLLM) — tarda un par de minutos la primera vez"
+  run mkdir -p "$LITELLM_DIR"
+  run "$py" -m venv "$LITELLM_DIR/venv" || return 1
+  run "$LITELLM_DIR/venv/bin/pip" install --quiet --upgrade pip || true
+  run "$LITELLM_DIR/venv/bin/pip" install --quiet "$LITELLM_PIP" || return 1
+}
+
+# nube_conectar openai|gemini
+nube_conectar() {
+  local prov="${1:-}" key modelo var
+  case " $NUBE_PROVEEDORES " in *" $prov "*) ;; *) die "Proveedores disponibles: $NUBE_PROVEEDORES" ;; esac
+  var="$(printf '%s' "$prov" | tr 'a-z' 'A-Z')_API_KEY"
+  step "Conectar $(_nube_label "$prov")"
+  cat <<TXT
+
+Tus agentes van a poder trabajar también con $(_nube_label "$prov"), con tu propia clave.
+Cobra por uso: cada pedido se descuenta de tu cuenta de $(_nube_label "$prov"), aparte del plan de Claude.
+$( [ "$prov" = openai ] && echo "La clave se crea en https://platform.openai.com/api-keys" || echo "La clave se crea en https://aistudio.google.com/apikey" )
+
+TXT
+  ask_secret "Pegá la clave (no se muestra)" key "nube_$prov"
+  [ -n "$key" ] || { info "Sin clave, no conecto nada."; return 0; }
+  modelo="$(_nube_elegir_modelo "$prov" "$key" 2>/dev/null || true)"
+  [ -n "$modelo" ] || die "La clave no funcionó o no habilita ningún modelo compatible. Revisala y probá de nuevo."
+  ok "Clave válida · modelo: $modelo"
+
+  run mkdir -p "$STACK_SECRETS_DIR"; chmod 700 "$STACK_SECRETS_DIR"
+  ( umask 077; printf '%s=%s\n' "$var" "$key" >"$(_nube_secret "$prov")" )
+  [ -s "$STACK_SECRETS_DIR/litellm-master.key" ] || ( umask 077; python3 -c 'import secrets; print("sk-ib-" + secrets.token_hex(24))' >"$STACK_SECRETS_DIR/litellm-master.key" )
+  fallback_conf_set "MODELO_$(printf '%s' "$prov" | tr 'a-z' 'A-Z')" "$modelo"
+
+  litellm_install || { warn "No se pudo instalar LiteLLM. La clave quedó guardada; reintentá con: $STACK_NAME motor conectar $prov"; return 1; }
+  _litellm_config
+  # Si ya corría, que tome la configuración nueva
+  if litellm_up; then pkill -f "$LITELLM_DIR/venv/bin/litellm" 2>/dev/null || true; sleep 1; fi
+  litellm_ensure_running || { warn "LiteLLM no arrancó; mirá $STACK_CONFIG_DIR/uso/litellm.log"; return 1; }
+  ok "$(_nube_label "$prov") conectado. Para usarlo: $STACK_NAME con $prov"
+  if confirm "¿Usarlo como respaldo automático cuando se agote Claude? (cobra por uso; si no, el respaldo es el motor local gratis)" n "nube_respaldo_$prov"; then
+    fallback_conf_set RESPALDO "$prov"; fallback_conf_set MOTOR 1
+    ok "Si se agota Claude, el trabajo sigue en $(_nube_label "$prov")."
+  fi
+}
+
 # Paso opcional del instalador
 motor_wizard() {
   step "Motor local de respaldo (opcional)"
@@ -169,7 +292,12 @@ JSON
 # Modo mínimo (--bare): sin hooks, memoria, conectores ni tu cuenta de Claude, para que el
 # pedido entre en la ventana del modelo y responda en un tiempo razonable.
 motor_session() {
+  local prov="${MOTOR_PROVEEDOR:-local}"
   have claude || die "Claude Code no está instalado."
+  if [ "$prov" != local ]; then
+    _nube_session "$prov" "$@"
+    return
+  fi
   motor_installed || die "El motor local no está instalado. Corré: $STACK_NAME motor install"
   local free
   free="$(motor_free_gb)"
@@ -192,6 +320,33 @@ servidores: eso queda para Claude. Cambios chicos y acotados; no reescribas trab
   exec claude --bare --strict-mcp-config --mcp-config '{"mcpServers":{}}' \
     --permission-mode default --tools Bash,Read,Edit,Write,Glob,Grep --disable-slash-commands \
     --settings "$(_motor_settings)" --system-prompt "$sys" "$@"
+}
+
+# Sesión con OpenAI o Gemini: modelos capaces y con ventana grande, así que cargan el CLAUDE.md
+# y la memoria de la empresa (sin --bare). Conectores, solo con --mcp: OpenAI acepta hasta 128
+# herramientas por pedido. Mismos bloqueos que el motor local: no es Claude quien trabaja.
+_nube_session() {
+  local prov="$1" mcp_args v modelo
+  shift
+  nube_conectada "$prov" || die "$(_nube_label "$prov") no está conectado. Corré: $STACK_NAME motor conectar $prov"
+  litellm_ensure_running || die "No arranca LiteLLM; mirá $STACK_CONFIG_DIR/uso/litellm.log"
+  modelo="$(fallback_conf_get "MODELO_$(printf '%s' "$prov" | tr 'a-z' 'A-Z')")"
+  mcp_args="--strict-mcp-config"
+  case " $* " in *" --mcp "*) mcp_args="" ;; esac
+  [ -t 2 ] && printf '\033[1;36m[%s] %s · cobra por uso con tu clave · revisá en Claude lo que haga\033[0m\n' "$(_nube_label "$prov")" "$modelo" >&2
+  for v in $(env | awk -F= '/^(CLAUDE|ANTHROPIC)[A-Za-z0-9_]*=/ {print $1}'); do unset "$v"; done
+  export ANTHROPIC_BASE_URL="$LITELLM_URL" ANTHROPIC_AUTH_TOKEN="$(cat "$STACK_SECRETS_DIR/litellm-master.key")" \
+    ANTHROPIC_MODEL="$STACK_NAME-$prov" ANTHROPIC_DEFAULT_OPUS_MODEL="$STACK_NAME-$prov" \
+    ANTHROPIC_DEFAULT_SONNET_MODEL="$STACK_NAME-$prov" ANTHROPIC_DEFAULT_HAIKU_MODEL="$STACK_NAME-$prov" \
+    CLAUDE_CODE_SUBAGENT_MODEL="$STACK_NAME-$prov" CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 \
+    CLAUDE_CODE_MAX_CONTEXT_TOKENS=128000
+  local pass=() a
+  for a in "$@"; do [ "$a" = --mcp ] || pass+=("$a"); done
+  if [ -n "$mcp_args" ]; then
+    exec claude $mcp_args --mcp-config '{"mcpServers":{}}' --permission-mode default \
+      --settings "$(_motor_settings)" ${pass[@]+"${pass[@]}"}
+  fi
+  exec claude --permission-mode default --settings "$(_motor_settings)" ${pass[@]+"${pass[@]}"}
 }
 
 # motor_continuar [traspaso.md | -l] — retoma en el motor local una sesión cortada por límite
@@ -229,7 +384,10 @@ motor_continuar() {
   grep -m1 '^- Volver a Claude' "$h" || true
   echo
   # Leer es inofensivo: pre-autorizado para que arranque solo; editar y ejecutar siguen pidiendo confirmación.
-  motor_session --allowedTools Read "Estás retomando una tarea que venía haciendo Claude y se cortó por el límite de uso. \
+  local resp
+  resp="$(fallback_conf_get RESPALDO)"
+  if [ -n "$resp" ] && [ "$resp" != local ] && nube_conectada "$resp"; then MOTOR_PROVEEDOR="$resp"; fi
+  MOTOR_PROVEEDOR="${MOTOR_PROVEEDOR:-local}" motor_session --allowedTools Read "Estás retomando una tarea que venía haciendo Claude y se cortó por el límite de uso. \
 Leé el archivo de traspaso $h con la herramienta Read. Resumime en 3 a 5 líneas en qué estado quedó y cuál es el \
 próximo paso, y esperá mi confirmación antes de hacer cambios. Al terminar el trabajo, agregá a ese archivo la \
 sección '## Lo que hizo el motor local'."
@@ -245,6 +403,15 @@ motor_status() {
   else
     printf '  motor local    no instalado (%s motor install)\n' "$STACK_NAME"
   fi
+  local prov
+  for prov in $NUBE_PROVEEDORES; do
+    if nube_conectada "$prov"; then
+      printf '  %-14s conectado (%s) · %s con %s\n' "$prov" "$(fallback_conf_get "MODELO_$(printf '%s' "$prov" | tr 'a-z' 'A-Z')")" "$STACK_NAME" "$prov"
+    else
+      printf '  %-14s no conectado (%s motor conectar %s)\n' "$prov" "$STACK_NAME" "$prov"
+    fi
+  done
+  printf '  respaldo       si se agota Claude: %s\n' "$(fallback_conf_get RESPALDO | grep . || echo local)"
 }
 
 motor_main() {
@@ -257,10 +424,19 @@ motor_main() {
         off) fallback_conf_set AUTO_OPEN 0; ok "Al agotarse Claude, solo aviso: retomás con $STACK_NAME continuar." ;;
         *) die "Uso: $STACK_NAME motor auto on|off" ;;
       esac ;;
+    conectar) nube_conectar "${2:-}" ;;
+    respaldo)
+      case "${2:-}" in
+        local) fallback_conf_set RESPALDO local ;;
+        openai|gemini) nube_conectada "$2" || die "Primero: $STACK_NAME motor conectar $2"; fallback_conf_set RESPALDO "$2" ;;
+        *) die "Uso: $STACK_NAME motor respaldo local|openai|gemini" ;;
+      esac
+      fallback_conf_set MOTOR 1
+      ok "Si se agota Claude, el trabajo sigue en: $2" ;;
     remove)
       fallback_conf_set MOTOR 0
       have ollama && ollama rm "$MOTOR_MODEL" >/dev/null 2>&1 || true
       ok "Motor local desactivado. Ollama y el modelo base quedan; para borrarlos: ollama rm $MOTOR_MODEL_BASE" ;;
-    *) die "Uso: $STACK_NAME motor install|status|auto on|off|remove" ;;
+    *) die "Uso: $STACK_NAME motor install|status|conectar openai|gemini|respaldo local|openai|gemini|auto on|off|remove" ;;
   esac
 }

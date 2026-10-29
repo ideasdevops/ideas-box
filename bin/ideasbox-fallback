@@ -8,6 +8,7 @@ Lo invoca Claude Code (settings.json, que arma `ideasbox sync`); cada subcomando
   resume       hook SessionStart(resume): si el motor local trabajo en esta sesion, avisa a Claude
 Uso manual:
   status                 uso conocido y traspasos pendientes
+  agotado                sale 0 (e imprime cuándo se renueva) si el plan de Claude está agotado
   checkpoint <traspaso>  marca el estado de los repos git antes de que trabaje el motor local
 """
 import json, os, shlex, shutil, subprocess, sys, time
@@ -416,6 +417,24 @@ def cmd_checkpoint():
     log(f"checkpoint {h.name}: {len(repos)} repos, {len(sueltos)} archivos sueltos")
 
 
+# ---------------------------------------------------------------- agotado
+def cmd_agotado():
+    rl = load_last(max_age=6 * 3600)
+    now = time.time()
+    for key in ("five_hour", "seven_day"):
+        w = (rl or {}).get(key) or {}
+        p = pct(rl or {}, key)
+        try:
+            reset = float(w.get("resets_at") or 0)
+            reset = reset / 1000 if reset > 1e12 else reset
+        except (TypeError, ValueError):
+            reset = 0
+        if p is not None and p >= 100 and reset > now:
+            print(fmt_reset(w.get("resets_at")))
+            sys.exit(0)
+    sys.exit(1)
+
+
 # ---------------------------------------------------------------- resume / status
 def cmd_resume():
     ack_notes(read_stdin().get("session_id", ""), "SessionStart")
@@ -440,7 +459,8 @@ def cmd_status():
 
 if __name__ == "__main__":
     cmds = {"statusline": cmd_statusline, "guard": cmd_guard, "handoff": cmd_handoff,
-            "resume": cmd_resume, "status": cmd_status, "checkpoint": cmd_checkpoint}
+            "resume": cmd_resume, "status": cmd_status, "checkpoint": cmd_checkpoint,
+            "agotado": cmd_agotado}
     if len(sys.argv) < 2 or sys.argv[1] not in cmds:
         print(__doc__)
         sys.exit(2)
