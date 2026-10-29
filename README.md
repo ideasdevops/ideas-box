@@ -219,16 +219,22 @@ datos aparte" se resuelve con un volumen APFS o un disco externo montado en `/Vo
 
 Copyright © 2026 IdeasDevOps & Disruptia AI.
 
-Ideas Box es software libre, publicado bajo la **GNU Affero General Public License v3.0**
-(AGPL-3.0) — ver [LICENSE](LICENSE). Podés usarlo, estudiarlo, modificarlo y vender servicios
-sobre él, también comercialmente. Usarlo tal cual no te obliga a publicar nada.
+Ideas Box es **gratis y de código visible**, bajo la **Licencia de Uso Sostenible de Ideas Box**
+(adaptada de la Sustainable Use License) — ver [LICENSE](LICENSE).
 
-La condición es una: si **distribuís una versión modificada**, o la **ofrecés a otros a través de
-una red** (por ejemplo, como servicio en línea), tenés que entregar su código fuente completo bajo
-esta misma licencia y conservar los avisos de copyright. Así Ideas Box sigue siendo abierto para
-todos, incluso cuando alguien lo mejora.
+- **Podés** descargarlo, instalarlo, usarlo en tu negocio, modificarlo y adaptarlo a tu forma de trabajar.
+- **Lo que creás es tuyo:** contenidos, presupuestos, informes, código de tus proyectos y cualquier
+  entregable hecho con Ideas Box los podés usar y vender libremente, igual que los servicios que
+  prestás con él.
+- **No podés** revender Ideas Box ni versiones modificadas, ofrecerlo a terceros como servicio, ni
+  cobrar por instalarlo o mantenerlo para otros sin una licencia de partner. Compartirlo gratis, sin
+  fines comerciales y con la licencia, sí.
+- Las versiones publicadas antes del cambio, bajo AGPL-3.0, siguen bajo esa licencia para quien ya
+  las tiene.
+
+Conectores, habilidades y modelos de IA comerciales que se sumen en el futuro tendrán su propia
+licencia. Licencias de partner: contacto al final de [LICENSE](LICENSE).
 
 Los packs de skills y los servidores MCP de terceros **no se redistribuyen**: se clonan de sus
-repositorios originales durante la instalación, cada uno **bajo su propia licencia**, que puede
-no ser AGPL. `catalog/` y `docs/TERCEROS.md` listan el origen de cada uno: revisalos antes de
+repositorios originales durante la instalación, cada uno **bajo su propia licencia**. `catalog/` y `docs/TERCEROS.md` listan el origen de cada uno: revisalos antes de
 usarlos comercialmente.
