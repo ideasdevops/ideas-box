@@ -25,3 +25,5 @@ elevenlabs:media	text_to_speech,speech_to_text,text_to_sound_effects,speech_to_s
 elevenlabs:voices	voice_clone,text_to_voice,create_voice_from_preview
 kling:ro	who_am_i,query_tasks,element_list,element_get,motion_library_list
 kling:gen	text_to_image,image_to_image,text_to_video,image_to_video,motion_control,file_upload,element_create,element_update
+disruptia:ro	disruptia_estado,mis_servicios,tienda_listar,tickets_listar,ticket_ver
+disruptia:write	disruptia_conectar,disruptia_conectar_confirmar,disruptia_desconectar,tienda_activar_prueba,ticket_crear,ticket_responder

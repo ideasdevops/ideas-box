@@ -1,0 +1,13 @@
+ID="disruptia"
+TITLE="DisruptIA — tus servicios, soporte y tienda desde Ideas Box"
+DESC="Ver lo que contrataste en DisruptIA, leer y pedir soporte, y dar de alta pruebas gratis de la tienda. Solo para clientes Enterprise con el plan Partner Creator."
+TIER="opcional"
+KIND="python"
+VENDOR="disruptia-mcp"
+DIR="disruptia-mcp"
+CMD="__SRC__/venv/bin/disruptia-mcp"
+ARGS_JSON='[]'
+ENV_KEYS=""
+ENV_SECRET=""
+TOOLGROUP="disruptia"
+NOTES="Es opcional. Para conectarlo pedile a Claude «conectá Ideas Box con DisruptIA» o corré: ~/.local/share/mcp-servers/disruptia-mcp/venv/bin/disruptia-mcp login. No paga ni cancela nada: lo de pago se completa en tu panel."
